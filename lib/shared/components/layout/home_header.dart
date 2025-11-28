@@ -1,0 +1,185 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:sse_market_x/core/models/user_model.dart';
+import 'package:sse_market_x/shared/theme/app_colors.dart';
+
+class HomeHeader extends StatelessWidget {
+  final UserModel user;
+  final String currentPartition;
+  final List<String> displayPartitions;
+  final ScrollController tabScrollController;
+  final Map<String, GlobalKey> tabKeys;
+  final Function(String) onPartitionTap;
+  final VoidCallback onSearchTap;
+  final VoidCallback onAddPostTap;
+  final VoidCallback? onAvatarTap;
+  final bool showAvatar;
+  final bool showAddButton;
+
+  const HomeHeader({
+    super.key,
+    required this.user,
+    required this.currentPartition,
+    required this.displayPartitions,
+    required this.tabScrollController,
+    required this.tabKeys,
+    required this.onPartitionTap,
+    required this.onSearchTap,
+    required this.onAddPostTap,
+    this.onAvatarTap,
+    this.showAvatar = true,
+    this.showAddButton = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Calculate horizontal padding based on visible elements
+    final horizontalPadding = showAvatar && showAddButton ? 12.0 : 16.0;
+    // Adjust vertical padding when elements are hidden for better visual balance
+    final verticalPaddingTop = showAvatar && showAddButton ? 4.0 : 8.0;
+    final verticalPaddingBottom = showAvatar && showAddButton ? 4.0 : 8.0;
+    
+    return Column(
+      children: [
+        Container(
+          color: AppColors.surface,
+          padding: EdgeInsets.fromLTRB(horizontalPadding, verticalPaddingTop, horizontalPadding, verticalPaddingBottom),
+          child: Row(
+            children: [
+              if (showAvatar) ...[
+                GestureDetector(
+                  onTap: onAvatarTap,
+                  child: Container(
+                    width: 32,
+                    height: 32,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.background,
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: user.avatar.isNotEmpty
+                        ? Image.network(
+                            user.avatar,
+                            fit: BoxFit.cover,
+                            frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+                              if (wasSynchronouslyLoaded) return child;
+                              return AnimatedOpacity(
+                                child: child,
+                                opacity: frame == null ? 0 : 1,
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeOut,
+                              );
+                            },
+                            errorBuilder: (_, __, ___) => const Icon(Icons.person,
+                                size: 18, color: AppColors.divider),
+                          )
+                        : const Icon(Icons.person, size: 18, color: AppColors.divider),
+                  ),
+                ),
+                const SizedBox(width: 12),
+              ],
+              Expanded(
+                child: GestureDetector(
+                  onTap: onSearchTap,
+                  child: Container(
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: AppColors.background,
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    alignment: Alignment.centerLeft,
+                    child: Row(
+                      children: [
+                        SvgPicture.asset(
+                          'assets/icons/ic_search.svg',
+                          width: 16,
+                          height: 16,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            '在$currentPartition分区内搜索',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              if (showAddButton) ...[
+                const SizedBox(width: 6),
+                IconButton(
+                  icon: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: const BoxDecoration(
+                      color: AppColors.primary,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: SvgPicture.asset(
+                        'assets/icons/add_icon.svg',
+                        width: 20,
+                        height: 20,
+                      ),
+                    ),
+                  ),
+                  onPressed: onAddPostTap,
+                ),
+              ],
+            ],
+          ),
+        ),
+        Container(
+          height: 40,
+          color: AppColors.surface,
+          padding: EdgeInsets.fromLTRB(horizontalPadding, 0, horizontalPadding, 4),
+          child: SingleChildScrollView(
+            controller: tabScrollController,
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: displayPartitions.asMap().entries.map((entry) {
+                final index = entry.key;
+                final p = entry.value;
+                final selected = p == currentPartition;
+                return Padding(
+                  padding: EdgeInsets.only(
+                      right: index < displayPartitions.length - 1 ? 4 : 0),
+                  child: GestureDetector(
+                    key: tabKeys[p],
+                    onTap: () => onPartitionTap(p),
+                    child: Container(
+                      height: 32,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 6),
+                      decoration: BoxDecoration(
+                        color:
+                            selected ? AppColors.primary : AppColors.background,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text(
+                        p,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color:
+                              selected ? Colors.white : AppColors.textPrimary,
+                          fontWeight:
+                              selected ? FontWeight.w600 : FontWeight.normal,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
