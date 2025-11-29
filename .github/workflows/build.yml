@@ -207,34 +207,20 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Build macOS (x64)
-        run: flutter build macos --release --target-platform=darwin-x64
+      - name: Build macOS
+        run: flutter build macos --release
 
-      # macOS 上构建出来是 .app 包，实际上是一个文件夹，需要压缩
-      - name: Archive macOS x64 Release
+      # macOS 构建出来是 .app 包，实际上是一个文件夹，需要压缩
+      - name: Archive macOS Release
         run: |
           cd build/macos/Build/Products/Release
-          zip -r "sse-market-macos-x64-${VERSION_NAME}.zip" "SSE Market.app"
+          zip -r "sse-market-macos-${VERSION_NAME}.zip" "SSE Market.app"
 
-      - name: Build macOS (ARM64)
-        run: flutter build macos --release --target-platform=darwin-arm64
-
-      - name: Archive macOS ARM64 Release
-        run: |
-          cd build/macos/Build/Products/Release
-          zip -r "sse-market-macos-arm64-${VERSION_NAME}.zip" "SSE Market.app"
-
-      - name: Upload macOS x64 Artifact
+      - name: Upload macOS Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: sse-market-macos-x64-${{ env.VERSION_NAME }}.zip
-          path: build/macos/Build/Products/Release/sse-market-macos-x64-${{ env.VERSION_NAME }}.zip
-
-      - name: Upload macOS ARM64 Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: sse-market-macos-arm64-${{ env.VERSION_NAME }}.zip
-          path: build/macos/Build/Products/Release/sse-market-macos-arm64-${{ env.VERSION_NAME }}.zip
+          name: sse-market-macos-${{ env.VERSION_NAME }}.zip
+          path: build/macos/Build/Products/Release/sse-market-macos-${{ env.VERSION_NAME }}.zip
 
   create-release:
     needs: [build-android, build-windows-x64, build-windows-arm64, build-linux, build-macos]
@@ -264,7 +250,6 @@ jobs:
             artifacts/sse-market-windows-x64-${{ env.VERSION_NAME }}.zip/sse-market-windows-x64-${{ env.VERSION_NAME }}.zip
             artifacts/sse-market-windows-arm64-${{ env.VERSION_NAME }}.zip/sse-market-windows-arm64-${{ env.VERSION_NAME }}.zip
             artifacts/sse-market-linux-x64-${{ env.VERSION_NAME }}.tar.gz/sse-market-linux-x64-${{ env.VERSION_NAME }}.tar.gz
-            artifacts/sse-market-macos-x64-${{ env.VERSION_NAME }}.zip/sse-market-macos-x64-${{ env.VERSION_NAME }}.zip
-            artifacts/sse-market-macos-arm64-${{ env.VERSION_NAME }}.zip/sse-market-macos-arm64-${{ env.VERSION_NAME }}.zip
+            artifacts/sse-market-macos-${{ env.VERSION_NAME }}.zip/sse-market-macos-${{ env.VERSION_NAME }}.zip
           token: ${{ secrets.GITHUB_TOKEN }}
           body_path: RELEASE_GUIDE.md
