@@ -105,18 +105,34 @@ jobs:
       - name: Build Windows (x64)
         run: flutter build windows --release
 
-      - name: Archive Windows Release
+      - name: Build Windows (ARM64)
+        run: flutter build windows --release --target-platform windows-arm64
+
+      - name: Archive Windows x64 Release
         uses: thedoctor0/zip-release@0.7.6
         with:
           type: 'zip'
           filename: 'sse-market-windows-x64-${{ env.VERSION_NAME }}.zip'
           directory: 'build/windows/x64/runner/Release'
           
-      - name: Upload Windows Artifact
+      - name: Archive Windows ARM64 Release
+        uses: thedoctor0/zip-release@0.7.6
+        with:
+          type: 'zip'
+          filename: 'sse-market-windows-arm64-${{ env.VERSION_NAME }}.zip'
+          directory: 'build/windows/arm64/runner/Release'
+          
+      - name: Upload Windows x64 Artifact
         uses: actions/upload-artifact@v4
         with:
           name: sse-market-windows-x64-${{ env.VERSION_NAME }}.zip
           path: build/windows/x64/runner/Release/sse-market-windows-x64-${{ env.VERSION_NAME }}.zip
+
+      - name: Upload Windows ARM64 Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sse-market-windows-arm64-${{ env.VERSION_NAME }}.zip
+          path: build/windows/arm64/runner/Release/sse-market-windows-arm64-${{ env.VERSION_NAME }}.zip
 
   build-linux:
     runs-on: ubuntu-latest
@@ -215,6 +231,7 @@ jobs:
             artifacts/sse-market-android-arm64-v8a-${{ env.VERSION_NAME }}.zip/sse-market-android-arm64-v8a-${{ env.VERSION_NAME }}.zip
             artifacts/sse-market-android-x86_64-${{ env.VERSION_NAME }}.zip/sse-market-android-x86_64-${{ env.VERSION_NAME }}.zip
             artifacts/sse-market-windows-x64-${{ env.VERSION_NAME }}.zip/sse-market-windows-x64-${{ env.VERSION_NAME }}.zip
+            artifacts/sse-market-windows-arm64-${{ env.VERSION_NAME }}.zip/sse-market-windows-arm64-${{ env.VERSION_NAME }}.zip
             artifacts/sse-market-linux-x64-${{ env.VERSION_NAME }}.tar.gz/sse-market-linux-x64-${{ env.VERSION_NAME }}.tar.gz
             artifacts/sse-market-macos-universal-${{ env.VERSION_NAME }}.zip/sse-market-macos-universal-${{ env.VERSION_NAME }}.zip
           token: ${{ secrets.GITHUB_TOKEN }}
