@@ -341,21 +341,25 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
             ),
           ],
         ),
-        actions: widget.previewPost == null ? [
-          if (_isOwnPost)
-            IconButton(
-              icon: const Icon(Icons.delete_outline, color: AppColors.error),
-              onPressed: _onDeletePost,
-            ),
-          IconButton(
-            icon: Icon(
-              _isSaved ? Icons.bookmark : Icons.bookmark_border,
-              color: AppColors.textPrimary,
-            ),
-            onPressed: _onSavePost,
-          ),
-          const SizedBox(width: 8), // Add right padding
-        ] : null,
+        actions: widget.previewPost == null
+            ? [
+                if (_isOwnPost)
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, color: AppColors.error),
+                    onPressed: _onDeletePost,
+                  ),
+                // 打分帖子不显示收藏按钮
+                if (widget.postType != 'rating')
+                  IconButton(
+                    icon: Icon(
+                      _isSaved ? Icons.bookmark : Icons.bookmark_border,
+                      color: AppColors.textPrimary,
+                    ),
+                    onPressed: _onSavePost,
+                  ),
+                const SizedBox(width: 8), // Add right padding
+              ]
+            : null,
       ),
       body: _isLoading
           ? const LoadingIndicator.center(message: '加载中...')
