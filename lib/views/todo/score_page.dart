@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/post_model.dart';
 import 'package:sse_market_x/views/post/score_post_detail_page.dart';
+import 'package:sse_market_x/views/post/create_post_page.dart';
 import 'package:sse_market_x/shared/components/loading/loading_indicator.dart';
 import 'package:sse_market_x/shared/components/cards/rating_card.dart';
 import 'package:sse_market_x/shared/components/utils/snackbar_helper.dart';
@@ -125,6 +126,25 @@ class _ScorePageState extends State<ScorePage> {
             fontSize: 18,
           ),
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 6),
+            child: IconButton(
+              icon: const Icon(Icons.add, color: AppColors.primary),
+              tooltip: '发布打分帖子',
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => CreatePostPage(
+                      apiService: widget.apiService,
+                      fromRatingPage: true,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 0, // 防止滚动时改变背景色
