@@ -35,7 +35,6 @@ jobs:
           storeFile=$RUNNER_TEMP/android_release.keystore
           EOF
 
-      # 构建通用 APK (包含 arm64-v8a, armeabi-v7a, x86_64)
       - name: Build Signed APK
         env:
           KEYSTORE_PATH: ${{ runner.temp }}/android_release.keystore
@@ -47,18 +46,15 @@ jobs:
 
       - name: Rename APK
         run: |
-          mv build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk build/app/outputs/flutter-apk/sse-market-android-armeabi-v7a.apk
-          mv build/app/outputs/flutter-apk/app-arm64-v8a-release.apk build/app/outputs/flutter-apk/sse-market-android-arm64-v8a.apk
-          mv build/app/outputs/flutter-apk/app-x86_64-release.apk build/app/outputs/flutter-apk/sse-market-android-x86_64.apk
+          mv build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk build/app/outputs/flutter-apk/sse-market-armeabi-v7a.apk
+          mv build/app/outputs/flutter-apk/app-arm64-v8a-release.apk build/app/outputs/flutter-apk/sse-market-arm64-v8a.apk
+          mv build/app/outputs/flutter-apk/app-x86_64-release.apk build/app/outputs/flutter-apk/sse-market-x86_64.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: android-release-apk
-          path: |
-            build/app/outputs/flutter-apk/sse-market-android-armeabi-v7a.apk
-            build/app/outputs/flutter-apk/sse-market-android-arm64-v8a.apk
-            build/app/outputs/flutter-apk/sse-market-android-x86_64.apk
+          path: build/app/outputs/flutter-apk/
 
   build-windows:
     runs-on: windows-latest
