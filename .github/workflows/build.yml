@@ -6,7 +6,7 @@ permissions:
 on:
   push:
     tags:
-      - 'v*' # 只有打标签 (如 v1.0.0) 时触发发布流程
+      - 'v*' # 打标签 (如 v1.0.0) 时触发发布流程
   workflow_dispatch: # 允许手动触发
 
 jobs:
@@ -189,21 +189,34 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      # macOS 构建通常默认支持 x64 和 arm64 (Universal)
-      - name: Build macOS (Universal)
-        run: flutter build macos --release
+      - name: Build macOS (x64)
+        run: flutter build macos --release --target-platform=darwin-x64
 
-      # macOS 构建出来是 .app 包，实际上是一个文件夹，需要压缩
-      - name: Archive macOS Release
+      # macOS 上构建出来是 .app 包，实际上是一个文件夹，需要压缩
+      - name: Archive macOS x64 Release
         run: |
           cd build/macos/Build/Products/Release
-          zip -r "sse-market-macos-universal-${VERSION_NAME}.zip" "SSE Market.app"
+          zip -r "sse-market-macos-x64-${VERSION_NAME}.zip" "SSE Market.app"
 
-      - name: Upload macOS Artifact
+      - name: Build macOS (ARM64)
+        run: flutter build macos --release --target-platform=darwin-arm64
+
+      - name: Archive macOS ARM64 Release
+        run: |
+          cd build/macos/Build/Products/Release
+          zip -r "sse-market-macos-arm64-${VERSION_NAME}.zip" "SSE Market.app"
+
+      - name: Upload macOS x64 Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: sse-market-macos-universal-${{ env.VERSION_NAME }}.zip
-          path: build/macos/Build/Products/Release/sse-market-macos-universal-${{ env.VERSION_NAME }}.zip
+          name: sse-market-macos-x64-${{ env.VERSION_NAME }}.zip
+          path: build/macos/Build/Products/Release/sse-market-macos-x64-${{ env.VERSION_NAME }}.zip
+
+      - name: Upload macOS ARM64 Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sse-market-macos-arm64-${{ env.VERSION_NAME }}.zip
+          path: build/macos/Build/Products/Release/sse-market-macos-arm64-${{ env.VERSION_NAME }}.zip
 
   create-release:
     needs: [build-android, build-windows, build-linux, build-macos]
@@ -233,5 +246,6 @@ jobs:
             artifacts/sse-market-windows-x64-${{ env.VERSION_NAME }}.zip/sse-market-windows-x64-${{ env.VERSION_NAME }}.zip
             artifacts/sse-market-windows-arm64-${{ env.VERSION_NAME }}.zip/sse-market-windows-arm64-${{ env.VERSION_NAME }}.zip
             artifacts/sse-market-linux-x64-${{ env.VERSION_NAME }}.tar.gz/sse-market-linux-x64-${{ env.VERSION_NAME }}.tar.gz
-            artifacts/sse-market-macos-universal-${{ env.VERSION_NAME }}.zip/sse-market-macos-universal-${{ env.VERSION_NAME }}.zip
+            artifacts/sse-market-macos-x64-${{ env.VERSION_NAME }}.zip/sse-market-macos-x64-${{ env.VERSION_NAME }}.zip
+            artifacts/sse-market-macos-arm64-${{ env.VERSION_NAME }}.zip/sse-market-macos-arm64-${{ env.VERSION_NAME }}.zip
           token: ${{ secrets.GITHUB_TOKEN }}
