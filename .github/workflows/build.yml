@@ -84,7 +84,7 @@ jobs:
           name: sse-market-android-x86_64-${{ env.VERSION_NAME }}.zip
           path: build/app/outputs/flutter-apk/sse-market-android-x86_64-${{ env.VERSION_NAME }}.zip
 
-  build-windows:
+  build-windows-x64:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -105,9 +105,6 @@ jobs:
       - name: Build Windows (x64)
         run: flutter build windows --release
 
-      - name: Build Windows (ARM64)
-        run: flutter build windows --release --target-platform windows-arm64
-
       - name: Archive Windows x64 Release
         uses: thedoctor0/zip-release@0.7.6
         with:
@@ -115,6 +112,33 @@ jobs:
           filename: 'sse-market-windows-x64-${{ env.VERSION_NAME }}.zip'
           directory: 'build/windows/x64/runner/Release'
           
+      - name: Upload Windows x64 Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sse-market-windows-x64-${{ env.VERSION_NAME }}.zip
+          path: build/windows/x64/runner/Release/sse-market-windows-x64-${{ env.VERSION_NAME }}.zip
+
+  build-windows-arm64:
+    runs-on: windows-11-arm
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read version from pubspec.yaml
+        shell: bash
+        run: |
+          VERSION_LINE=$(grep '^version:' pubspec.yaml | head -n 1 || echo '')
+          VERSION_NAME=${VERSION_LINE#version: }
+          VERSION_NAME=${VERSION_NAME%%+*}
+          echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+      
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build Windows (ARM64)
+        run: flutter build windows --release
+
       - name: Archive Windows ARM64 Release
         uses: thedoctor0/zip-release@0.7.6
         with:
@@ -122,12 +146,6 @@ jobs:
           filename: 'sse-market-windows-arm64-${{ env.VERSION_NAME }}.zip'
           directory: 'build/windows/arm64/runner/Release'
           
-      - name: Upload Windows x64 Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: sse-market-windows-x64-${{ env.VERSION_NAME }}.zip
-          path: build/windows/x64/runner/Release/sse-market-windows-x64-${{ env.VERSION_NAME }}.zip
-
       - name: Upload Windows ARM64 Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -219,7 +237,7 @@ jobs:
           path: build/macos/Build/Products/Release/sse-market-macos-arm64-${{ env.VERSION_NAME }}.zip
 
   create-release:
-    needs: [build-android, build-windows, build-linux, build-macos]
+    needs: [build-android, build-windows-x64, build-windows-arm64, build-linux, build-macos]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
