@@ -9,6 +9,7 @@ import 'package:sse_market_x/core/models/user_model.dart';
 import 'package:sse_market_x/views/post/markdown_help_page.dart';
 import 'package:sse_market_x/shared/components/markdown/latex_markdown.dart';
 import 'package:sse_market_x/shared/components/utils/snackbar_helper.dart';
+import 'package:sse_market_x/shared/components/inputs/toolbar_icon_button.dart';
 import 'package:sse_market_x/shared/components/overlays/custom_dialog.dart';
 import 'package:sse_market_x/shared/components/inputs/custom_dropdown.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
@@ -20,6 +21,8 @@ class CreatePostPage extends StatefulWidget {
   final bool isActive;
   final Function(String title, String content)? onPreviewUpdate;
   final VoidCallback? onPostSuccess;
+  /// 是否从打分页面进入，用于默认选中“打分”分区并跳过草稿加载
+  final bool fromRatingPage;
 
   const CreatePostPage({
     super.key,
@@ -28,6 +31,7 @@ class CreatePostPage extends StatefulWidget {
     this.isActive = true,
     this.onPreviewUpdate,
     this.onPostSuccess,
+    this.fromRatingPage = false,
   });
 
   @override
@@ -58,6 +62,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
     '打听求助',
     '随想随记',
     '求职招募',
+    '打分',
     '其他',
   ];
 
@@ -70,6 +75,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
     '打听求助': '打听求助',
     '随想随记': '日常吐槽',
     '求职招募': '求职招募',
+    '打分': '打分',
     '其他': '其他',
   };
 
@@ -80,15 +86,21 @@ class _CreatePostPageState extends State<CreatePostPage> {
 
     _titleController.addListener(_onTextChanged);
     _contentController.addListener(_onTextChanged);
-    
-    // Only load draft if already active
-    if (widget.isActive) {
-      _loadDraft();
-      _draftLoaded = true;
-      // Initial preview update
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _updatePreview();
-      });
+
+    // 如果从打分页面进入：默认选中“打分”，且不加载草稿
+    if (widget.fromRatingPage) {
+      _selectedPartition = '打分';
+      _draftLoaded = true; // 标记为已处理，避免后续 didUpdateWidget 再次加载
+    } else {
+      // 仅在普通入口且已激活时加载草稿
+      if (widget.isActive) {
+        _loadDraft();
+        _draftLoaded = true;
+        // Initial preview update
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _updatePreview();
+        });
+      }
     }
   }
 
@@ -96,13 +108,15 @@ class _CreatePostPageState extends State<CreatePostPage> {
   void didUpdateWidget(covariant CreatePostPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     // Load draft when becoming active for the first time
-    if (widget.isActive && !oldWidget.isActive && !_draftLoaded) {
-      _loadDraft();
-      _draftLoaded = true;
-      // Trigger initial preview
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _updatePreview();
-      });
+    if (!widget.fromRatingPage) {
+      if (widget.isActive && !oldWidget.isActive && !_draftLoaded) {
+        _loadDraft();
+        _draftLoaded = true;
+        // Trigger initial preview
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _updatePreview();
+        });
+      }
     }
   }
 
@@ -585,90 +599,47 @@ class _CreatePostPageState extends State<CreatePostPage> {
         children: [
           // Markdown 工具按钮
           if (!_showPreview) ...[
-            Container(
-                margin: EdgeInsets.zero,
-                child: IconButton(
-                icon: const Icon(Icons.format_bold, size: 20),
-                onPressed: () => _insertMarkdown('**', '**', placeholder: '粗体文字'),
-                tooltip: '粗体：**粗体文字**',
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                color: AppColors.textSecondary
-              )
+            ToolbarIconButton(
+              icon: Icons.format_bold,
+              tooltip: '粗体：**粗体文字**',
+              onPressed: () => _insertMarkdown('**', '**', placeholder: '粗体文字'),
             ),
-            Container(
-              margin: EdgeInsets.zero,
-              child: IconButton(
-              icon: const Icon(Icons.format_italic, size: 20),
-              onPressed: () => _insertMarkdown('*', '*', placeholder: '斜体文字'),
+            ToolbarIconButton(
+              icon: Icons.format_italic,
               tooltip: '斜体：*斜体文字*',
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-              color: AppColors.textSecondary,
-              )
+              onPressed: () => _insertMarkdown('*', '*', placeholder: '斜体文字'),
             ),
-            Container(
-              margin: EdgeInsets.zero,
-              child: IconButton(
-              icon: const Icon(Icons.title, size: 20),
-              onPressed: () => _insertMarkdown('\n## ', '\n', placeholder: '二级标题'),
+            ToolbarIconButton(
+              icon: Icons.title,
               tooltip: '标题：## 二级标题',
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-              color: AppColors.textSecondary,
-              )
+              onPressed: () => _insertMarkdown('\n## ', '\n', placeholder: '二级标题'),
             ),
-            Container(
-              margin: EdgeInsets.zero,
-              child: IconButton(
-              icon: const Icon(Icons.format_list_bulleted, size: 20),
-              onPressed: () => _insertMarkdown('\n- ', '\n', placeholder: '列表项'),
+            ToolbarIconButton(
+              icon: Icons.format_list_bulleted,
               tooltip: '无序列表：- 列表项',
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-              color: AppColors.textSecondary,
-              )
+              onPressed: () => _insertMarkdown('\n- ', '\n', placeholder: '列表项'),
             ),
-            Container(
-              margin: EdgeInsets.zero,
-              child: IconButton(
-              icon: const Icon(Icons.code, size: 20),
-              onPressed: () => _insertMarkdown('`', '`', placeholder: '代码'),
+            ToolbarIconButton(
+              icon: Icons.code,
               tooltip: '代码：`代码`',
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-              color: AppColors.textSecondary,
-              )
+              onPressed: () => _insertMarkdown('`', '`', placeholder: '代码'),
             ),
-            Container(
-              margin: EdgeInsets.zero,
-              child: IconButton(
-              icon: const Icon(Icons.format_quote, size: 20),
-              onPressed: () => _insertMarkdown('\n> ', '\n', placeholder: '引用内容'),
+            ToolbarIconButton(
+              icon: Icons.format_quote,
               tooltip: '引用：> 引用内容',
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-              color: AppColors.textSecondary,
-              )
+              onPressed: () => _insertMarkdown('\n> ', '\n', placeholder: '引用内容'),
             ),
-            Container(
-              margin: EdgeInsets.zero,
-              child: IconButton(
-              icon: const Icon(Icons.image, size: 20),
-              onPressed: _isUploading ? null : _pickAndUploadImage,
+            ToolbarIconButton(
+              icon: Icons.image,
               tooltip: '上传图片',
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-              color: AppColors.textSecondary,
-              )
+              onPressed: _isUploading ? null : _pickAndUploadImage,
             ),
           ],
           const Spacer(),
           // Markdown 帮助
-          Container(
-            margin: EdgeInsets.zero,
-            child: IconButton(
-            icon: const Icon(Icons.help_outline, size: 20),
+          ToolbarIconButton(
+            icon: Icons.help_outline,
+            tooltip: 'Markdown帮助',
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
@@ -676,31 +647,18 @@ class _CreatePostPageState extends State<CreatePostPage> {
                 ),
               );
             },
-            tooltip: 'Markdown帮助',
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-            color: AppColors.textSecondary,
-          )
           ),
           // 预览按钮（与评论输入区统一为 icon 按钮样式）
           if (widget.onPreviewUpdate == null)
-            Container(
-              margin: EdgeInsets.zero,
-              child: IconButton(
-              icon: Icon(
-                _showPreview ? Icons.edit : Icons.visibility,
-                size: 20,
-              ),
+            ToolbarIconButton(
+              icon: _showPreview ? Icons.edit : Icons.visibility,
+              tooltip: _showPreview ? '编辑' : '预览',
+              isActive: _showPreview,
               onPressed: () {
                 setState(() {
                   _showPreview = !_showPreview;
                 });
               },
-              tooltip: _showPreview ? '编辑' : '预览',
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-              color: _showPreview ? AppColors.primary : AppColors.textSecondary,
-            )
             ),
         ],
       ),
