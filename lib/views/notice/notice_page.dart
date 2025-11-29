@@ -299,7 +299,9 @@ class _NoticePageState extends State<NoticePage> {
                             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                           ),
                           Text(
-                            TimeUtils.formatNoticeTime(notice.time),
+                            notice.postId == 0
+                                ? ''
+                                : TimeUtils.formatNoticeTime(notice.time),
                             style: const TextStyle(fontSize: 12, color: AppColors.textTertiary),
                           ),
                         ],
@@ -311,6 +313,16 @@ class _NoticePageState extends State<NoticePage> {
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.3),
                       ),
+                      if (notice.postId == 0) ...[
+                        const SizedBox(height: 4),
+                        const Text(
+                          '该评论已删除',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textTertiary,
+                          ),
+                        ),
+                      ],
                       if (isUnread)
                         Padding(
                           padding: const EdgeInsets.only(top: 8.0),
