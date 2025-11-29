@@ -249,3 +249,4 @@ jobs:
             artifacts/sse-market-macos-x64-${{ env.VERSION_NAME }}.zip/sse-market-macos-x64-${{ env.VERSION_NAME }}.zip
             artifacts/sse-market-macos-arm64-${{ env.VERSION_NAME }}.zip/sse-market-macos-arm64-${{ env.VERSION_NAME }}.zip
           token: ${{ secrets.GITHUB_TOKEN }}
+          body_path: RELEASE_GUIDE.md
