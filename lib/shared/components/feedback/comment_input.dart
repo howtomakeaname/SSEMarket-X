@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/views/post/markdown_help_page.dart';
 import 'package:sse_market_x/shared/components/utils/snackbar_helper.dart';
+import 'package:sse_market_x/shared/components/inputs/toolbar_icon_button.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 
 /// 评论输入组件
@@ -496,18 +497,11 @@ class _CommentInputState extends State<CommentInput> {
     required VoidCallback onPressed,
     bool isActive = false,
   }) {
-    return Tooltip(
-      message: tooltip,
-      child: Container(
-          margin: EdgeInsets.zero,
-          child: IconButton(
-          icon: Icon(icon, size: 16),
-          onPressed: onPressed,
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-          color: isActive ? AppColors.primary : AppColors.textSecondary,
-        ),
-      )
+    return ToolbarIconButton(
+      icon: icon,
+      tooltip: tooltip,
+      onPressed: onPressed,
+      isActive: isActive,
     );
   }
 
