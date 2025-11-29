@@ -54,14 +54,47 @@ jobs:
       - name: Rename APK
         run: |
           mv build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk build/app/outputs/flutter-apk/sse-market-android-armeabi-v7a-${VERSION_NAME}.apk
+          mv build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk.sha1 build/app/outputs/flutter-apk/sse-market-android-armeabi-v7a-${VERSION_NAME}.apk.sha1
           mv build/app/outputs/flutter-apk/app-arm64-v8a-release.apk build/app/outputs/flutter-apk/sse-market-android-arm64-v8a-${VERSION_NAME}.apk
+          mv build/app/outputs/flutter-apk/app-arm64-v8a-release.apk.sha1 build/app/outputs/flutter-apk/sse-market-android-arm64-v8a-${VERSION_NAME}.apk.sha1
           mv build/app/outputs/flutter-apk/app-x86_64-release.apk build/app/outputs/flutter-apk/sse-market-android-x86_64-${VERSION_NAME}.apk
+          mv build/app/outputs/flutter-apk/app-x86_64-release.apk.sha1 build/app/outputs/flutter-apk/sse-market-android-x86_64-${VERSION_NAME}.apk.sha1
 
-      - name: Upload APK
+      - name: Upload armeabi-v7a APK
         uses: actions/upload-artifact@v4
         with:
-          name: android-release-apk
-          path: build/app/outputs/flutter-apk/
+          name: sse-market-android-armeabi-v7a-${{ env.VERSION_NAME }}.apk
+          path: build/app/outputs/flutter-apk/sse-market-android-armeabi-v7a-${{ env.VERSION_NAME }}.apk
+
+      - name: Upload armeabi-v7a SHA1
+        uses: actions/upload-artifact@v4
+        with:
+          name: sse-market-android-armeabi-v7a-${{ env.VERSION_NAME }}.apk.sha1
+          path: build/app/outputs/flutter-apk/sse-market-android-armeabi-v7a-${{ env.VERSION_NAME }}.apk.sha1
+
+      - name: Upload arm64-v8a APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: sse-market-android-arm64-v8a-${{ env.VERSION_NAME }}.apk
+          path: build/app/outputs/flutter-apk/sse-market-android-arm64-v8a-${{ env.VERSION_NAME }}.apk
+
+      - name: Upload arm64-v8a SHA1
+        uses: actions/upload-artifact@v4
+        with:
+          name: sse-market-android-arm64-v8a-${{ env.VERSION_NAME }}.apk.sha1
+          path: build/app/outputs/flutter-apk/sse-market-android-arm64-v8a-${{ env.VERSION_NAME }}.apk.sha1
+
+      - name: Upload x86_64 APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: sse-market-android-x86_64-${{ env.VERSION_NAME }}.apk
+          path: build/app/outputs/flutter-apk/sse-market-android-x86_64-${{ env.VERSION_NAME }}.apk
+
+      - name: Upload x86_64 SHA1
+        uses: actions/upload-artifact@v4
+        with:
+          name: sse-market-android-x86_64-${{ env.VERSION_NAME }}.apk.sha1
+          path: build/app/outputs/flutter-apk/sse-market-android-x86_64-${{ env.VERSION_NAME }}.apk.sha1
 
   build-windows:
     runs-on: windows-latest
@@ -94,7 +127,7 @@ jobs:
       - name: Upload Windows Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: windows-release-zip
+          name: sse-market-windows-x64-${{ env.VERSION_NAME }}.zip
           path: build/windows/x64/runner/Release/sse-market-windows-x64-${{ env.VERSION_NAME }}.zip
 
   build-linux:
@@ -131,7 +164,7 @@ jobs:
       - name: Upload Linux Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: linux-release-tar
+          name: sse-market-linux-x64-${{ env.VERSION_NAME }}.tar.gz
           path: build/linux/x64/release/sse-market-linux-x64-${{ env.VERSION_NAME }}.tar.gz
 
   build-macos:
@@ -165,7 +198,7 @@ jobs:
       - name: Upload macOS Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: macos-release-zip
+          name: sse-market-macos-universal-${{ env.VERSION_NAME }}.zip
           path: build/macos/Build/Products/Release/sse-market-macos-universal-${{ env.VERSION_NAME }}.zip
 
   create-release:
@@ -173,6 +206,13 @@ jobs:
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
+      - name: Read version from pubspec.yaml
+        shell: bash
+        run: |
+          VERSION_LINE=$(grep '^version:' pubspec.yaml | head -n 1 || echo '')
+          VERSION_NAME=${VERSION_LINE#version: }
+          VERSION_NAME=${VERSION_NAME%%+*}
+          echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
       - name: Download All Artifacts
         uses: actions/download-artifact@v4
         with:
@@ -182,10 +222,13 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            artifacts/android-release-apk/sse-market-android-armeabi-v7a-${{ env.VERSION_NAME }}.apk
-            artifacts/android-release-apk/sse-market-android-arm64-v8a-${{ env.VERSION_NAME }}.apk
-            artifacts/android-release-apk/sse-market-android-x86_64-${{ env.VERSION_NAME }}.apk
-            artifacts/windows-release-zip/sse-market-windows-x64-${{ env.VERSION_NAME }}.zip
-            artifacts/linux-release-tar/sse-market-linux-x64-${{ env.VERSION_NAME }}.tar.gz
-            artifacts/macos-release-zip/sse-market-macos-universal-${{ env.VERSION_NAME }}.zip
+            artifacts/sse-market-android-armeabi-v7a-${{ env.VERSION_NAME }}.apk/sse-market-android-armeabi-v7a-${{ env.VERSION_NAME }}.apk
+            artifacts/sse-market-android-armeabi-v7a-${{ env.VERSION_NAME }}.apk.sha1/sse-market-android-armeabi-v7a-${{ env.VERSION_NAME }}.apk.sha1
+            artifacts/sse-market-android-arm64-v8a-${{ env.VERSION_NAME }}.apk/sse-market-android-arm64-v8a-${{ env.VERSION_NAME }}.apk
+            artifacts/sse-market-android-arm64-v8a-${{ env.VERSION_NAME }}.apk.sha1/sse-market-android-arm64-v8a-${{ env.VERSION_NAME }}.apk.sha1
+            artifacts/sse-market-android-x86_64-${{ env.VERSION_NAME }}.apk/sse-market-android-x86_64-${{ env.VERSION_NAME }}.apk
+            artifacts/sse-market-android-x86_64-${{ env.VERSION_NAME }}.apk.sha1/sse-market-android-x86_64-${{ env.VERSION_NAME }}.apk.sha1
+            artifacts/sse-market-windows-x64-${{ env.VERSION_NAME }}.zip/sse-market-windows-x64-${{ env.VERSION_NAME }}.zip
+            artifacts/sse-market-linux-x64-${{ env.VERSION_NAME }}.tar.gz/sse-market-linux-x64-${{ env.VERSION_NAME }}.tar.gz
+            artifacts/sse-market-macos-universal-${{ env.VERSION_NAME }}.zip/sse-market-macos-universal-${{ env.VERSION_NAME }}.zip
           token: ${{ secrets.GITHUB_TOKEN }}
