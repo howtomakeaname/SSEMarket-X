@@ -11,6 +11,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Read version from pubspec.yaml
+        shell: bash
+        run: |
+          VERSION_LINE=$(grep '^version:' pubspec.yaml | head -n 1 || echo '')
+          VERSION_NAME=${VERSION_LINE#version: }
+          VERSION_NAME=${VERSION_NAME%%+*}
+          echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
       - uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
@@ -46,9 +53,9 @@ jobs:
 
       - name: Rename APK
         run: |
-          mv build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk build/app/outputs/flutter-apk/sse-market-armeabi-v7a.apk
-          mv build/app/outputs/flutter-apk/app-arm64-v8a-release.apk build/app/outputs/flutter-apk/sse-market-arm64-v8a.apk
-          mv build/app/outputs/flutter-apk/app-x86_64-release.apk build/app/outputs/flutter-apk/sse-market-x86_64.apk
+          mv build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk build/app/outputs/flutter-apk/sse-market-android-armeabi-v7a-${VERSION_NAME}.apk
+          mv build/app/outputs/flutter-apk/app-arm64-v8a-release.apk build/app/outputs/flutter-apk/sse-market-android-arm64-v8a-${VERSION_NAME}.apk
+          mv build/app/outputs/flutter-apk/app-x86_64-release.apk build/app/outputs/flutter-apk/sse-market-android-x86_64-${VERSION_NAME}.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
@@ -60,6 +67,13 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Read version from pubspec.yaml
+        shell: bash
+        run: |
+          VERSION_LINE=$(grep '^version:' pubspec.yaml | head -n 1 || echo '')
+          VERSION_NAME=${VERSION_LINE#version: }
+          VERSION_NAME=${VERSION_NAME%%+*}
+          echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
@@ -74,19 +88,26 @@ jobs:
         uses: thedoctor0/zip-release@0.7.6
         with:
           type: 'zip'
-          filename: 'sse-market-windows-x64.zip'
+          filename: 'sse-market-windows-x64-${{ env.VERSION_NAME }}.zip'
           directory: 'build/windows/x64/runner/Release'
           
       - name: Upload Windows Artifact
         uses: actions/upload-artifact@v4
         with:
           name: windows-release-zip
-          path: build/windows/x64/runner/Release/sse-market-windows-x64.zip
+          path: build/windows/x64/runner/Release/sse-market-windows-x64-${{ env.VERSION_NAME }}.zip
 
   build-linux:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Read version from pubspec.yaml
+        shell: bash
+        run: |
+          VERSION_LINE=$(grep '^version:' pubspec.yaml | head -n 1 || echo '')
+          VERSION_NAME=${VERSION_LINE#version: }
+          VERSION_NAME=${VERSION_NAME%%+*}
+          echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
       - name: Install Linux Dependencies
         run: |
           sudo apt-get update
@@ -105,18 +126,25 @@ jobs:
       - name: Archive Linux Release
         run: |
           cd build/linux/x64/release/bundle
-          tar -czf ../sse-market-linux-x64.tar.gz *
+          tar -czf ../sse-market-linux-x64-${VERSION_NAME}.tar.gz *
 
       - name: Upload Linux Artifact
         uses: actions/upload-artifact@v4
         with:
           name: linux-release-tar
-          path: build/linux/x64/release/sse-market-linux-x64.tar.gz
+          path: build/linux/x64/release/sse-market-linux-x64-${{ env.VERSION_NAME }}.tar.gz
 
   build-macos:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Read version from pubspec.yaml
+        shell: bash
+        run: |
+          VERSION_LINE=$(grep '^version:' pubspec.yaml | head -n 1 || echo '')
+          VERSION_NAME=${VERSION_LINE#version: }
+          VERSION_NAME=${VERSION_NAME%%+*}
+          echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
@@ -132,13 +160,13 @@ jobs:
       - name: Archive macOS Release
         run: |
           cd build/macos/Build/Products/Release
-          zip -r sse-market-macos-universal.zip "SSE Market.app"
+          zip -r "sse-market-macos-universal-${VERSION_NAME}.zip" "SSE Market.app"
 
       - name: Upload macOS Artifact
         uses: actions/upload-artifact@v4
         with:
           name: macos-release-zip
-          path: build/macos/Build/Products/Release/sse-market-macos-universal.zip
+          path: build/macos/Build/Products/Release/sse-market-macos-universal-${{ env.VERSION_NAME }}.zip
 
   create-release:
     needs: [build-android, build-windows, build-linux, build-macos]
@@ -154,10 +182,10 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            artifacts/android-release-apk/sse-market-android-armeabi-v7a.apk
-            artifacts/android-release-apk/sse-market-android-arm64-v8a.apk
-            artifacts/android-release-apk/sse-market-android-x86_64.apk
-            artifacts/windows-release-zip/sse-market-windows-x64.zip
-            artifacts/linux-release-tar/sse-market-linux-x64.tar.gz
-            artifacts/macos-release-zip/sse-market-macos-universal.zip
+            artifacts/android-release-apk/sse-market-android-armeabi-v7a-${{ env.VERSION_NAME }}.apk
+            artifacts/android-release-apk/sse-market-android-arm64-v8a-${{ env.VERSION_NAME }}.apk
+            artifacts/android-release-apk/sse-market-android-x86_64-${{ env.VERSION_NAME }}.apk
+            artifacts/windows-release-zip/sse-market-windows-x64-${{ env.VERSION_NAME }}.zip
+            artifacts/linux-release-tar/sse-market-linux-x64-${{ env.VERSION_NAME }}.tar.gz
+            artifacts/macos-release-zip/sse-market-macos-universal-${{ env.VERSION_NAME }}.zip
           token: ${{ secrets.GITHUB_TOKEN }}
