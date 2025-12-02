@@ -2,9 +2,9 @@
 
 使用 **Flutter** 构建的多端应用，目标平台包含：
 
-- **Android**（手机 / 平板）
+- **Android**（Phone / Pad）
 - **iOS**（iPhone / iPad）
-- **Web**（浏览器）
+- **HarmonyOS**（Mobile / Tablet）
 - **Desktop**（Windows / macOS / Linux）
 
 ---
@@ -176,6 +176,62 @@ flutter build linux --release
 - Windows：`build/windows/`
 - macOS：`build/macos/`
 - Linux：`build/linux/`
+
+---
+
+## 运行与构建 - OpenHarmony / HarmonyOS (OHOS)
+
+> OHOS 平台需要使用 OpenHarmony TPC 维护的 Flutter SDK 分支。
+
+### 环境准备
+
+1. 克隆 OpenHarmony TPC 的 Flutter SDK：
+
+   ```bash
+   git clone -b br_3.22.0-ohos-1.0.4 https://gitcode.com/openharmony-tpc/flutter_flutter.git ~/flutter-ohos
+   export PATH="$HOME/flutter-ohos/bin:$PATH"
+   ```
+
+2. 安装 HarmonyOS SDK 和命令行工具（hvigor、ohpm 等）
+
+3. 验证环境：
+
+   ```bash
+   flutter doctor
+   ```
+
+### 依赖说明
+
+本项目使用 `pubspec_overrides.yaml` 管理 OHOS 平台的特殊依赖。该文件会自动覆盖 `pubspec.yaml` 中的部分依赖，从 OpenHarmony TPC 的 git 仓库拉取适配版本。
+
+- **构建 OHOS 平台**：保留 `pubspec_overrides.yaml` 文件
+- **构建其他平台**：删除或重命名 `pubspec_overrides.yaml` 文件
+
+### Debug 运行
+
+连接 HarmonyOS 设备或启动模拟器后：
+
+```bash
+flutter pub get
+flutter run -d ohos
+```
+
+### Release 构建 HAP
+
+```bash
+flutter pub get
+flutter flutter build hap --release --no-codesign
+```
+
+构建产物位于：
+
+- `build/ohos/hap/entry-default-unsigned.hap`（未签名）
+
+如需签名，请配置签名证书后执行：
+
+```bash
+flutter build hap --release
+```
 
 ---
 

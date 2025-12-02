@@ -20,7 +20,7 @@ version: 0.5.1+2
 
 environment:
   sdk: ^3.4.0
-  flutter: 3.22.0
+  flutter: 3.27.4
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -39,32 +39,14 @@ dependencies:
   encrypt: ^5.0.3
   crypto: ^3.0.6
   flutter_svg: ^2.0.9
-  flutter_markdown:
-    git:
-      url: "https://gitcode.com/openharmony-tpc/flutter_packages.git"
-      path: "packages/flutter_markdown"
-  webview_flutter:
-    git:
-      url: "https://gitcode.com/openharmony-tpc/flutter_packages.git"
-      path: "packages/webview_flutter/webview_flutter"
-  url_launcher:
-    git:
-      url: "https://gitcode.com/openharmony-tpc/flutter_packages.git"
-      path: "packages/url_launcher/url_launcher"
-  shared_preferences:
-    git:
-      url: "https://gitcode.com/openharmony-tpc/flutter_packages.git"
-      path: "packages/shared_preferences/shared_preferences"
+  flutter_markdown: ^0.6.17+2
+  webview_flutter: ^4.6.0
+  url_launcher: ^6.1.12
+  shared_preferences: ^2.2.0
   intl: ^0.20.2
-  image_picker:
-    git:
-      url: "https://gitcode.com/openharmony-tpc/flutter_packages.git"
-      path: "packages/image_picker/image_picker"
+  image_picker: ^1.0.2
   markdown_widget: ^2.3.2+8
-  flutter_math_fork: 
-    git:
-      url: https://gitcode.com/openharmony-sig/flutter_math_fork.git
-      ref: br_v0.7.4_ohos
+  flutter_math_fork: ^0.7.4
   web_socket_channel: ^3.0.3
 
 dev_dependencies:
@@ -81,12 +63,8 @@ dev_dependencies:
   # Generate launcher icons from a single source image
   flutter_launcher_icons: ^0.13.1
 
-# Force use git version of url_launcher to resolve dependency conflict
-dependency_overrides:
-  url_launcher:
-    git:
-      url: "https://gitcode.com/openharmony-tpc/flutter_packages.git"
-      path: "packages/url_launcher/url_launcher"
+# dependency_overrides 已移至 pubspec_overrides.yaml (OHOS 平台专用)
+# 非 OHOS 平台构建时不需要覆盖依赖
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
