@@ -26,11 +26,10 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
       
-      - name: Clone Flutter SDK from GitCode OpenHarmony TPC
+      - name: Clone Flutter SDK from main channel
         run: |
-          git clone https://gitcode.com/openharmony-tpc/flutter_flutter.git $HOME/flutter
+          git clone -b main https://github.com/flutter/flutter.git $HOME/flutter
           cd $HOME/flutter
-          git checkout c4a66f77d0e5047ddf5a1bd353fd3ee9cbfeafcd
           echo "$HOME/flutter/bin" >> $GITHUB_PATH
       
       - name: Initialize Flutter SDK
@@ -102,11 +101,10 @@ jobs:
           VERSION_NAME=${VERSION_LINE#version: }
           VERSION_NAME=${VERSION_NAME%%+*}
           echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
-      - name: Clone Flutter SDK from GitCode OpenHarmony TPC
+      - name: Clone Flutter SDK from main channel
         run: |
-          git clone https://gitcode.com/openharmony-tpc/flutter_flutter.git $HOME/flutter
+          git clone -b main https://github.com/flutter/flutter.git $HOME/flutter
           cd $HOME/flutter
-          git checkout c4a66f77d0e5047ddf5a1bd353fd3ee9cbfeafcd
           echo "$HOME/flutter/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
       
       - name: Initialize Flutter SDK
@@ -142,11 +140,10 @@ jobs:
           VERSION_NAME=${VERSION_LINE#version: }
           VERSION_NAME=${VERSION_NAME%%+*}
           echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
-      - name: Clone Flutter SDK from GitCode OpenHarmony TPC
+      - name: Clone Flutter SDK from main channel
         run: |
-          git clone https://gitcode.com/openharmony-tpc/flutter_flutter.git $HOME/flutter
+          git clone -b main https://github.com/flutter/flutter.git $HOME/flutter
           cd $HOME/flutter
-          git checkout c4a66f77d0e5047ddf5a1bd353fd3ee9cbfeafcd
           echo "$HOME/flutter/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
       
       - name: Initialize Flutter SDK
@@ -187,11 +184,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev
 
-      - name: Clone Flutter SDK from GitCode OpenHarmony TPC
+      - name: Clone Flutter SDK from main channel
         run: |
-          git clone https://gitcode.com/openharmony-tpc/flutter_flutter.git $HOME/flutter
+          git clone -b main https://github.com/flutter/flutter.git $HOME/flutter
           cd $HOME/flutter
-          git checkout c4a66f77d0e5047ddf5a1bd353fd3ee9cbfeafcd
           echo "$HOME/flutter/bin" >> $GITHUB_PATH
       
       - name: Initialize Flutter SDK
@@ -225,11 +221,10 @@ jobs:
           VERSION_NAME=${VERSION_LINE#version: }
           VERSION_NAME=${VERSION_NAME%%+*}
           echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
-      - name: Clone Flutter SDK from GitCode OpenHarmony TPC
+      - name: Clone Flutter SDK from main channel
         run: |
-          git clone https://gitcode.com/openharmony-tpc/flutter_flutter.git $HOME/flutter
+          git clone -b main https://github.com/flutter/flutter.git $HOME/flutter
           cd $HOME/flutter
-          git checkout c4a66f77d0e5047ddf5a1bd353fd3ee9cbfeafcd
           echo "$HOME/flutter/bin" >> $GITHUB_PATH
       
       - name: Initialize Flutter SDK
@@ -253,8 +248,102 @@ jobs:
           name: sse-market-macos-${{ env.VERSION_NAME }}.zip
           path: build/macos/Build/Products/Release/sse-market-macos-${{ env.VERSION_NAME }}.zip
 
+  build-ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read version from pubspec.yaml
+        shell: bash
+        run: |
+          VERSION_LINE=$(grep '^version:' pubspec.yaml | head -n 1 || echo '')
+          VERSION_NAME=${VERSION_LINE#version: }
+          VERSION_NAME=${VERSION_NAME%%+*}
+          echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
+      
+      - name: Clone Flutter SDK from main channel
+        run: |
+          git clone -b main https://github.com/flutter/flutter.git $HOME/flutter
+          echo "$HOME/flutter/bin" >> $GITHUB_PATH
+      
+      - name: Initialize Flutter SDK
+        run: flutter --version
+      
+      - name: Get dependencies
+        run: flutter pub get
+      
+      - name: Build iOS (no codesign)
+        run: flutter build ios --release --no-codesign
+      
+      - name: Archive iOS App
+        run: |
+          cd build/ios/iphoneos
+          zip -r "sse-market-ios-${VERSION_NAME}.zip" Runner.app
+      
+      - name: Upload iOS Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sse-market-ios-${{ env.VERSION_NAME }}.zip
+          path: build/ios/iphoneos/sse-market-ios-${{ env.VERSION_NAME }}.zip
+
+  build-ohos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read version from pubspec.yaml
+        shell: bash
+        run: |
+          VERSION_LINE=$(grep '^version:' pubspec.yaml | head -n 1 || echo '')
+          VERSION_NAME=${VERSION_LINE#version: }
+          VERSION_NAME=${VERSION_NAME%%+*}
+          echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl libgl1-mesa-dev
+      
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+      
+      - name: Setup HarmonyOS CLI tools
+        uses: ErBWs/setup-ohos@v1
+        with:
+          version: latest
+          cache: true
+      
+      - name: Clone Flutter SDK from GitCode OpenHarmony TPC
+        run: |
+          git clone https://gitcode.com/openharmony-tpc/flutter_flutter.git $HOME/flutter
+          echo "$HOME/flutter/bin" >> $GITHUB_PATH
+      
+      - name: Initialize Flutter SDK
+        run: flutter --version
+      
+      - name: Get dependencies
+        run: flutter pub get
+      
+      - name: Build OpenHarmony HAP
+        run: flutter build hap --release --no-codesign
+      
+      - name: Rename HAP
+        run: |
+          mv build/ohos/hap/entry-default-unsigned.hap build/ohos/hap/sse-market-ohos-${VERSION_NAME}.hap
+      
+      - name: Archive OpenHarmony HAP
+        run: |
+          cd build/ohos/hap
+          zip -j "sse-market-ohos-${VERSION_NAME}.zip" "sse-market-ohos-${VERSION_NAME}.hap"
+      
+      - name: Upload OpenHarmony HAP
+        uses: actions/upload-artifact@v4
+        with:
+          name: sse-market-ohos-${{ env.VERSION_NAME }}.zip
+          path: build/ohos/hap/sse-market-ohos-${{ env.VERSION_NAME }}.zip
+
   create-release:
-    needs: [build-android, build-windows-x64, build-windows-arm64, build-linux, build-macos]
+    needs: [build-android, build-windows-x64, build-windows-arm64, build-linux, build-macos, build-ios, build-ohos]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
@@ -282,5 +371,7 @@ jobs:
             artifacts/sse-market-windows-arm64-${{ env.VERSION_NAME }}.zip/sse-market-windows-arm64-${{ env.VERSION_NAME }}.zip
             artifacts/sse-market-linux-x64-${{ env.VERSION_NAME }}.tar.gz/sse-market-linux-x64-${{ env.VERSION_NAME }}.tar.gz
             artifacts/sse-market-macos-${{ env.VERSION_NAME }}.zip/sse-market-macos-${{ env.VERSION_NAME }}.zip
+            artifacts/sse-market-ios-${{ env.VERSION_NAME }}.zip/sse-market-ios-${{ env.VERSION_NAME }}.zip
+            artifacts/sse-market-ohos-${{ env.VERSION_NAME }}.zip/sse-market-ohos-${{ env.VERSION_NAME }}.zip
           token: ${{ secrets.GITHUB_TOKEN }}
           body_path: RELEASE_GUIDE.md
