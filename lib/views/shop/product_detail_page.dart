@@ -139,7 +139,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     curve: Curves.easeOut,
                   );
                 },
-                errorBuilder: (_, _, __) => const Center(
+                errorBuilder: (context, error, stackTrace) => const Center(
                   child: Icon(
                     Icons.image_not_supported_outlined,
                     size: 48,

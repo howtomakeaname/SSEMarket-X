@@ -183,7 +183,7 @@ class _SideMenuState extends State<SideMenu> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary.withValues(alpha: 0.08) : null,
+          color: isSelected ? AppColors.primary.withOpacity(0.08) : null,
         ),
         child: Row(
           children: [

@@ -1,0 +1,56 @@
+{
+  "color": [
+    {
+      "name": "app_background_color",
+      "value": "#1A1A1A"
+    },
+    {
+      "name": "app_surface_color",
+      "value": "#000000"
+    },
+    {
+      "name": "app_text_primary",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "app_text_secondary",
+      "value": "#CCCCCC"
+    },
+    {
+      "name": "app_text_tertiary",
+      "value": "#999999"
+    },
+    {
+      "name": "app_divider_color",
+      "value": "#404040"
+    },
+    {
+      "name": "app_primary_color",
+      "value": "#007DFF"
+    },
+    {
+      "name": "app_secondary_color",
+      "value": "#4CAF50"
+    },
+    {
+      "name": "app_error_color",
+      "value": "#FF6B6B"
+    },
+    {
+      "name": "app_warning_color",
+      "value": "#FFA726"
+    },
+    {
+      "name": "start_window_background",
+      "value": "#000000"
+    },
+    {
+      "name": "status_bar_background",
+      "value": "#000000"
+    },
+    {
+      "name": "status_bar_content",
+      "value": "#FFFFFF"
+    }
+  ]
+}

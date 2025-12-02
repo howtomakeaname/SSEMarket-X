@@ -1,9 +1,12 @@
 name: Build and Release
 
+permissions:
+  contents: write
+
 on:
   push:
     tags:
-      - 'v*' # 只有打标签 (如 v1.0.0) 时触发发布流程
+      - 'v*' # 打标签 (如 v1.0.0) 时触发发布流程
   workflow_dispatch: # 允许手动触发
 
 jobs:
@@ -11,23 +14,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Read version from pubspec.yaml
-        shell: bash
-        run: |
-          VERSION_LINE=$(grep '^version:' pubspec.yaml | head -n 1 || echo '')
-          VERSION_NAME=${VERSION_LINE#version: }
-          VERSION_NAME=${VERSION_NAME%%+*}
-          echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
+      
+      - name: Read version
+        uses: ./.github/actions/read-version
+      
       - uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
       
-      - name: Get dependencies
-        run: flutter pub get
+      - name: Setup Flutter
+        uses: ./.github/actions/setup-flutter
 
       - name: Decode Keystore
         run: |
@@ -48,8 +45,7 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-        run: |
-          flutter build apk --release --split-per-abi --no-tree-shake-icons
+        run: flutter build apk --release --split-per-abi --no-tree-shake-icons
 
       - name: Rename APK
         run: |
@@ -57,68 +53,116 @@ jobs:
           mv build/app/outputs/flutter-apk/app-arm64-v8a-release.apk build/app/outputs/flutter-apk/sse-market-android-arm64-v8a-${VERSION_NAME}.apk
           mv build/app/outputs/flutter-apk/app-x86_64-release.apk build/app/outputs/flutter-apk/sse-market-android-x86_64-${VERSION_NAME}.apk
 
-      - name: Upload APK
+      - name: Archive Android APKs
+        run: |
+          cd build/app/outputs/flutter-apk
+          zip -j "sse-market-android-armeabi-v7a-${VERSION_NAME}.zip" "sse-market-android-armeabi-v7a-${VERSION_NAME}.apk"
+          zip -j "sse-market-android-arm64-v8a-${VERSION_NAME}.zip" "sse-market-android-arm64-v8a-${VERSION_NAME}.apk"
+          zip -j "sse-market-android-x86_64-${VERSION_NAME}.zip" "sse-market-android-x86_64-${VERSION_NAME}.apk"
+
+      - name: Upload armeabi-v7a ZIP
         uses: actions/upload-artifact@v4
         with:
-          name: android-release-apk
-          path: build/app/outputs/flutter-apk/
+          name: sse-market-android-armeabi-v7a-${{ env.VERSION_NAME }}.zip
+          path: build/app/outputs/flutter-apk/sse-market-android-armeabi-v7a-${{ env.VERSION_NAME }}.zip
 
-  build-windows:
+      - name: Upload arm64-v8a ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: sse-market-android-arm64-v8a-${{ env.VERSION_NAME }}.zip
+          path: build/app/outputs/flutter-apk/sse-market-android-arm64-v8a-${{ env.VERSION_NAME }}.zip
+
+      - name: Upload x86_64 ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: sse-market-android-x86_64-${{ env.VERSION_NAME }}.zip
+          path: build/app/outputs/flutter-apk/sse-market-android-x86_64-${{ env.VERSION_NAME }}.zip
+
+  build-windows-x64:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Read version from pubspec.yaml
-        shell: bash
-        run: |
-          VERSION_LINE=$(grep '^version:' pubspec.yaml | head -n 1 || echo '')
-          VERSION_NAME=${VERSION_LINE#version: }
-          VERSION_NAME=${VERSION_NAME%%+*}
-          echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
       
-      - name: Get dependencies
-        run: flutter pub get
+      - name: Read version
+        uses: ./.github/actions/read-version
+      
+      - name: Setup Flutter
+        uses: ./.github/actions/setup-flutter
 
       - name: Build Windows (x64)
         run: flutter build windows --release
 
-      - name: Archive Windows Release
+      - name: Archive Windows x64 Release
         uses: thedoctor0/zip-release@0.7.6
         with:
           type: 'zip'
           filename: 'sse-market-windows-x64-${{ env.VERSION_NAME }}.zip'
           directory: 'build/windows/x64/runner/Release'
           
-      - name: Upload Windows Artifact
+      - name: Upload Windows x64 Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: windows-release-zip
+          name: sse-market-windows-x64-${{ env.VERSION_NAME }}.zip
           path: build/windows/x64/runner/Release/sse-market-windows-x64-${{ env.VERSION_NAME }}.zip
+
+  build-windows-arm64:
+    runs-on: windows-11-arm
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Read version
+        uses: ./.github/actions/read-version
+      
+      - name: Clone Flutter SDK from GitHub
+        run: |
+          git clone -b main https://github.com/flutter/flutter.git $HOME/flutter
+          echo "$HOME/flutter/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      
+      - name: Initialize Flutter SDK
+        run: flutter --version
+      
+      - name: Remove OHOS dependency overrides
+        shell: bash
+        run: |
+          if [ -f pubspec_overrides.yaml ]; then
+            rm pubspec_overrides.yaml
+            echo "Removed pubspec_overrides.yaml for non-OHOS build"
+          fi
+      
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build Windows (ARM64)
+        run: flutter build windows --release
+
+      - name: Archive Windows ARM64 Release
+        uses: thedoctor0/zip-release@0.7.6
+        with:
+          type: 'zip'
+          filename: 'sse-market-windows-arm64-${{ env.VERSION_NAME }}.zip'
+          directory: 'build/windows/arm64/runner/Release'
+          
+      - name: Upload Windows ARM64 Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sse-market-windows-arm64-${{ env.VERSION_NAME }}.zip
+          path: build/windows/arm64/runner/Release/sse-market-windows-arm64-${{ env.VERSION_NAME }}.zip
 
   build-linux:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Read version from pubspec.yaml
-        shell: bash
-        run: |
-          VERSION_LINE=$(grep '^version:' pubspec.yaml | head -n 1 || echo '')
-          VERSION_NAME=${VERSION_LINE#version: }
-          VERSION_NAME=${VERSION_NAME%%+*}
-          echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
+      
+      - name: Read version
+        uses: ./.github/actions/read-version
+      
       - name: Install Linux Dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev
-
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
       
-      - name: Get dependencies
-        run: flutter pub get
+      - name: Setup Flutter
+        uses: ./.github/actions/setup-flutter
 
       - name: Build Linux (x64)
         run: flutter build linux --release
@@ -131,48 +175,122 @@ jobs:
       - name: Upload Linux Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: linux-release-tar
+          name: sse-market-linux-x64-${{ env.VERSION_NAME }}.tar.gz
           path: build/linux/x64/release/sse-market-linux-x64-${{ env.VERSION_NAME }}.tar.gz
 
   build-macos:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Read version from pubspec.yaml
-        shell: bash
-        run: |
-          VERSION_LINE=$(grep '^version:' pubspec.yaml | head -n 1 || echo '')
-          VERSION_NAME=${VERSION_LINE#version: }
-          VERSION_NAME=${VERSION_NAME%%+*}
-          echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
       
-      - name: Get dependencies
-        run: flutter pub get
+      - name: Read version
+        uses: ./.github/actions/read-version
+      
+      - name: Setup Flutter
+        uses: ./.github/actions/setup-flutter
 
-      # macOS 构建通常默认支持 x64 和 arm64 (Universal)
-      - name: Build macOS (Universal)
+      - name: Build macOS
         run: flutter build macos --release
 
-      # macOS 构建出来是 .app 包，实际上是一个文件夹，需要压缩
       - name: Archive macOS Release
         run: |
           cd build/macos/Build/Products/Release
-          zip -r "sse-market-macos-universal-${VERSION_NAME}.zip" "SSE Market.app"
+          zip -r "sse-market-macos-${VERSION_NAME}.zip" "SSE Market.app"
 
       - name: Upload macOS Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: macos-release-zip
-          path: build/macos/Build/Products/Release/sse-market-macos-universal-${{ env.VERSION_NAME }}.zip
+          name: sse-market-macos-${{ env.VERSION_NAME }}.zip
+          path: build/macos/Build/Products/Release/sse-market-macos-${{ env.VERSION_NAME }}.zip
+
+  build-ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Read version
+        uses: ./.github/actions/read-version
+      
+      - name: Setup Flutter
+        uses: ./.github/actions/setup-flutter
+      
+      - name: Build iOS (no codesign)
+        run: flutter build ios --release --no-codesign
+      
+      - name: Archive iOS App
+        run: |
+          cd build/ios/iphoneos
+          zip -r "sse-market-ios-nosign-${VERSION_NAME}.zip" Runner.app
+      
+      - name: Upload iOS Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sse-market-ios-nosign-${{ env.VERSION_NAME }}.zip
+          path: build/ios/iphoneos/sse-market-ios-nosign-${{ env.VERSION_NAME }}.zip
+
+  build-ohos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Read version
+        uses: ./.github/actions/read-version
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl libgl1-mesa-dev
+      
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+      
+      - name: Setup HarmonyOS CLI tools
+        uses: ErBWs/setup-ohos@v1
+        with:
+          version: latest
+          cache: true
+      
+      - name: Clone Flutter SDK from OpenHarmony TPC (3.22.0)
+        run: |
+          git clone -b br_3.22.0-ohos-1.0.4 https://gitcode.com/openharmony-tpc/flutter_flutter.git $HOME/flutter
+          echo "$HOME/flutter/bin" >> $GITHUB_PATH
+      
+      - name: Initialize Flutter SDK
+        run: flutter --version
+      
+      - name: Get dependencies
+        run: flutter pub get
+      
+      - name: Build OpenHarmony HAP
+        run: flutter build hap --release --no-codesign
+      
+      - name: Rename HAP
+        run: |
+          mv build/ohos/hap/entry-default-unsigned.hap build/ohos/hap/sse-market-ohos-nosign-${VERSION_NAME}.hap
+      
+      - name: Archive OpenHarmony HAP
+        run: |
+          cd build/ohos/hap
+          zip -j "sse-market-ohos-nosign-${VERSION_NAME}.zip" "sse-market-ohos-nosign-${VERSION_NAME}.hap"
+      
+      - name: Upload OpenHarmony HAP
+        uses: actions/upload-artifact@v4
+        with:
+          name: sse-market-ohos-nosign-${{ env.VERSION_NAME }}.zip
+          path: build/ohos/hap/sse-market-ohos-nosign-${{ env.VERSION_NAME }}.zip
 
   create-release:
-    needs: [build-android, build-windows, build-linux, build-macos]
+    needs: [build-android, build-windows-x64, build-windows-arm64, build-linux, build-macos, build-ios, build-ohos]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
+      - uses: actions/checkout@v4
+      
+      - name: Read version
+        uses: ./.github/actions/read-version
+      
       - name: Download All Artifacts
         uses: actions/download-artifact@v4
         with:
@@ -182,10 +300,14 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            artifacts/android-release-apk/sse-market-android-armeabi-v7a-${{ env.VERSION_NAME }}.apk
-            artifacts/android-release-apk/sse-market-android-arm64-v8a-${{ env.VERSION_NAME }}.apk
-            artifacts/android-release-apk/sse-market-android-x86_64-${{ env.VERSION_NAME }}.apk
-            artifacts/windows-release-zip/sse-market-windows-x64-${{ env.VERSION_NAME }}.zip
-            artifacts/linux-release-tar/sse-market-linux-x64-${{ env.VERSION_NAME }}.tar.gz
-            artifacts/macos-release-zip/sse-market-macos-universal-${{ env.VERSION_NAME }}.zip
+            artifacts/sse-market-android-armeabi-v7a-${{ env.VERSION_NAME }}.zip/sse-market-android-armeabi-v7a-${{ env.VERSION_NAME }}.zip
+            artifacts/sse-market-android-arm64-v8a-${{ env.VERSION_NAME }}.zip/sse-market-android-arm64-v8a-${{ env.VERSION_NAME }}.zip
+            artifacts/sse-market-android-x86_64-${{ env.VERSION_NAME }}.zip/sse-market-android-x86_64-${{ env.VERSION_NAME }}.zip
+            artifacts/sse-market-windows-x64-${{ env.VERSION_NAME }}.zip/sse-market-windows-x64-${{ env.VERSION_NAME }}.zip
+            artifacts/sse-market-windows-arm64-${{ env.VERSION_NAME }}.zip/sse-market-windows-arm64-${{ env.VERSION_NAME }}.zip
+            artifacts/sse-market-linux-x64-${{ env.VERSION_NAME }}.tar.gz/sse-market-linux-x64-${{ env.VERSION_NAME }}.tar.gz
+            artifacts/sse-market-macos-${{ env.VERSION_NAME }}.zip/sse-market-macos-${{ env.VERSION_NAME }}.zip
+            artifacts/sse-market-ios-nosign-${{ env.VERSION_NAME }}.zip/sse-market-ios-nosign-${{ env.VERSION_NAME }}.zip
+            artifacts/sse-market-ohos-nosign-${{ env.VERSION_NAME }}.zip/sse-market-ohos-nosign-${{ env.VERSION_NAME }}.zip
           token: ${{ secrets.GITHUB_TOKEN }}
+          body_path: RELEASE_GUIDE.md
