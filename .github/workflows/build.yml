@@ -21,17 +21,29 @@ jobs:
           VERSION_NAME=${VERSION_LINE#version: }
           VERSION_NAME=${VERSION_NAME%%+*}
           echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl libgl1-mesa-dev
+      
       - uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
       
-      - name: Setup Flutter SDK
-        uses: subosito/flutter-action@v2
+      - name: Setup HarmonyOS CLI tools
+        uses: ErBWs/setup-ohos@v1
         with:
-          channel: 'stable'
-          flutter-version-file: pubspec.yaml
-          architecture: x64
+          version: latest
+          cache: true
+      
+      - name: Clone Flutter SDK from OpenHarmony TPC
+        run: |
+          git clone -b br_3.22.0-ohos-1.0.4 https://gitcode.com/openharmony-tpc/flutter_flutter.git $HOME/flutter
+          echo "$HOME/flutter/bin" >> $GITHUB_PATH
+      
+      - name: Initialize Flutter SDK
+        run: flutter --version
       
       - name: Get dependencies
         run: flutter pub get
@@ -100,12 +112,18 @@ jobs:
           VERSION_NAME=${VERSION_NAME%%+*}
           echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
       
-      - name: Setup Flutter SDK
-        uses: subosito/flutter-action@v2
+      - uses: actions/setup-java@v4
         with:
-          channel: 'stable'
-          flutter-version-file: pubspec.yaml
-          architecture: x64
+          distribution: 'zulu'
+          java-version: '17'
+      
+      - name: Clone Flutter SDK from OpenHarmony TPC
+        run: |
+          git clone -b br_3.22.0-ohos-1.0.4 https://gitcode.com/openharmony-tpc/flutter_flutter.git $HOME/flutter
+          echo "$HOME/flutter/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      
+      - name: Initialize Flutter SDK
+        run: flutter --version
       
       - name: Get dependencies
         run: flutter pub get
@@ -138,9 +156,14 @@ jobs:
           VERSION_NAME=${VERSION_NAME%%+*}
           echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
       
-      - name: Clone Flutter SDK from flutter-3.22-candidate.0 branch
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+      
+      - name: Clone Flutter SDK from OpenHarmony TPC
         run: |
-          git clone -b flutter-3.22-candidate.0 https://github.com/flutter/flutter.git $HOME/flutter
+          git clone -b br_3.22.0-ohos-1.0.4 https://gitcode.com/openharmony-tpc/flutter_flutter.git $HOME/flutter
           echo "$HOME/flutter/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
       
       - name: Initialize Flutter SDK
@@ -179,14 +202,26 @@ jobs:
       - name: Install Linux Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev curl libgl1-mesa-dev
 
-      - name: Setup Flutter SDK
-        uses: subosito/flutter-action@v2
+      - uses: actions/setup-java@v4
         with:
-          channel: 'stable'
-          flutter-version-file: pubspec.yaml
-          architecture: x64
+          distribution: 'zulu'
+          java-version: '17'
+      
+      - name: Setup HarmonyOS CLI tools
+        uses: ErBWs/setup-ohos@v1
+        with:
+          version: latest
+          cache: true
+      
+      - name: Clone Flutter SDK from OpenHarmony TPC
+        run: |
+          git clone -b br_3.22.0-ohos-1.0.4 https://gitcode.com/openharmony-tpc/flutter_flutter.git $HOME/flutter
+          echo "$HOME/flutter/bin" >> $GITHUB_PATH
+      
+      - name: Initialize Flutter SDK
+        run: flutter --version
       
       - name: Get dependencies
         run: flutter pub get
@@ -217,12 +252,27 @@ jobs:
           VERSION_NAME=${VERSION_NAME%%+*}
           echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
       
-      - name: Setup Flutter SDK
-        uses: subosito/flutter-action@v2
+      - name: Install dependencies
+        run: |
+          brew install curl
+      
+      - uses: actions/setup-java@v4
         with:
-          channel: 'stable'
-          flutter-version-file: pubspec.yaml
-          architecture: x64
+          distribution: 'zulu'
+          java-version: '17'
+      
+      - name: Setup HarmonyOS SDK (manual for macOS)
+        run: |
+          mkdir -p $HOME/ohos-sdk
+          echo "OHOS SDK setup placeholder for macOS"
+      
+      - name: Clone Flutter SDK from OpenHarmony TPC
+        run: |
+          git clone -b br_3.22.0-ohos-1.0.4 https://gitcode.com/openharmony-tpc/flutter_flutter.git $HOME/flutter
+          echo "$HOME/flutter/bin" >> $GITHUB_PATH
+      
+      - name: Initialize Flutter SDK
+        run: flutter --version
       
       - name: Get dependencies
         run: flutter pub get
@@ -254,12 +304,27 @@ jobs:
           VERSION_NAME=${VERSION_NAME%%+*}
           echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
       
-      - name: Setup Flutter SDK
-        uses: subosito/flutter-action@v2
+      - name: Install dependencies
+        run: |
+          brew install curl
+      
+      - uses: actions/setup-java@v4
         with:
-          channel: 'stable'
-          flutter-version-file: pubspec.yaml
-          architecture: x64
+          distribution: 'zulu'
+          java-version: '17'
+      
+      - name: Setup HarmonyOS SDK (manual for macOS)
+        run: |
+          mkdir -p $HOME/ohos-sdk
+          echo "OHOS SDK setup placeholder for macOS"
+      
+      - name: Clone Flutter SDK from OpenHarmony TPC
+        run: |
+          git clone -b br_3.22.0-ohos-1.0.4 https://gitcode.com/openharmony-tpc/flutter_flutter.git $HOME/flutter
+          echo "$HOME/flutter/bin" >> $GITHUB_PATH
+      
+      - name: Initialize Flutter SDK
+        run: flutter --version
       
       - name: Get dependencies
         run: flutter pub get
