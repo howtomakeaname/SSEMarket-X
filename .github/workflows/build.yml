@@ -115,7 +115,7 @@ jobs:
       
       - name: Clone Flutter SDK from GitHub
         run: |
-          git clone -b flutter-3.27-candidate.0 https://github.com/flutter/flutter.git $HOME/flutter
+          git clone -b flutter-3.22-candidate.1 https://github.com/flutter/flutter.git $HOME/flutter
           echo "$HOME/flutter/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
       
       - name: Initialize Flutter SDK
@@ -254,7 +254,7 @@ jobs:
       
       - name: Clone Flutter SDK from OpenHarmony TPC
         run: |
-          git clone -b oh-3.27.4-dev https://gitcode.com/openharmony-tpc/flutter_flutter.git $HOME/flutter
+          git clone -b br_3.22.0-ohos-1.0.4 https://gitcode.com/openharmony-tpc/flutter_flutter.git $HOME/flutter
           echo "$HOME/flutter/bin" >> $GITHUB_PATH
       
       - name: Initialize Flutter SDK
