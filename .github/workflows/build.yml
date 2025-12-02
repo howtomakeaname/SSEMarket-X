@@ -115,7 +115,7 @@ jobs:
       
       - name: Clone Flutter SDK from GitHub
         run: |
-          git clone -b flutter-3.38-candidate.0 https://github.com/flutter/flutter.git $HOME/flutter
+          git clone -b main https://github.com/flutter/flutter.git $HOME/flutter
           echo "$HOME/flutter/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
       
       - name: Initialize Flutter SDK
