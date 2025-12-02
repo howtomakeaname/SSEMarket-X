@@ -284,7 +284,7 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
+      onPopInvoked: (didPop) {
         if (!didPop) {
           _onBack();
         }

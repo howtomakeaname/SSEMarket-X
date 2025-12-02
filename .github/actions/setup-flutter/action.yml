@@ -1,0 +1,35 @@
+name: 'Setup Flutter'
+description: 'Setup Flutter SDK with optional OHOS dependency overrides removal'
+
+inputs:
+  flutter-version:
+    description: 'Flutter version to install'
+    required: false
+    default: '3.38.1'
+  remove-ohos-overrides:
+    description: 'Whether to remove pubspec_overrides.yaml for non-OHOS builds'
+    required: false
+    default: 'true'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Flutter SDK
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ inputs.flutter-version }}
+        channel: 'stable'
+        architecture: x64
+    
+    - name: Remove OHOS dependency overrides
+      if: inputs.remove-ohos-overrides == 'true'
+      shell: bash
+      run: |
+        if [ -f pubspec_overrides.yaml ]; then
+          rm pubspec_overrides.yaml
+          echo "Removed pubspec_overrides.yaml for non-OHOS build"
+        fi
+    
+    - name: Get dependencies
+      shell: bash
+      run: flutter pub get
