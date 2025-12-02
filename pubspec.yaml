@@ -20,7 +20,7 @@ version: 0.5.1+2
 
 environment:
   sdk: ^3.4.0
-  flutter: 3.22.1
+  flutter: 3.22.0
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -46,7 +46,7 @@ dependencies:
   intl: ^0.20.2
   image_picker: ^1.0.2
   markdown_widget: ^2.3.2+8
-  flutter_math_fork: ^0.7.4
+  flutter_math_fork: ^0.7.2
   web_socket_channel: ^3.0.3
 
 dev_dependencies:
