@@ -19,7 +19,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 0.5.1+2
 
 environment:
-  sdk: ^3.10.0
+  sdk: ^3.4.0
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -38,14 +38,32 @@ dependencies:
   encrypt: ^5.0.3
   crypto: ^3.0.6
   flutter_svg: ^2.0.9
-  flutter_markdown: ^0.7.4+1
-  webview_flutter: ^4.13.0
-  url_launcher: ^6.3.2
-  shared_preferences: ^2.5.3
+  flutter_markdown:
+    git:
+      url: "https://gitcode.com/openharmony-tpc/flutter_packages.git"
+      path: "packages/flutter_markdown"
+  webview_flutter:
+    git:
+      url: "https://gitcode.com/openharmony-tpc/flutter_packages.git"
+      path: "packages/webview_flutter/webview_flutter"
+  url_launcher:
+    git:
+      url: "https://gitcode.com/openharmony-tpc/flutter_packages.git"
+      path: "packages/url_launcher/url_launcher"
+  shared_preferences:
+    git:
+      url: "https://gitcode.com/openharmony-tpc/flutter_packages.git"
+      path: "packages/shared_preferences/shared_preferences"
   intl: ^0.20.2
-  image_picker: ^1.0.7
-  markdown_widget: ^2.3.2+6
-  flutter_math_fork: ^0.7.2
+  image_picker:
+    git:
+      url: "https://gitcode.com/openharmony-tpc/flutter_packages.git"
+      path: "packages/image_picker/image_picker"
+  markdown_widget: ^2.3.2+8
+  flutter_math_fork: 
+    git:
+      url: https://gitcode.com/openharmony-sig/flutter_math_fork.git
+      ref: br_v0.7.4_ohos
   web_socket_channel: ^3.0.3
 
 dev_dependencies:
@@ -57,10 +75,17 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^6.0.0
+  flutter_lints: ^4.0.0
 
   # Generate launcher icons from a single source image
   flutter_launcher_icons: ^0.13.1
+
+# Force use git version of url_launcher to resolve dependency conflict
+dependency_overrides:
+  url_launcher:
+    git:
+      url: "https://gitcode.com/openharmony-tpc/flutter_packages.git"
+      path: "packages/url_launcher/url_launcher"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
