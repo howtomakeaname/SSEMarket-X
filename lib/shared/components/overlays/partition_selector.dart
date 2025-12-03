@@ -24,7 +24,7 @@ class PartitionSelector extends StatelessWidget {
         ),
         child: Container(
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: context.surfaceColor,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
@@ -40,22 +40,22 @@ class PartitionSelector extends StatelessWidget {
               // 标题栏
               Container(
                 padding: const EdgeInsets.all(20),
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   border: Border(
                     bottom: BorderSide(
-                      color: AppColors.divider,
+                      color: context.dividerColor,
                       width: 0.5,
                     ),
                   ),
                 ),
                 child: Row(
                   children: [
-                    const Text(
+                    Text(
                       '选择分区',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
+                        color: context.textPrimaryColor,
                       ),
                     ),
                     const Spacer(),
@@ -63,10 +63,10 @@ class PartitionSelector extends StatelessWidget {
                       onTap: () => Navigator.of(context).pop(),
                       child: Container(
                         padding: const EdgeInsets.all(4),
-                        child: const Icon(
+                        child: Icon(
                           Icons.close,
                           size: 20,
-                          color: AppColors.textSecondary,
+                          color: context.textSecondaryColor,
                         ),
                       ),
                     ),
@@ -98,7 +98,7 @@ class PartitionSelector extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                                  color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                                  color: isSelected ? AppColors.primary : context.textPrimaryColor,
                                 ),
                               ),
                               const Spacer(),
