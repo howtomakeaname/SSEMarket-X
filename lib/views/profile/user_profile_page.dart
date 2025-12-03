@@ -3,6 +3,7 @@ import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/user_model.dart';
 import 'package:sse_market_x/core/services/storage_service.dart';
 import 'package:sse_market_x/core/utils/level_utils.dart';
+import 'package:sse_market_x/core/services/media_cache_service.dart';
 import 'package:sse_market_x/shared/components/media/cached_image.dart';
 import 'package:sse_market_x/shared/components/utils/snackbar_helper.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
@@ -187,6 +188,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 width: 64,
                 height: 64,
                 fit: BoxFit.cover,
+                category: CacheCategory.avatar,
                 errorWidget: defaultAvatar,
               )
             : defaultAvatar,

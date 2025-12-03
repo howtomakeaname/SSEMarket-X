@@ -15,6 +15,7 @@ class CachedImage extends StatefulWidget {
   final Widget? errorWidget;
   final BorderRadius? borderRadius;
   final Duration fadeInDuration;
+  final CacheCategory category;
 
   const CachedImage({
     super.key,
@@ -26,6 +27,7 @@ class CachedImage extends StatefulWidget {
     this.errorWidget,
     this.borderRadius,
     this.fadeInDuration = const Duration(milliseconds: 300),
+    this.category = CacheCategory.other,
   });
 
   @override
@@ -87,7 +89,10 @@ class _CachedImageState extends State<CachedImage>
     });
 
     try {
-      final file = await _cacheService.getOrDownload(widget.imageUrl);
+      final file = await _cacheService.getOrDownload(
+        widget.imageUrl,
+        category: widget.category,
+      );
       if (mounted) {
         setState(() {
           _cachedFile = file;

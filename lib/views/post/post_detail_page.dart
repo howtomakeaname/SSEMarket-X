@@ -9,6 +9,7 @@ import 'package:sse_market_x/core/utils/time_utils.dart';
 import 'package:sse_market_x/shared/components/cards/comment_card.dart';
 import 'package:sse_market_x/shared/components/feedback/comment_input.dart';
 import 'package:sse_market_x/shared/components/markdown/latex_markdown.dart';
+import 'package:sse_market_x/core/services/media_cache_service.dart';
 import 'package:sse_market_x/shared/components/media/cached_image.dart';
 import 'package:sse_market_x/shared/components/loading/loading_indicator.dart';
 import 'package:sse_market_x/shared/components/utils/snackbar_helper.dart';
@@ -446,6 +447,7 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
                         width: 40,
                         height: 40,
                         fit: BoxFit.cover,
+                        category: CacheCategory.avatar,
                         errorWidget: SvgPicture.asset(
                           'assets/icons/default_avatar.svg',
                           fit: BoxFit.cover,

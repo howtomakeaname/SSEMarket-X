@@ -5,6 +5,7 @@ import 'package:sse_market_x/core/models/comment_model.dart';
 import 'package:sse_market_x/core/utils/level_utils.dart';
 import 'package:sse_market_x/core/utils/time_utils.dart';
 import 'package:sse_market_x/shared/components/markdown/latex_markdown.dart';
+import 'package:sse_market_x/core/services/media_cache_service.dart';
 import 'package:sse_market_x/shared/components/media/cached_image.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 
@@ -184,6 +185,7 @@ class _CommentCardState extends State<CommentCard> {
                         width: 36,
                         height: 36,
                         fit: BoxFit.cover,
+                        category: CacheCategory.avatar,
                         errorWidget: SvgPicture.asset(
                           'assets/icons/default_avatar.svg',
                           fit: BoxFit.cover,
@@ -436,6 +438,7 @@ class _CommentCardState extends State<CommentCard> {
                           width: 28,
                           height: 28,
                           fit: BoxFit.cover,
+                          category: CacheCategory.avatar,
                           errorWidget: SvgPicture.asset(
                             'assets/icons/default_avatar.svg',
                             fit: BoxFit.cover,
