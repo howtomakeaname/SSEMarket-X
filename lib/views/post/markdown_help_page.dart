@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:sse_market_x/shared/components/markdown/latex_markdown.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 
 /// Markdown语法帮助页面
@@ -178,7 +179,7 @@ class _MarkdownHelpPageState extends State<MarkdownHelpPage> {
             ),
             child: MarkdownBody(
               data: item.example,
-              styleSheet: MarkdownStyleSheet(
+              styleSheet: getAdaptiveMarkdownStyleSheet(context).copyWith(
                 p: TextStyle(fontSize: 14, color: context.textPrimaryColor),
                 h1: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: context.textPrimaryColor),
                 h2: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: context.textPrimaryColor),
@@ -188,7 +189,6 @@ class _MarkdownHelpPageState extends State<MarkdownHelpPage> {
                   backgroundColor: context.backgroundColor,
                   color: AppColors.primary,
                 ),
-                blockquote: TextStyle(fontSize: 14, color: context.textSecondaryColor),
               ),
             ),
           ),
@@ -285,7 +285,7 @@ class _MarkdownHelpPageState extends State<MarkdownHelpPage> {
                     )
                   : MarkdownBody(
                       data: _practiceController.text,
-                      styleSheet: MarkdownStyleSheet(
+                      styleSheet: getAdaptiveMarkdownStyleSheet(context).copyWith(
                         p: TextStyle(fontSize: 14, color: context.textPrimaryColor),
                       ),
                     ),

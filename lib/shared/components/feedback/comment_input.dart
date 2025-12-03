@@ -3,6 +3,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/views/post/markdown_help_page.dart';
+import 'package:sse_market_x/shared/components/markdown/latex_markdown.dart';
 import 'package:sse_market_x/shared/components/utils/snackbar_helper.dart';
 import 'package:sse_market_x/shared/components/inputs/toolbar_icon_button.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
@@ -598,7 +599,7 @@ class _CommentInputState extends State<CommentInput> {
             )
           : MarkdownBody(
               data: _controller.text,
-              styleSheet: MarkdownStyleSheet(
+              styleSheet: getAdaptiveMarkdownStyleSheet(context).copyWith(
                 p: TextStyle(
                   fontSize: 14,
                   color: context.textPrimaryColor,
@@ -607,12 +608,7 @@ class _CommentInputState extends State<CommentInput> {
                 code: TextStyle(
                   fontSize: 13,
                   color: AppColors.primary,
-                  backgroundColor: context.surfaceColor,
-                ),
-                blockquote: TextStyle(
-                  fontSize: 14,
-                  color: context.textSecondaryColor,
-                  fontStyle: FontStyle.italic,
+                  backgroundColor: context.backgroundColor,
                 ),
               ),
             ),
