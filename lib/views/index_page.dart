@@ -478,7 +478,7 @@ class _IndexPageState extends State<IndexPage> {
         icon = Icons.article_outlined;
         break;
       case 2:
-        message = '打分占位';
+        message = '选择一个帖子查看详情';
         icon = Icons.grade_outlined;
         break;
       case 3:
@@ -486,7 +486,7 @@ class _IndexPageState extends State<IndexPage> {
         icon = Icons.shopping_bag_outlined;
         break;
       case 4:
-        message = '通知中心';
+        message = '查看通知';
         icon = Icons.notifications_outlined;
         break;
       case 5:
@@ -498,7 +498,7 @@ class _IndexPageState extends State<IndexPage> {
         icon = Icons.person_outline;
         break;
       default:
-        message = '请选择内容查看';
+        message = '选择内容以查看';
         icon = Icons.article_outlined;
     }
     

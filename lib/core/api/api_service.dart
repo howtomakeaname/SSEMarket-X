@@ -1303,4 +1303,93 @@ class ApiService {
       return [];
     }
   }
+
+  /// 发布闲置商品
+  Future<bool> postProduct({
+    required int userId,
+    required int price,
+    required String title,
+    required String content,
+    required List<String> photos,
+  }) async {
+    if (token.isEmpty || userId == 0) return false;
+
+    final uri = Uri.parse('$_baseUrl/auth/postProduct');
+    final body = jsonEncode(<String, dynamic>{
+      'UserID': userId,
+      'Price': price,
+      'Title': title,
+      'Content': content,
+      'Photos': photos,
+      'ISAnonymous': false,
+    });
+
+    try {
+      final response = await http.post(
+        uri,
+        headers: <String, String>{
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: body,
+      );
+
+      return response.statusCode == 200;
+    } catch (e) {
+      print('发布商品失败: $e');
+      return false;
+    }
+  }
+
+  /// 标记商品为已售出
+  Future<bool> markProductSold(int productId) async {
+    if (token.isEmpty) return false;
+
+    final uri = Uri.parse('$_baseUrl/auth/saleProduct');
+    final body = jsonEncode(<String, dynamic>{
+      'productID': productId,
+    });
+
+    try {
+      final response = await http.post(
+        uri,
+        headers: <String, String>{
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: body,
+      );
+
+      return response.statusCode == 200;
+    } catch (e) {
+      print('标记商品售出失败: $e');
+      return false;
+    }
+  }
+
+  /// 删除商品
+  Future<bool> deleteProduct(int productId) async {
+    if (token.isEmpty) return false;
+
+    final uri = Uri.parse('$_baseUrl/auth/deleteProduct');
+    final body = jsonEncode(<String, dynamic>{
+      'productID': productId,
+    });
+
+    try {
+      final response = await http.post(
+        uri,
+        headers: <String, String>{
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: body,
+      );
+
+      return response.statusCode == 200;
+    } catch (e) {
+      print('删除商品失败: $e');
+      return false;
+    }
+  }
 }
