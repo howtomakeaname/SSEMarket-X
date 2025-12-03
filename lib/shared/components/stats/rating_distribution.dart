@@ -37,9 +37,9 @@ class RatingDistribution extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       width: double.infinity, // Ensure full width
       decoration: BoxDecoration(
-        color: AppColors.background,
+        color: context.backgroundColor,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.divider),
+        border: Border.all(color: context.dividerColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
