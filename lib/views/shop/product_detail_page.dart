@@ -285,23 +285,42 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           if (_product.photos.length > 1)
             Positioned(
               bottom: 16,
-              left: 0,
-              right: 0,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: _product.photos.asMap().entries.map((entry) {
-                  return Container(
-                    width: 8,
-                    height: 8,
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: _currentImageIndex == entry.key
-                          ? Colors.white
-                          : Colors.white.withOpacity(0.5),
-                    ),
-                  );
-                }).toList(),
+              left: 16,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.4),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: _product.photos.asMap().entries.map((entry) {
+                    final isActive = _currentImageIndex == entry.key;
+                    return AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeOutCubic,
+                      width: isActive ? 16 : 8,
+                      height: 8,
+                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(4),
+                        color: isActive
+                            ? Colors.white
+                            : Colors.white.withOpacity(0.5),
+                        boxShadow: isActive
+                            ? [
+                                BoxShadow(
+                                  color: Colors.white.withOpacity(0.3),
+                                  blurRadius: 4,
+                                  spreadRadius: 1,
+                                ),
+                              ]
+                            : null,
+                      ),
+                    );
+                  }).toList(),
+                ),
               ),
             ),
           // 点击查看提示
