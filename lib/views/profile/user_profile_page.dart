@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/user_model.dart';
 import 'package:sse_market_x/core/services/storage_service.dart';
@@ -172,27 +173,28 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
   Widget _buildAvatar() {
     final hasAvatar = _user!.avatar.isNotEmpty;
-    final defaultAvatar = Container(
-      color: context.backgroundColor,
-      alignment: Alignment.center,
-      child: Icon(Icons.person, size: 40, color: context.textSecondaryColor),
+    final defaultAvatar = SvgPicture.asset(
+      'assets/icons/default_avatar.svg',
+      fit: BoxFit.cover,
     );
-    return SizedBox(
+    return Container(
       width: 64,
       height: 64,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(32),
-        child: hasAvatar
-            ? CachedImage(
-                imageUrl: _user!.avatar,
-                width: 64,
-                height: 64,
-                fit: BoxFit.cover,
-                category: CacheCategory.avatar,
-                errorWidget: defaultAvatar,
-              )
-            : defaultAvatar,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: context.backgroundColor,
       ),
+      clipBehavior: Clip.antiAlias,
+      child: hasAvatar
+          ? CachedImage(
+              imageUrl: _user!.avatar,
+              width: 64,
+              height: 64,
+              fit: BoxFit.cover,
+              category: CacheCategory.avatar,
+              errorWidget: defaultAvatar,
+            )
+          : defaultAvatar,
     );
   }
 
@@ -207,6 +209,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
       children: [
         Row(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Text(
               _user!.name,
@@ -216,20 +219,13 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 color: context.textPrimaryColor,
               ),
             ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                levelName,
-                style: const TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
-                ),
+            const SizedBox(width: 6),
+            Text(
+              levelName,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: LevelUtils.getLevelColor(score),
               ),
             ),
           ],

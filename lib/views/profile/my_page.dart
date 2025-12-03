@@ -110,7 +110,6 @@ class _MyPageState extends State<MyPage> {
           _buildAvatar(context),
           const SizedBox(width: 16),
           Expanded(child: _buildUserTextsAndExp(context)),
-          Icon(Icons.chevron_right, size: 18, color: context.dividerColor),
         ],
       ),
     );
@@ -118,34 +117,28 @@ class _MyPageState extends State<MyPage> {
 
   Widget _buildAvatar(BuildContext context) {
     final hasAvatar = _user.avatar.isNotEmpty;
-    return SizedBox(
+    final defaultAvatar = SvgPicture.asset(
+      'assets/icons/default_avatar.svg',
+      fit: BoxFit.cover,
+    );
+    return Container(
       width: 60,
       height: 60,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(30),
-        child: hasAvatar
-            ? CachedImage(
-                imageUrl: _user.avatar,
-                width: 60,
-                height: 60,
-                fit: BoxFit.cover,
-                category: CacheCategory.avatar,
-                errorWidget: _buildDefaultAvatar(context),
-              )
-            : _buildDefaultAvatar(context),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: context.backgroundColor,
       ),
-    );
-  }
-
-  Widget _buildDefaultAvatar(BuildContext context) {
-    return Container(
-      color: context.backgroundColor,
-      alignment: Alignment.center,
-      child: SvgPicture.asset(
-        'assets/icons/default_avatar.svg',
-        width: 40,
-        height: 40,
-      ),
+      clipBehavior: Clip.antiAlias,
+      child: hasAvatar
+          ? CachedImage(
+              imageUrl: _user.avatar,
+              width: 60,
+              height: 60,
+              fit: BoxFit.cover,
+              category: CacheCategory.avatar,
+              errorWidget: defaultAvatar,
+            )
+          : defaultAvatar,
     );
   }
 
@@ -162,6 +155,7 @@ class _MyPageState extends State<MyPage> {
       children: [
         Row(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Text(
               name,
@@ -171,20 +165,13 @@ class _MyPageState extends State<MyPage> {
                 color: context.textPrimaryColor,
               ),
             ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: context.backgroundColor,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                levelName,
-                style: const TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
-                ),
+            const SizedBox(width: 6),
+            Text(
+              levelName,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: LevelUtils.getLevelColor(score),
               ),
             ),
           ],

@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/product_model.dart';
+
+import 'package:sse_market_x/core/services/storage_service.dart';
 import 'package:sse_market_x/shared/components/loading/loading_indicator.dart';
 import 'package:sse_market_x/core/services/media_cache_service.dart';
 import 'package:sse_market_x/shared/components/media/cached_image.dart';
+import 'package:sse_market_x/shared/components/utils/snackbar_helper.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
+import 'package:sse_market_x/views/chat/chat_detail_page.dart';
 
 /// 商品详情页
 class ProductDetailPage extends StatefulWidget {
@@ -253,58 +257,75 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     );
   }
 
+  Future<void> _handleStartChat() async {
+    final currentUser = StorageService().user;
+    if (currentUser?.userId == _product.sellerId) {
+      SnackBarHelper.show(context, '不能和自己聊天哦');
+      return;
+    }
+
+    // 获取卖家用户信息
+    try {
+      final seller = await widget.apiService.getInfoById(_product.sellerId);
+      if (seller.userId == 0) {
+        if (mounted) {
+          SnackBarHelper.show(context, '获取卖家信息失败');
+        }
+        return;
+      }
+      
+      if (mounted) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => ChatDetailPage(
+              apiService: widget.apiService,
+              targetUser: seller,
+              isEmbedded: false,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        SnackBarHelper.show(context, '获取卖家信息失败');
+      }
+    }
+  }
+
   Widget _buildActionButtons() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
         color: context.surfaceColor,
         border: Border(
           top: BorderSide(color: context.dividerColor, width: 0.5),
         ),
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: ElevatedButton(
-              onPressed: () {
-                // TODO: 实现私聊功能
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text(
-                '私聊卖家',
-                style: TextStyle(fontSize: 16),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          width: double.infinity,
+          height: 48,
+          child: ElevatedButton.icon(
+            onPressed: _handleStartChat,
+            icon: const Icon(Icons.chat_bubble_outline, color: Colors.white),
+            label: const Text(
+              '私聊卖家',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
               ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: OutlinedButton(
-              onPressed: () {
-                // TODO: 实现收藏功能
-              },
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primary,
-                side: const BorderSide(color: AppColors.primary),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: const Text(
-                '收藏商品',
-                style: TextStyle(fontSize: 16),
-              ),
+              elevation: 0,
             ),
           ),
-        ],
+        ),
       ),
     );
   }

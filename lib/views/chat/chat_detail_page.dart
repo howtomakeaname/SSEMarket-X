@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/chat_message_model.dart';
 import 'package:sse_market_x/core/models/user_model.dart';
@@ -110,7 +111,6 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
               setState(() {
                 _messages.add(message);
               });
-              _scrollToBottom();
             }
           }
         }
@@ -138,21 +138,19 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     setState(() {
       _isLoading = false;
     });
-    
-    // Scroll to bottom after frame
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scrollToBottom();
-    });
   }
 
+  /// 滚动到底部（reverse 模式下是滚动到 position 0）
   void _scrollToBottom() {
-    if (_scrollController.hasClients) {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients && mounted) {
+        _scrollController.animateTo(
+          0,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+        );
+      }
+    });
   }
 
   Future<void> _sendMessage() async {
@@ -240,13 +238,16 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                       )
                     : ListView.builder(
                         controller: _scrollController,
+                        reverse: true,
                         padding: const EdgeInsets.all(16),
                         itemCount: _messages.length,
                         itemBuilder: (context, index) {
-                          final message = _messages[index];
+                          // reverse 模式下，index 0 是最新消息，需要反转索引
+                          final reversedIndex = _messages.length - 1 - index;
+                          final message = _messages[reversedIndex];
                           final isMe = message.senderUserId == StorageService().user?.userId;
-                          final showTime = _shouldShowTime(index);
-                          return _buildMessageItem(message, isMe, showTime, index);
+                          final showTime = _shouldShowTime(reversedIndex);
+                          return _buildMessageItem(message, isMe, showTime, reversedIndex);
                         },
                       ),
           ),
@@ -278,7 +279,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                         minLines: 1,
                         textInputAction: TextInputAction.newline,
                         decoration: InputDecoration(
-                          hintText: '发送消息...',
+                          hintText: '输入内容...',
                           hintStyle: TextStyle(color: context.textSecondaryColor, fontSize: 14),
                           border: InputBorder.none,
                           contentPadding: const EdgeInsets.symmetric(
@@ -412,13 +413,29 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!isMe) ...[
-            CircleAvatar(
-              radius: 16,
-              backgroundImage: NetworkImage(widget.targetUser.avatar),
-              onBackgroundImageError: (_, __) {},
-              child: widget.targetUser.avatar.isEmpty 
-                  ? const Icon(Icons.person, size: 16) 
-                  : null,
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: context.backgroundColor,
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: widget.targetUser.avatar.isNotEmpty
+                  ? Image.network(
+                      widget.targetUser.avatar,
+                      width: 32,
+                      height: 32,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => SvgPicture.asset(
+                        'assets/icons/default_avatar.svg',
+                        fit: BoxFit.cover,
+                      ),
+                    )
+                  : SvgPicture.asset(
+                      'assets/icons/default_avatar.svg',
+                      fit: BoxFit.cover,
+                    ),
             ),
             const SizedBox(width: 8),
           ],
