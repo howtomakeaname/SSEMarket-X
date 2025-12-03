@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sse_market_x/core/models/product_model.dart';
+import 'package:sse_market_x/core/services/media_cache_service.dart';
+import 'package:sse_market_x/shared/components/media/cached_image.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 
 class ProductCard extends StatelessWidget {
@@ -31,19 +33,11 @@ class ProductCard extends StatelessWidget {
                 width: double.infinity,
                 color: context.backgroundColor,
                 child: product.firstPhoto.isNotEmpty
-                    ? Image.network(
-                        product.firstPhoto,
+                    ? CachedImage(
+                        imageUrl: product.firstPhoto,
                         fit: BoxFit.cover,
-                        frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-                          if (wasSynchronouslyLoaded) return child;
-                          return AnimatedOpacity(
-                            opacity: frame == null ? 0 : 1,
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.easeOut,
-                            child: child,
-                          );
-                        },
-                        errorBuilder: (_, __, ___) => Center(
+                        category: CacheCategory.product,
+                        errorWidget: Center(
                           child: Icon(
                             Icons.image_not_supported_outlined,
                             size: 48,

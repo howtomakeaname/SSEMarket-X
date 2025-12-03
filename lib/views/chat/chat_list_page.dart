@@ -4,6 +4,8 @@ import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/user_model.dart';
 import 'package:sse_market_x/core/services/storage_service.dart';
 import 'package:sse_market_x/core/services/websocket_service.dart';
+import 'package:sse_market_x/core/services/media_cache_service.dart';
+import 'package:sse_market_x/shared/components/media/cached_image.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 
 class ChatListPage extends StatefulWidget {
@@ -210,10 +212,13 @@ class _ChatListPageState extends State<ChatListPage> {
                       ),
                       clipBehavior: Clip.antiAlias,
                       child: contact.avatarUrl.isNotEmpty 
-                          ? Image.network(
-                              contact.avatarUrl,
+                          ? CachedImage(
+                              imageUrl: contact.avatarUrl,
+                              width: 48,
+                              height: 48,
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Icon(Icons.person, size: 24, color: context.textSecondaryColor),
+                              category: CacheCategory.avatar,
+                              errorWidget: Icon(Icons.person, size: 24, color: context.textSecondaryColor),
                             )
                           : Icon(Icons.person, size: 24, color: context.textSecondaryColor),
                     ),

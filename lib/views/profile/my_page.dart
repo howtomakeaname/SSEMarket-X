@@ -11,6 +11,8 @@ import 'package:sse_market_x/core/utils/level_utils.dart';
 import 'package:sse_market_x/views/profile/favorites_page.dart';
 import 'package:sse_market_x/views/auth/login_page.dart';
 import 'package:sse_market_x/views/profile/settings_page.dart';
+import 'package:sse_market_x/core/services/media_cache_service.dart';
+import 'package:sse_market_x/shared/components/media/cached_image.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 import 'package:sse_market_x/shared/components/overlays/custom_dialog.dart';
 
@@ -122,16 +124,27 @@ class _MyPageState extends State<MyPage> {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(30),
         child: hasAvatar
-            ? Image.network(_user.avatar, fit: BoxFit.cover)
-            : Container(
-                color: context.backgroundColor,
-                alignment: Alignment.center,
-                child: SvgPicture.asset(
-                  'assets/icons/default_avatar.svg',
-                  width: 40,
-                  height: 40,
-                ),
-              ),
+            ? CachedImage(
+                imageUrl: _user.avatar,
+                width: 60,
+                height: 60,
+                fit: BoxFit.cover,
+                category: CacheCategory.avatar,
+                errorWidget: _buildDefaultAvatar(context),
+              )
+            : _buildDefaultAvatar(context),
+      ),
+    );
+  }
+
+  Widget _buildDefaultAvatar(BuildContext context) {
+    return Container(
+      color: context.backgroundColor,
+      alignment: Alignment.center,
+      child: SvgPicture.asset(
+        'assets/icons/default_avatar.svg',
+        width: 40,
+        height: 40,
       ),
     );
   }

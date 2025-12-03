@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
+import 'package:sse_market_x/core/services/media_cache_service.dart';
 import 'package:sse_market_x/views/auth/reset_password_page.dart';
-import 'package:sse_market_x/shared/components/utils/snackbar_helper.dart';
+import 'package:sse_market_x/views/profile/cache_management_page.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -22,6 +23,40 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   bool _isNotificationEnabled = true;
   bool _isAutoPlay = true;
+  
+  final MediaCacheService _cacheService = MediaCacheService();
+  String _cacheSize = '计算中...';
+  bool _isLoadingCacheInfo = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCacheInfo();
+  }
+
+  Future<void> _loadCacheInfo() async {
+    setState(() {
+      _isLoadingCacheInfo = true;
+    });
+    
+    try {
+      final size = await _cacheService.getCacheSize();
+      
+      if (mounted) {
+        setState(() {
+          _cacheSize = _cacheService.formatCacheSize(size);
+          _isLoadingCacheInfo = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _cacheSize = '获取失败';
+          _isLoadingCacheInfo = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -77,13 +112,7 @@ class _SettingsPageState extends State<SettingsPage> {
             ]),
             _buildSectionTitle('存储设置'),
             _buildSettingsGroup([
-              _buildActionItem(
-                title: '清除缓存',
-                subtitle: '清除应用缓存数据',
-                onTap: () {
-                  _showClearCacheDialog();
-                },
-              ),
+              _buildCacheItem(),
             ]),
             _buildSectionTitle('账户设置'),
             _buildSettingsGroup([
@@ -232,26 +261,76 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  void _showClearCacheDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('清除缓存'),
-        content: const Text('确定要清除所有缓存吗？'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              SnackBarHelper.show(context, '缓存已清除');
-            },
-            child: const Text('确定', style: TextStyle(color: Colors.red)),
-          ),
-        ],
+  /// 构建缓存管理项
+  Widget _buildCacheItem() {
+    return InkWell(
+      onTap: _openCacheManagement,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '缓存管理',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: context.textPrimaryColor,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '查看和清理图片、视频等媒体缓存',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: context.textSecondaryColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // 缓存大小显示
+            if (_isLoadingCacheInfo)
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: context.textSecondaryColor,
+                ),
+              )
+            else
+              Text(
+                _cacheSize,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: context.textSecondaryColor,
+                ),
+              ),
+            const SizedBox(width: 8),
+            SvgPicture.asset(
+              'assets/icons/ic_arrow_right.svg',
+              width: 16,
+              height: 16,
+              colorFilter: ColorFilter.mode(context.dividerColor, BlendMode.srcIn),
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  /// 打开缓存管理页面
+  Future<void> _openCacheManagement() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const CacheManagementPage(),
+      ),
+    );
+    // 返回后刷新缓存信息
+    _loadCacheInfo();
   }
 }

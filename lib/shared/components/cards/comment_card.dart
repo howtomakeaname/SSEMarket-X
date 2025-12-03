@@ -5,6 +5,8 @@ import 'package:sse_market_x/core/models/comment_model.dart';
 import 'package:sse_market_x/core/utils/level_utils.dart';
 import 'package:sse_market_x/core/utils/time_utils.dart';
 import 'package:sse_market_x/shared/components/markdown/latex_markdown.dart';
+import 'package:sse_market_x/core/services/media_cache_service.dart';
+import 'package:sse_market_x/shared/components/media/cached_image.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 
 /// 评论卡片组件
@@ -178,15 +180,16 @@ class _CommentCardState extends State<CommentCard> {
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: widget.comment.authorAvatar.isNotEmpty
-                    ? Image.network(
-                        widget.comment.authorAvatar,
+                    ? CachedImage(
+                        imageUrl: widget.comment.authorAvatar,
+                        width: 36,
+                        height: 36,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return SvgPicture.asset(
-                            'assets/icons/default_avatar.svg',
-                            fit: BoxFit.cover,
-                          );
-                        },
+                        category: CacheCategory.avatar,
+                        errorWidget: SvgPicture.asset(
+                          'assets/icons/default_avatar.svg',
+                          fit: BoxFit.cover,
+                        ),
                       )
                     : SvgPicture.asset(
                         'assets/icons/default_avatar.svg',
@@ -430,15 +433,16 @@ class _CommentCardState extends State<CommentCard> {
                   ),
                   clipBehavior: Clip.antiAlias,
                   child: subComment.authorAvatar.isNotEmpty
-                      ? Image.network(
-                          subComment.authorAvatar,
+                      ? CachedImage(
+                          imageUrl: subComment.authorAvatar,
+                          width: 28,
+                          height: 28,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return SvgPicture.asset(
-                              'assets/icons/default_avatar.svg',
-                              fit: BoxFit.cover,
-                            );
-                          },
+                          category: CacheCategory.avatar,
+                          errorWidget: SvgPicture.asset(
+                            'assets/icons/default_avatar.svg',
+                            fit: BoxFit.cover,
+                          ),
                         )
                       : SvgPicture.asset(
                           'assets/icons/default_avatar.svg',

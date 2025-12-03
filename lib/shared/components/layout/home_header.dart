@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sse_market_x/core/models/user_model.dart';
+import 'package:sse_market_x/core/services/media_cache_service.dart';
+import 'package:sse_market_x/shared/components/media/cached_image.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 
 class HomeHeader extends StatelessWidget {
@@ -58,19 +60,13 @@ class HomeHeader extends StatelessWidget {
                     ),
                     clipBehavior: Clip.antiAlias,
                     child: user.avatar.isNotEmpty
-                        ? Image.network(
-                            user.avatar,
+                        ? CachedImage(
+                            imageUrl: user.avatar,
+                            width: 32,
+                            height: 32,
                             fit: BoxFit.cover,
-                            frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-                              if (wasSynchronouslyLoaded) return child;
-                              return AnimatedOpacity(
-                                opacity: frame == null ? 0 : 1,
-                                duration: const Duration(milliseconds: 300),
-                                curve: Curves.easeOut,
-                                child: child,
-                              );
-                            },
-                            errorBuilder: (_, __, ___) => Icon(Icons.person,
+                            category: CacheCategory.avatar,
+                            errorWidget: Icon(Icons.person,
                                 size: 18, color: context.dividerColor),
                           )
                         : Icon(Icons.person, size: 18, color: context.dividerColor),
