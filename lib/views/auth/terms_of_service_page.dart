@@ -47,6 +47,7 @@ class _TermsOfServicePageState extends State<TermsOfServicePage> {
       appBar: AppBar(
         backgroundColor: AppColors.surface,
         elevation: 0,
+        centerTitle: false,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
           onPressed: () => Navigator.of(context).pop(),
@@ -59,7 +60,6 @@ class _TermsOfServicePageState extends State<TermsOfServicePage> {
             color: AppColors.textPrimary,
           ),
         ),
-        centerTitle: true,
       ),
       body: _isLoading
           ? const LoadingIndicator.center()
