@@ -238,6 +238,7 @@ class _MyPageState extends State<MyPage> {
             context,
             title: '修改资料',
             iconSvg: 'assets/icons/ic_edit.svg',
+            isFirst: true,
             onTap: () {
               Navigator.of(context).push<bool>(
                 MaterialPageRoute(
@@ -271,6 +272,7 @@ class _MyPageState extends State<MyPage> {
             context,
             title: '设置',
             iconSvg: 'assets/icons/ic_settings.svg',
+            isLast: true,
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
@@ -300,6 +302,7 @@ class _MyPageState extends State<MyPage> {
             context,
             title: '关于本应用',
             iconSvg: 'assets/icons/ic_info.svg',
+            isFirst: true,
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
@@ -328,6 +331,7 @@ class _MyPageState extends State<MyPage> {
             iconSvg: 'assets/icons/ic_logout.svg',
             iconColor: AppColors.error,
             textColor: AppColors.error,
+            isLast: true,
             onTap: () {
               () async {
                 final confirm = await showCustomDialog(
@@ -364,29 +368,54 @@ class _MyPageState extends State<MyPage> {
     Color? iconColor,
     Color? textColor,
     required VoidCallback onTap,
+    bool isFirst = false,
+    bool isLast = false,
   }) {
     final effectiveIconColor = iconColor ?? context.textSecondaryColor;
     final effectiveTextColor = textColor ?? context.textPrimaryColor;
     
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-      leading: SvgPicture.asset(
-        iconSvg,
-        width: 24,
-        height: 24,
-        colorFilter: ColorFilter.mode(effectiveIconColor, BlendMode.srcIn),
+    // 根据位置设置圆角
+    BorderRadius? borderRadius;
+    if (isFirst && isLast) {
+      borderRadius = BorderRadius.circular(12);
+    } else if (isFirst) {
+      borderRadius = const BorderRadius.vertical(top: Radius.circular(12));
+    } else if (isLast) {
+      borderRadius = const BorderRadius.vertical(bottom: Radius.circular(12));
+    }
+    
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: borderRadius,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              SvgPicture.asset(
+                iconSvg,
+                width: 24,
+                height: 24,
+                colorFilter: ColorFilter.mode(effectiveIconColor, BlendMode.srcIn),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(fontSize: 16, color: effectiveTextColor),
+                ),
+              ),
+              SvgPicture.asset(
+                'assets/icons/ic_arrow_right.svg',
+                width: 18,
+                height: 18,
+                colorFilter: ColorFilter.mode(context.dividerColor, BlendMode.srcIn),
+              ),
+            ],
+          ),
+        ),
       ),
-      title: Text(
-        title,
-        style: TextStyle(fontSize: 16, color: effectiveTextColor),
-      ),
-      trailing: SvgPicture.asset(
-        'assets/icons/ic_arrow_right.svg',
-        width: 18,
-        height: 18,
-        colorFilter: ColorFilter.mode(context.dividerColor, BlendMode.srcIn),
-      ),
-      onTap: onTap,
     );
   }
 }

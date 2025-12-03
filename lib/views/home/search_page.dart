@@ -196,6 +196,8 @@ class _SearchPageState extends State<SearchPage> {
       backgroundColor: context.backgroundColor,
       appBar: AppBar(
         backgroundColor: context.surfaceColor,
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: context.textPrimaryColor),

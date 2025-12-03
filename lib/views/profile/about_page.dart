@@ -12,6 +12,8 @@ class AboutPage extends StatelessWidget {
       backgroundColor: context.backgroundColor,
       appBar: AppBar(
         backgroundColor: context.surfaceColor,
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: context.textPrimaryColor),
@@ -111,12 +113,24 @@ class AboutPage extends StatelessWidget {
           Divider(height: 1, color: context.dividerColor, indent: 16, endIndent: 16),
           _buildInfoItem(
             context,
+            title: '服务协议',
+            value: '',
+            showArrow: true,
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const PrivacyPolicyPage(type: 'terms')),
+              );
+            },
+          ),
+          Divider(height: 1, color: context.dividerColor, indent: 16, endIndent: 16),
+          _buildInfoItem(
+            context,
             title: '隐私政策',
             value: '',
             showArrow: true,
             onTap: () {
               Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const PrivacyPolicyPage()),
+                MaterialPageRoute(builder: (_) => const PrivacyPolicyPage(type: 'privacy')),
               );
             },
           ),
