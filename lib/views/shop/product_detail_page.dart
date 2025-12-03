@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/product_model.dart';
 import 'package:sse_market_x/shared/components/loading/loading_indicator.dart';
+import 'package:sse_market_x/core/services/media_cache_service.dart';
 import 'package:sse_market_x/shared/components/media/cached_image.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 
@@ -131,6 +132,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               return CachedImage(
                 imageUrl: _product.photos[index],
                 fit: BoxFit.cover,
+                category: CacheCategory.product,
                 errorWidget: Center(
                   child: Icon(
                     Icons.image_not_supported_outlined,

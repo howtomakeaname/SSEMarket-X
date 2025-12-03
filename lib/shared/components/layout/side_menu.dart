@@ -6,6 +6,7 @@ import 'package:sse_market_x/core/models/user_model.dart';
 import 'package:sse_market_x/core/services/storage_service.dart';
 import 'package:sse_market_x/core/services/websocket_service.dart';
 import 'package:sse_market_x/core/utils/level_utils.dart';
+import 'package:sse_market_x/core/services/media_cache_service.dart';
 import 'package:sse_market_x/shared/components/media/cached_image.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 
@@ -138,6 +139,7 @@ class _SideMenuState extends State<SideMenu> {
                                 width: 40,
                                 height: 40,
                                 fit: BoxFit.cover,
+                                category: CacheCategory.avatar,
                                 errorWidget: Icon(Icons.person, color: context.textSecondaryColor),
                               )
                             : Icon(Icons.person, color: context.textSecondaryColor),

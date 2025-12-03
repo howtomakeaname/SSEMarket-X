@@ -11,6 +11,7 @@ import 'package:sse_market_x/core/utils/level_utils.dart';
 import 'package:sse_market_x/views/profile/favorites_page.dart';
 import 'package:sse_market_x/views/auth/login_page.dart';
 import 'package:sse_market_x/views/profile/settings_page.dart';
+import 'package:sse_market_x/core/services/media_cache_service.dart';
 import 'package:sse_market_x/shared/components/media/cached_image.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 import 'package:sse_market_x/shared/components/overlays/custom_dialog.dart';
@@ -128,6 +129,7 @@ class _MyPageState extends State<MyPage> {
                 width: 60,
                 height: 60,
                 fit: BoxFit.cover,
+                category: CacheCategory.avatar,
                 errorWidget: _buildDefaultAvatar(context),
               )
             : _buildDefaultAvatar(context),

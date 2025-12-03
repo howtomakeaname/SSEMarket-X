@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sse_market_x/core/models/product_model.dart';
+import 'package:sse_market_x/core/services/media_cache_service.dart';
 import 'package:sse_market_x/shared/components/media/cached_image.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 
@@ -35,6 +36,7 @@ class ProductCard extends StatelessWidget {
                     ? CachedImage(
                         imageUrl: product.firstPhoto,
                         fit: BoxFit.cover,
+                        category: CacheCategory.product,
                         errorWidget: Center(
                           child: Icon(
                             Icons.image_not_supported_outlined,

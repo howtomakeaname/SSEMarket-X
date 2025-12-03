@@ -5,6 +5,27 @@ import 'package:http/http.dart' as http;
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
 
+/// 缓存分类
+enum CacheCategory {
+  avatar('avatar', '头像'),
+  post('post', '帖子'),
+  product('product', '闲置'),
+  chat('chat', '聊天'),
+  other('other', '其他');
+
+  final String prefix;
+  final String label;
+  const CacheCategory(this.prefix, this.label);
+
+  static CacheCategory fromString(String? value) {
+    if (value == null) return CacheCategory.other;
+    for (final cat in CacheCategory.values) {
+      if (cat.prefix == value) return cat;
+    }
+    return CacheCategory.other;
+  }
+}
+
 /// 媒体缓存服务
 /// 用于缓存网络图片和视频，以 URL 为 key 进行缓存管理
 class MediaCacheService {
@@ -13,6 +34,8 @@ class MediaCacheService {
   MediaCacheService._internal();
 
   Directory? _cacheDir;
+  File? _metadataFile;
+  Map<String, CacheMetadata> _metadata = {};
   bool _initialized = false;
 
   /// 初始化缓存服务
@@ -24,37 +47,48 @@ class MediaCacheService {
       if (!await _cacheDir!.exists()) {
         await _cacheDir!.create(recursive: true);
       }
+      _metadataFile = File('${_cacheDir!.path}/.metadata.json');
+      await _loadMetadata();
       _initialized = true;
     } catch (e) {
       debugPrint('MediaCacheService init error: $e');
     }
   }
 
-  /// 根据 URL 生成缓存文件名（包含分类前缀）
-  String _getCacheFileName(String url, {CacheCategory? category}) {
+  /// 加载元数据
+  Future<void> _loadMetadata() async {
+    try {
+      if (_metadataFile != null && await _metadataFile!.exists()) {
+        final content = await _metadataFile!.readAsString();
+        final Map<String, dynamic> json = jsonDecode(content);
+        _metadata = json.map((key, value) => 
+            MapEntry(key, CacheMetadata.fromJson(value)));
+      }
+    } catch (e) {
+      debugPrint('MediaCache: Load metadata error: $e');
+      _metadata = {};
+    }
+  }
+
+  /// 保存元数据
+  Future<void> _saveMetadata() async {
+    try {
+      if (_metadataFile != null) {
+        final json = _metadata.map((key, value) => MapEntry(key, value.toJson()));
+        await _metadataFile!.writeAsString(jsonEncode(json));
+      }
+    } catch (e) {
+      debugPrint('MediaCache: Save metadata error: $e');
+    }
+  }
+
+
+  /// 根据 URL 生成缓存文件名
+  String _getCacheFileName(String url) {
     final bytes = utf8.encode(url);
     final digest = md5.convert(bytes);
     final extension = _getFileExtension(url);
-    final cat = category ?? _guessCategory(url);
-    return '${cat.prefix}_${digest.toString()}$extension';
-  }
-
-  /// 根据 URL 猜测分类
-  CacheCategory _guessCategory(String url) {
-    final lowerUrl = url.toLowerCase();
-    if (lowerUrl.contains('avatar') || lowerUrl.contains('head')) {
-      return CacheCategory.avatar;
-    }
-    if (lowerUrl.contains('product') || lowerUrl.contains('goods') || lowerUrl.contains('item')) {
-      return CacheCategory.product;
-    }
-    if (lowerUrl.contains('post') || lowerUrl.contains('article') || lowerUrl.contains('content')) {
-      return CacheCategory.post;
-    }
-    if (lowerUrl.contains('chat') || lowerUrl.contains('message')) {
-      return CacheCategory.chat;
-    }
-    return CacheCategory.other;
+    return '${digest.toString()}$extension';
   }
 
   /// 获取文件扩展名
@@ -75,7 +109,6 @@ class MediaCacheService {
     }
   }
 
-
   /// 获取缓存文件路径
   Future<File?> getCacheFile(String url) async {
     if (!_initialized) await init();
@@ -83,7 +116,7 @@ class MediaCacheService {
 
     final fileName = _getCacheFileName(url);
     final file = File('${_cacheDir!.path}/$fileName');
-    
+
     if (await file.exists()) {
       return file;
     }
@@ -97,16 +130,18 @@ class MediaCacheService {
   }
 
   /// 获取或下载媒体文件
-  /// 如果已缓存则返回缓存文件，否则下载并缓存
-  Future<File?> getOrDownload(String url) async {
+  /// [category] 指定缓存来源分类
+  Future<File?> getOrDownload(String url, {CacheCategory category = CacheCategory.other}) async {
     if (!_initialized) await init();
     if (_cacheDir == null) return null;
 
+    final fileName = _getCacheFileName(url);
+    final file = File('${_cacheDir!.path}/$fileName');
+
     // 检查缓存
-    final cachedFile = await getCacheFile(url);
-    if (cachedFile != null) {
+    if (await file.exists()) {
       debugPrint('MediaCache: Hit cache for $url');
-      return cachedFile;
+      return file;
     }
 
     // 下载并缓存
@@ -114,10 +149,15 @@ class MediaCacheService {
       debugPrint('MediaCache: Downloading $url');
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
-        final fileName = _getCacheFileName(url);
-        final file = File('${_cacheDir!.path}/$fileName');
         await file.writeAsBytes(response.bodyBytes);
-        debugPrint('MediaCache: Cached $url');
+        // 保存元数据
+        _metadata[fileName] = CacheMetadata(
+          url: url,
+          category: category,
+          cachedAt: DateTime.now(),
+        );
+        await _saveMetadata();
+        debugPrint('MediaCache: Cached $url as ${category.label}');
         return file;
       }
     } catch (e) {
@@ -135,7 +175,7 @@ class MediaCacheService {
     try {
       if (await _cacheDir!.exists()) {
         await for (final entity in _cacheDir!.list(recursive: true)) {
-          if (entity is File) {
+          if (entity is File && !entity.path.endsWith('.metadata.json')) {
             totalSize += await entity.length();
           }
         }
@@ -165,6 +205,7 @@ class MediaCacheService {
       if (await _cacheDir!.exists()) {
         await _cacheDir!.delete(recursive: true);
         await _cacheDir!.create(recursive: true);
+        _metadata.clear();
         debugPrint('MediaCache: Cache cleared');
         return true;
       }
@@ -183,7 +224,7 @@ class MediaCacheService {
     try {
       if (await _cacheDir!.exists()) {
         await for (final entity in _cacheDir!.list(recursive: true)) {
-          if (entity is File) {
+          if (entity is File && !entity.path.endsWith('.metadata.json')) {
             count++;
           }
         }
@@ -194,6 +235,7 @@ class MediaCacheService {
     return count;
   }
 
+
   /// 获取所有缓存文件信息
   Future<List<CacheFileInfo>> getCacheFiles() async {
     if (!_initialized) await init();
@@ -203,12 +245,16 @@ class MediaCacheService {
     try {
       if (await _cacheDir!.exists()) {
         await for (final entity in _cacheDir!.list(recursive: true)) {
-          if (entity is File) {
+          if (entity is File && !entity.path.endsWith('.metadata.json')) {
             final stat = await entity.stat();
+            final fileName = entity.path.split('/').last;
+            final metadata = _metadata[fileName];
             files.add(CacheFileInfo(
               file: entity,
               size: stat.size,
               modifiedTime: stat.modified,
+              category: metadata?.category ?? CacheCategory.other,
+              url: metadata?.url,
             ));
           }
         }
@@ -225,7 +271,10 @@ class MediaCacheService {
   Future<bool> deleteFile(File file) async {
     try {
       if (await file.exists()) {
+        final fileName = file.path.split('/').last;
         await file.delete();
+        _metadata.remove(fileName);
+        await _saveMetadata();
         return true;
       }
     } catch (e) {
@@ -238,33 +287,49 @@ class MediaCacheService {
   Future<int> deleteFiles(List<File> files) async {
     int deletedCount = 0;
     for (final file in files) {
-      if (await deleteFile(file)) {
-        deletedCount++;
+      final fileName = file.path.split('/').last;
+      try {
+        if (await file.exists()) {
+          await file.delete();
+          _metadata.remove(fileName);
+          deletedCount++;
+        }
+      } catch (e) {
+        debugPrint('MediaCache: Delete file error: $e');
       }
+    }
+    if (deletedCount > 0) {
+      await _saveMetadata();
     }
     return deletedCount;
   }
 }
 
-/// 缓存分类
-enum CacheCategory {
-  avatar('avatar', '头像'),
-  post('post', '帖子'),
-  product('product', '闲置'),
-  chat('chat', '聊天'),
-  other('other', '其他');
+/// 缓存元数据
+class CacheMetadata {
+  final String url;
+  final CacheCategory category;
+  final DateTime cachedAt;
 
-  final String prefix;
-  final String label;
-  const CacheCategory(this.prefix, this.label);
+  CacheMetadata({
+    required this.url,
+    required this.category,
+    required this.cachedAt,
+  });
 
-  static CacheCategory fromFileName(String fileName) {
-    if (fileName.startsWith('avatar_')) return CacheCategory.avatar;
-    if (fileName.startsWith('post_')) return CacheCategory.post;
-    if (fileName.startsWith('product_')) return CacheCategory.product;
-    if (fileName.startsWith('chat_')) return CacheCategory.chat;
-    return CacheCategory.other;
+  factory CacheMetadata.fromJson(Map<String, dynamic> json) {
+    return CacheMetadata(
+      url: json['url'] ?? '',
+      category: CacheCategory.fromString(json['category']),
+      cachedAt: DateTime.tryParse(json['cachedAt'] ?? '') ?? DateTime.now(),
+    );
   }
+
+  Map<String, dynamic> toJson() => {
+    'url': url,
+    'category': category.prefix,
+    'cachedAt': cachedAt.toIso8601String(),
+  };
 }
 
 /// 缓存文件信息
@@ -272,18 +337,19 @@ class CacheFileInfo {
   final File file;
   final int size;
   final DateTime modifiedTime;
+  final CacheCategory category;
+  final String? url;
 
   CacheFileInfo({
     required this.file,
     required this.size,
     required this.modifiedTime,
+    required this.category,
+    this.url,
   });
 
   /// 获取文件名
   String get fileName => file.path.split('/').last;
-
-  /// 获取分类
-  CacheCategory get category => CacheCategory.fromFileName(fileName);
 
   /// 判断是否为图片
   bool get isImage {

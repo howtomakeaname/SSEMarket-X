@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sse_market_x/core/models/post_model.dart';
 import 'package:sse_market_x/core/utils/level_utils.dart';
 import 'package:sse_market_x/core/utils/time_utils.dart';
+import 'package:sse_market_x/core/services/media_cache_service.dart';
 import 'package:sse_market_x/shared/components/media/cached_image.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 
@@ -270,6 +271,7 @@ class _PostCardState extends State<PostCard> {
               width: 40,
               height: 40,
               fit: BoxFit.cover,
+              category: CacheCategory.avatar,
               errorWidget: SvgPicture.asset(
                 'assets/icons/default_avatar.svg',
                 fit: BoxFit.cover,
