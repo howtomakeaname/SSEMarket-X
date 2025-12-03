@@ -64,7 +64,7 @@ class _AuthDesktopLayoutState extends State<AuthDesktopLayout>
         // Left Branding Side
         Expanded(
           child: Container(
-            color: AppColors.background,
+            color: context.backgroundColor,
             child: Stack(
               children: [
                 // Top-left decorative circle
@@ -150,7 +150,7 @@ class _AuthDesktopLayoutState extends State<AuthDesktopLayout>
                 // Main content
                 Center(
                   child: LayoutBuilder(
-                    builder: (context, constraints) {
+                    builder: (ctx, constraints) {
                       // Calculate responsive sizes based on available width
                       final width = constraints.maxWidth;
                       final logoSize = (width * 0.22).clamp(110.0, 180.0);
@@ -182,7 +182,7 @@ class _AuthDesktopLayoutState extends State<AuthDesktopLayout>
                             '软工集市',
                             style: TextStyle(
                               fontSize: subtitleSize,
-                              color: AppColors.textSecondary,
+                              color: context.textSecondaryColor,
                             ),
                           ),
                         ],
@@ -197,7 +197,7 @@ class _AuthDesktopLayoutState extends State<AuthDesktopLayout>
         // Right Form Side
         Expanded(
           child: Container(
-            color: AppColors.surface,
+            color: context.surfaceColor,
             child: widget.enableScroll
                 ? Center(
                     child: Container(
