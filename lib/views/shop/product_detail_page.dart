@@ -58,21 +58,21 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.backgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.surfaceColor,
         elevation: 0,
         automaticallyImplyLeading: false,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back, color: context.textPrimaryColor),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
+        title: Text(
           '详情',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+            color: context.textPrimaryColor,
           ),
         ),
         centerTitle: false,
@@ -103,19 +103,19 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       return Container(
         width: double.infinity,
         height: 300,
-        color: AppColors.surface,
-        child: const Center(
+        color: context.surfaceColor,
+        child: Center(
           child: Icon(
             Icons.image_not_supported_outlined,
             size: 64,
-            color: AppColors.textSecondary,
+            color: context.textSecondaryColor,
           ),
         ),
       );
     }
 
     return Container(
-      color: AppColors.surface,
+      color: context.surfaceColor,
       height: 300,
       child: Stack(
         children: [
@@ -139,11 +139,11 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     curve: Curves.easeOut,
                   );
                 },
-                errorBuilder: (context, error, stackTrace) => const Center(
+                errorBuilder: (context, error, stackTrace) => Center(
                   child: Icon(
                     Icons.image_not_supported_outlined,
                     size: 48,
-                    color: AppColors.textSecondary,
+                    color: context.textSecondaryColor,
                   ),
                 ),
               );
@@ -179,34 +179,34 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
   Widget _buildProductInfo() {
     return Container(
-      color: AppColors.surface,
+      color: context.surfaceColor,
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             _product.name,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              color: context.textPrimaryColor,
             ),
           ),
           const SizedBox(height: 12),
           Row(
             children: [
-              const Text(
+              Text(
                 '闲置者: ',
                 style: TextStyle(
                   fontSize: 14,
-                  color: AppColors.textSecondary,
+                  color: context.textSecondaryColor,
                 ),
               ),
               Text(
                 _product.sellerName,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
-                  color: AppColors.textPrimary,
+                  color: context.textPrimaryColor,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -237,20 +237,20 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             ],
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             '商品描述',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w500,
-              color: AppColors.textPrimary,
+              color: context.textPrimaryColor,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             _product.description,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
-              color: AppColors.textSecondary,
+              color: context.textSecondaryColor,
               height: 1.5,
             ),
           ),
@@ -262,10 +262,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   Widget _buildActionButtons() {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
+      decoration: BoxDecoration(
+        color: context.surfaceColor,
         border: Border(
-          top: BorderSide(color: AppColors.divider, width: 0.5),
+          top: BorderSide(color: context.dividerColor, width: 0.5),
         ),
       ),
       child: Row(
