@@ -24,17 +24,17 @@ class CustomDropdown<T> extends StatelessWidget {
       child: DropdownButton<T>(
         value: value,
         isExpanded: true,
-        isDense: true, // 减小整体上下 padding
-        icon: const Icon(
+        isDense: true,
+        icon: Icon(
           Icons.keyboard_arrow_down,
-          color: AppColors.textSecondary,
+          color: context.textSecondaryColor,
           size: 20,
         ),
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 16,
-          color: AppColors.textPrimary,
+          color: context.textPrimaryColor,
         ),
-        dropdownColor: AppColors.surface,
+        dropdownColor: context.surfaceColor,
         borderRadius: BorderRadius.circular(8),
         elevation: 8,
         menuMaxHeight: 300,
@@ -42,12 +42,12 @@ class CustomDropdown<T> extends StatelessWidget {
           return DropdownMenuItem<T>(
             value: item,
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 2), // 更小的上下内边距
+              padding: const EdgeInsets.symmetric(vertical: 2),
               child: Text(
                 itemBuilder(item),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
-                  color: AppColors.textPrimary,
+                  color: context.textPrimaryColor,
                 ),
               ),
             ),
