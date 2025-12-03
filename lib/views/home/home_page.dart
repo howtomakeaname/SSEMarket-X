@@ -286,11 +286,11 @@ class HomePageState extends State<HomePage> {
     }
 
     return Container(
-      color: AppColors.background, // Use consistent background color
+      color: context.backgroundColor, // Use consistent background color
       child: RefreshIndicator(
         onRefresh: () => _fetchPosts(refresh: true),
         color: AppColors.primary,
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.surfaceColor,
         child: Stack(
           children: [
             ListView.builder(
@@ -385,7 +385,7 @@ class HomePageState extends State<HomePage> {
   Widget _buildRefreshingIndicator() {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
-      color: AppColors.background,
+      color: context.backgroundColor,
       child: const LoadingRow(message: '刷新中...'),
     );
   }
@@ -399,12 +399,12 @@ class HomePageState extends State<HomePage> {
 
   /// 没有更多数据提示
   Widget _buildNoMoreData() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(vertical: 16),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16),
       child: Center(
         child: Text(
           '已经到底啦',
-          style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+          style: TextStyle(fontSize: 12, color: context.textSecondaryColor),
         ),
       ),
     );
