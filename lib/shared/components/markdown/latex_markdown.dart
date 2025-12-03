@@ -154,6 +154,12 @@ class CachedImageNode extends SpanNode {
   }
 }
 
+/// 将缩略图 URL 转换为原图 URL
+/// 服务端存储了两个版本：resized（200x200缩略图）和 uploads（原图）
+String _getOriginalImageUrl(String url) {
+  return url.replaceAll('/resized/', '/uploads/');
+}
+
 /// 缓存的 Markdown 图片组件
 class _CachedMarkdownImage extends StatefulWidget {
   final String url;
@@ -174,6 +180,9 @@ class _CachedMarkdownImageState extends State<_CachedMarkdownImage>
 
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
+
+  /// 获取原图 URL
+  String get _originalUrl => _getOriginalImageUrl(widget.url);
 
   @override
   void initState() {
@@ -205,8 +214,9 @@ class _CachedMarkdownImageState extends State<_CachedMarkdownImage>
     }
 
     try {
+      // 使用原图 URL 下载
       final file = await _cacheService.getOrDownload(
-        widget.url,
+        _originalUrl,
         category: CacheCategory.post,
       );
       if (mounted) {
@@ -267,7 +277,7 @@ class _CachedMarkdownImageState extends State<_CachedMarkdownImage>
     }
 
     return GestureDetector(
-      onTap: () => ImageViewer.show(context, widget.url, cachedFile: _cachedFile),
+      onTap: () => ImageViewer.show(context, _originalUrl, cachedFile: _cachedFile),
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 8),
         child: ClipRRect(
@@ -276,8 +286,9 @@ class _CachedMarkdownImageState extends State<_CachedMarkdownImage>
             opacity: _fadeAnimation,
             child: Image.file(
               _cachedFile!,
-              fit: BoxFit.cover,
+              fit: BoxFit.fitWidth, // 保持宽度适配，不压缩高度
               width: double.infinity,
+              filterQuality: FilterQuality.high, // 高质量渲染
               errorBuilder: (_, __, ___) => Container(
                 height: 120,
                 color: context.backgroundColor,
