@@ -82,13 +82,13 @@ class _ShopPageState extends State<ShopPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.backgroundColor,
       body: Column(
         children: [
           // 顶部标题栏
-          _buildHeader(),
+          _buildHeader(context),
           // Tab 切换
-          _buildTabs(),
+          _buildTabs(context),
           // 商品列表 - 支持左右滑动
           Expanded(
             child: _isLoading && !_isRefreshing
@@ -111,65 +111,59 @@ class _ShopPageState extends State<ShopPage> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     return Container(
       height: 56,
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      color: AppColors.surface,
+      color: context.surfaceColor,
       child: Row(
         children: [
-          const Text(
+          Text(
             '闲置物品',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              color: context.textPrimaryColor,
             ),
           ),
           const Spacer(),
-          // 发布按钮（暂时隐藏）
-          // IconButton(
-          //   icon: const Icon(Icons.add, color: AppColors.primary),
-          //   onPressed: () {},
-          // ),
         ],
       ),
     );
   }
 
-  Widget _buildTabs() {
+  Widget _buildTabs(BuildContext context) {
     return Container(
       height: 48,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: AppColors.surface,
+      color: context.surfaceColor,
       child: Row(
         children: [
-          _buildTabButton('热门', 0),
+          _buildTabButton(context, '热门', 0),
           const SizedBox(width: 8),
-          _buildTabButton('我的', 1),
+          _buildTabButton(context, '我的', 1),
         ],
       ),
     );
   }
 
-  Widget _buildTabButton(String label, int index) {
+  Widget _buildTabButton(BuildContext context, String label, int index) {
     final isSelected = _currentIndex == index;
     return GestureDetector(
       onTap: () {
-        // 点击 Tab 时直接切换到目标页，避免动画滚动经过中间页造成不必要的渲染
         _pageController.jumpToPage(index);
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : AppColors.background,
+          color: isSelected ? AppColors.primary : context.backgroundColor,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Text(
           label,
           style: TextStyle(
             fontSize: 14,
-            color: isSelected ? Colors.white : AppColors.textPrimary,
+            color: isSelected ? Colors.white : context.textPrimaryColor,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
           ),
         ),
@@ -188,14 +182,14 @@ class _ShopPageState extends State<ShopPage> {
             Icon(
               Icons.inventory_2_outlined,
               size: 64,
-              color: AppColors.textSecondary.withOpacity(0.5),
+              color: context.textSecondaryColor.withOpacity(0.5),
             ),
             const SizedBox(height: 16),
             Text(
               index == 0 ? '暂无热门商品' : '暂无我的商品',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
-                color: AppColors.textSecondary,
+                color: context.textSecondaryColor,
               ),
             ),
           ],
