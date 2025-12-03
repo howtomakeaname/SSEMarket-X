@@ -1082,7 +1082,7 @@ class ApiService {
   /// 发送验证码
   /// [mode] 0: 注册, 1: 重置密码
   Future<String> sendCode(String email, int mode) async {
-    final uri = Uri.parse('$_baseUrl/auth/sendCode');
+    final uri = Uri.parse('$_baseUrl/auth/validateEmail');
     final body = jsonEncode(<String, dynamic>{
       'email': email,
       'mode': mode,
@@ -1148,7 +1148,7 @@ class ApiService {
 
   /// 重置密码
   Future<String> resetPassword(String email, String password, String password2, String valiCode) async {
-    final uri = Uri.parse('$_baseUrl/auth/updatePassword');
+    final uri = Uri.parse('$_baseUrl/auth/modifyPassword');
     
     final encryptedPassword = _encryptPassword(password, '16bit secret key');
     final encryptedPassword2 = _encryptPassword(password2, '16bit secret key');

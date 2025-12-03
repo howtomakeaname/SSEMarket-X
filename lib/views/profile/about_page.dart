@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:sse_market_x/shared/components/overlays/privacy_policy_modal.dart';
-import 'package:sse_market_x/shared/components/utils/snackbar_helper.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
+import 'package:sse_market_x/views/auth/privacy_policy_page.dart';
 
 class AboutPage extends StatelessWidget {
   const AboutPage({super.key});
@@ -113,11 +112,8 @@ class AboutPage extends StatelessWidget {
             value: '',
             showArrow: true,
             onTap: () {
-              PrivacyPolicyModal.show(
-                context,
-                onAccept: () {
-                  SnackBarHelper.show(context, '已同意隐私政策');
-                },
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const PrivacyPolicyPage()),
               );
             },
           ),
