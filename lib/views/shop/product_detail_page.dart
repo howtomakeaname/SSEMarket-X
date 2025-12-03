@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/product_model.dart';
 import 'package:sse_market_x/shared/components/loading/loading_indicator.dart';
+import 'package:sse_market_x/shared/components/media/cached_image.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 
 /// 商品详情页
@@ -127,19 +128,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               });
             },
             itemBuilder: (context, index) {
-              return Image.network(
-                _product.photos[index],
+              return CachedImage(
+                imageUrl: _product.photos[index],
                 fit: BoxFit.cover,
-                frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-                  if (wasSynchronouslyLoaded) return child;
-                  return AnimatedOpacity(
-                    child: child,
-                    opacity: frame == null ? 0 : 1,
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeOut,
-                  );
-                },
-                errorBuilder: (context, error, stackTrace) => Center(
+                errorWidget: Center(
                   child: Icon(
                     Icons.image_not_supported_outlined,
                     size: 48,

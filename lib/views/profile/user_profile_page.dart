@@ -3,6 +3,7 @@ import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/user_model.dart';
 import 'package:sse_market_x/core/services/storage_service.dart';
 import 'package:sse_market_x/core/utils/level_utils.dart';
+import 'package:sse_market_x/shared/components/media/cached_image.dart';
 import 'package:sse_market_x/shared/components/utils/snackbar_helper.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 import 'package:sse_market_x/views/chat/chat_detail_page.dart';
@@ -170,22 +171,25 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
   Widget _buildAvatar() {
     final hasAvatar = _user!.avatar.isNotEmpty;
+    final defaultAvatar = Container(
+      color: context.backgroundColor,
+      alignment: Alignment.center,
+      child: Icon(Icons.person, size: 40, color: context.textSecondaryColor),
+    );
     return SizedBox(
       width: 64,
       height: 64,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(32),
         child: hasAvatar
-            ? Image.network(
-                _user!.avatar,
+            ? CachedImage(
+                imageUrl: _user!.avatar,
+                width: 64,
+                height: 64,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Icon(Icons.person, size: 40, color: context.textSecondaryColor),
+                errorWidget: defaultAvatar,
               )
-            : Container(
-                color: context.backgroundColor,
-                alignment: Alignment.center,
-                child: Icon(Icons.person, size: 40, color: context.textSecondaryColor),
-              ),
+            : defaultAvatar,
       ),
     );
   }
