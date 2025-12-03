@@ -12,40 +12,64 @@ class CacheManagementPage extends StatefulWidget {
   State<CacheManagementPage> createState() => _CacheManagementPageState();
 }
 
-class _CacheManagementPageState extends State<CacheManagementPage>
-    with SingleTickerProviderStateMixin {
+class _CacheManagementPageState extends State<CacheManagementPage> {
   final MediaCacheService _cacheService = MediaCacheService();
   List<CacheFileInfo> _cacheFiles = [];
   Map<CacheCategory, List<CacheFileInfo>> _categorizedFiles = {};
-  Set<String> _selectedFiles = {};
+  final Set<String> _selectedFiles = {};
   bool _isLoading = true;
   bool _isSelectionMode = false;
   int _totalSize = 0;
   CacheCategory? _currentCategory; // null 表示全部
 
-  late TabController _tabController;
   final List<CacheCategory?> _tabs = [null, ...CacheCategory.values];
+  
+  // Tab 滚动控制
+  final ScrollController _tabScrollController = ScrollController();
+  final Map<CacheCategory?, GlobalKey> _tabKeys = {};
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: _tabs.length, vsync: this);
-    _tabController.addListener(_onTabChanged);
+    // 初始化 tab keys
+    for (final tab in _tabs) {
+      _tabKeys[tab] = GlobalKey();
+    }
     _loadCacheFiles();
   }
 
   @override
   void dispose() {
-    _tabController.removeListener(_onTabChanged);
-    _tabController.dispose();
+    _tabScrollController.dispose();
     super.dispose();
   }
 
-  void _onTabChanged() {
-    if (_tabController.indexIsChanging) return;
+  void _onTabChanged(CacheCategory? category) {
     setState(() {
-      _currentCategory = _tabs[_tabController.index];
+      _currentCategory = category;
     });
+    _scrollToTab(category);
+  }
+
+  /// 滚动到选中的 tab
+  void _scrollToTab(CacheCategory? category) {
+    final key = _tabKeys[category];
+    if (key?.currentContext != null) {
+      final RenderBox renderBox = key!.currentContext!.findRenderObject() as RenderBox;
+      final position = renderBox.localToGlobal(Offset.zero);
+      final screenWidth = MediaQuery.of(context).size.width;
+      final tabWidth = renderBox.size.width;
+      
+      // 计算目标滚动位置，使 tab 居中
+      final targetOffset = _tabScrollController.offset + 
+          position.dx - (screenWidth - tabWidth) / 2;
+      
+      _tabScrollController.animateTo(
+        targetOffset.clamp(0, _tabScrollController.position.maxScrollExtent),
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutCubic,
+      );
+    }
   }
 
   Future<void> _loadCacheFiles() async {
@@ -190,7 +214,9 @@ class _CacheManagementPageState extends State<CacheManagementPage>
       backgroundColor: context.backgroundColor,
       appBar: AppBar(
         backgroundColor: context.surfaceColor,
+        surfaceTintColor: Colors.transparent, // 禁止滚动时背景色变化
         elevation: 0,
+        scrolledUnderElevation: 0, // 禁止滚动时阴影
         leading: IconButton(
           icon: Icon(
             _isSelectionMode ? Icons.close : Icons.arrow_back,
@@ -217,7 +243,10 @@ class _CacheManagementPageState extends State<CacheManagementPage>
                 _displayFiles.every((f) => _selectedFiles.contains(f.fileName))
                     ? '取消全选'
                     : '全选',
-                style: const TextStyle(color: AppColors.primary),
+                style: const TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 16,
+                ),
               ),
             ),
           ] else if (_cacheFiles.isNotEmpty) ...[
@@ -225,18 +254,15 @@ class _CacheManagementPageState extends State<CacheManagementPage>
               onPressed: _clearAllCache,
               child: Text(
                 '清除全部',
-                style: TextStyle(color: context.textSecondaryColor),
+                style: TextStyle(
+                  color: context.textSecondaryColor,
+                  fontSize: 16,
+                ),
               ),
             ),
-            const SizedBox(width: 8),
           ],
+          const SizedBox(width: 8),
         ],
-        bottom: _cacheFiles.isNotEmpty && !_isSelectionMode
-            ? PreferredSize(
-                preferredSize: const Size.fromHeight(48),
-                child: _buildTabBar(),
-              )
-            : null,
       ),
       body: _isLoading
           ? const Center(
@@ -249,48 +275,33 @@ class _CacheManagementPageState extends State<CacheManagementPage>
   }
 
 
-  Widget _buildTabBar() {
+  /// 自定义分类选择器 - 下划线指示器风格
+  Widget _buildCategorySelector() {
     return Container(
+      height: 42,
       color: context.surfaceColor,
-      child: TabBar(
-        controller: _tabController,
-        isScrollable: true,
-        labelColor: AppColors.primary,
-        unselectedLabelColor: context.textSecondaryColor,
-        indicatorColor: AppColors.primary,
-        indicatorSize: TabBarIndicatorSize.label,
-        tabAlignment: TabAlignment.start,
-        tabs: _tabs.map((cat) {
-          final count = cat == null
-              ? _cacheFiles.length
-              : (_categorizedFiles[cat]?.length ?? 0);
-          final label = cat?.label ?? '全部';
-          return Tab(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(label),
-                if (count > 0) ...[
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: context.backgroundColor,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '$count',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: context.textSecondaryColor,
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          );
-        }).toList(),
+      child: SingleChildScrollView(
+        controller: _tabScrollController,
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: _tabs.map((cat) {
+            final count = cat == null
+                ? _cacheFiles.length
+                : (_categorizedFiles[cat]?.length ?? 0);
+            final label = cat?.label ?? '全部';
+            final isSelected = _currentCategory == cat;
+            
+            return _CategoryChip(
+              key: _tabKeys[cat],
+              label: label,
+              count: count,
+              isSelected: isSelected,
+              onTap: () => _onTabChanged(cat),
+            );
+          }).toList(),
+        ),
       ),
     );
   }
@@ -320,20 +331,12 @@ class _CacheManagementPageState extends State<CacheManagementPage>
 
   Widget _buildCacheContent() {
     final files = _displayFiles;
-    if (files.isEmpty) {
-      return Center(
-        child: Text(
-          '该分类暂无缓存',
-          style: TextStyle(
-            fontSize: 14,
-            color: context.textSecondaryColor,
-          ),
-        ),
-      );
-    }
 
     return Column(
       children: [
+        // 分类选择器
+        if (!_isSelectionMode) _buildCategorySelector(),
+        if (!_isSelectionMode) Divider(height: 1, color: context.dividerColor),
         // 当前分类统计
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -361,21 +364,31 @@ class _CacheManagementPageState extends State<CacheManagementPage>
         Divider(height: 1, color: context.dividerColor),
         // 文件网格
         Expanded(
-          child: GridView.builder(
-            padding: const EdgeInsets.all(8),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
-              childAspectRatio: 1,
-            ),
-            itemCount: files.length,
-            itemBuilder: (context, index) {
-              final fileInfo = files[index];
-              final isSelected = _selectedFiles.contains(fileInfo.fileName);
-              return _buildCacheItem(fileInfo, isSelected);
-            },
-          ),
+          child: files.isEmpty
+              ? Center(
+                  child: Text(
+                    '该分类暂无缓存',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: context.textSecondaryColor,
+                    ),
+                  ),
+                )
+              : GridView.builder(
+                  padding: const EdgeInsets.all(8),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
+                    childAspectRatio: 1,
+                  ),
+                  itemCount: files.length,
+                  itemBuilder: (context, index) {
+                    final fileInfo = files[index];
+                    final isSelected = _selectedFiles.contains(fileInfo.fileName);
+                    return _buildCacheItem(fileInfo, isSelected);
+                  },
+                ),
         ),
       ],
     );
@@ -517,20 +530,100 @@ class _CacheManagementPageState extends State<CacheManagementPage>
               ),
             ),
           ),
-          ElevatedButton(
-            onPressed: _selectedFiles.isEmpty ? null : _deleteSelected,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
-              disabledBackgroundColor: context.dividerColor,
+          GestureDetector(
+            onTap: _selectedFiles.isEmpty ? null : _deleteSelected,
+            child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(
+              decoration: BoxDecoration(
+                color: _selectedFiles.isEmpty
+                    ? context.dividerColor
+                    : AppColors.error,
                 borderRadius: BorderRadius.circular(8),
               ),
+              child: Text(
+                '删除',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: _selectedFiles.isEmpty
+                      ? context.textTertiaryColor
+                      : Colors.white,
+                ),
+              ),
             ),
-            child: const Text('删除'),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// 自定义分类标签组件 - 下划线指示器风格
+class _CategoryChip extends StatelessWidget {
+  final String label;
+  final int count;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _CategoryChip({
+    super.key,
+    required this.label,
+    required this.count,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            // 文字和数量
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                      color: isSelected ? AppColors.primary : context.textSecondaryColor,
+                    ),
+                  ),
+                  if (count > 0) ...[
+                    const SizedBox(width: 4),
+                    Text(
+                      '$count',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: isSelected
+                            ? AppColors.primary.withOpacity(0.7)
+                            : context.textTertiaryColor,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            // 下划线指示器 - 贴底
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              height: 2,
+              width: isSelected ? 20 : 0,
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(1),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
