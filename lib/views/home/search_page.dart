@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/post_model.dart';
 import 'package:sse_market_x/core/models/user_model.dart';
 import 'package:sse_market_x/views/post/post_detail_page.dart';
 import 'package:sse_market_x/shared/components/loading/loading_indicator.dart';
 import 'package:sse_market_x/shared/components/cards/post_card.dart';
+import 'package:sse_market_x/shared/components/overlays/custom_dialog.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 
 /// 搜索页面
 class SearchPage extends StatefulWidget {
   final ApiService apiService;
   final String partition;
-  final Function(int postId)? onPostTap; // 三栏布局下的点击回调
+  final Function(int postId)? onPostTap;
 
   const SearchPage({
     super.key,
@@ -30,15 +32,19 @@ class _SearchPageState extends State<SearchPage> {
   final FocusNode _focusNode = FocusNode();
 
   List<PostModel> _posts = [];
-  List<PostModel> _hotPosts = []; // 热榜帖子
+  List<PostModel> _hotPosts = [];
+  List<String> _searchHistory = [];
   UserModel _user = UserModel.empty();
   bool _isLoading = false;
   bool _isLoadingHotPosts = false;
+  bool _hasSearched = false; // 是否已执行过搜索
   bool _hasMore = true;
   int _offset = 0;
   static const int _pageSize = 20;
+  static const int _maxHotPosts = 6; // 热榜最多显示6条
+  static const int _maxHistoryCount = 10; // 最多保存10条历史记录
+  static const String _historyKey = 'search_history';
 
-  /// API 名称 -> 显示名称
   final Map<String, String> _apiToDisplayPartition = {
     '院务': '院务',
     '课程交流': '课程',
@@ -50,17 +56,16 @@ class _SearchPageState extends State<SearchPage> {
     '其他': '其他',
   };
 
-  /// 获取当前分区显示名称
-  String get _displayPartition => _apiToDisplayPartition[widget.partition] ?? widget.partition;
-
+  String get _displayPartition =>
+      _apiToDisplayPartition[widget.partition] ?? widget.partition;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
     _loadUser();
-    _loadHotPosts(); // 加载热榜帖子
-    // 自动聚焦搜索框
+    _loadHotPosts();
+    _loadSearchHistory();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focusNode.requestFocus();
     });
@@ -78,9 +83,7 @@ class _SearchPageState extends State<SearchPage> {
     try {
       final user = await widget.apiService.getUserInfo();
       if (mounted) {
-        setState(() {
-          _user = user;
-        });
+        setState(() => _user = user);
       }
     } catch (e) {
       debugPrint('获取用户信息失败: $e');
@@ -88,27 +91,84 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   Future<void> _loadHotPosts() async {
-    setState(() {
-      _isLoadingHotPosts = true;
-    });
+    setState(() => _isLoadingHotPosts = true);
 
     try {
       final hotPosts = await widget.apiService.getHeatPosts();
       if (mounted) {
         setState(() {
-          _hotPosts = hotPosts;
+          _hotPosts = hotPosts.take(_maxHotPosts).toList();
           _isLoadingHotPosts = false;
         });
       }
     } catch (e) {
       debugPrint('加载热榜帖子失败: $e');
       if (mounted) {
-        setState(() {
-          _isLoadingHotPosts = false;
-        });
+        setState(() => _isLoadingHotPosts = false);
       }
     }
   }
+
+  // ===== 搜索历史相关 =====
+
+  Future<void> _loadSearchHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    final history = prefs.getStringList(_historyKey) ?? [];
+    if (mounted) {
+      setState(() => _searchHistory = history);
+    }
+  }
+
+  Future<void> _saveSearchHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_historyKey, _searchHistory);
+  }
+
+  void _addToHistory(String keyword) {
+    if (keyword.isEmpty) return;
+    setState(() {
+      _searchHistory.remove(keyword); // 移除重复项
+      _searchHistory.insert(0, keyword); // 添加到开头
+      if (_searchHistory.length > _maxHistoryCount) {
+        _searchHistory = _searchHistory.take(_maxHistoryCount).toList();
+      }
+    });
+    _saveSearchHistory();
+  }
+
+  Future<void> _deleteHistoryItem(String keyword) async {
+    final confirm = await showCustomDialog(
+      context: context,
+      title: '删除记录',
+      content: '确定要删除"$keyword"吗？',
+      cancelText: '取消',
+      confirmText: '删除',
+      confirmColor: AppColors.error,
+    );
+
+    if (confirm == true && mounted) {
+      setState(() => _searchHistory.remove(keyword));
+      _saveSearchHistory();
+    }
+  }
+
+  Future<void> _clearAllHistory() async {
+    final confirm = await showCustomDialog(
+      context: context,
+      title: '清空历史',
+      content: '确定要清空所有搜索历史吗？',
+      cancelText: '取消',
+      confirmText: '清空',
+      confirmColor: AppColors.error,
+    );
+
+    if (confirm == true && mounted) {
+      setState(() => _searchHistory.clear());
+      _saveSearchHistory();
+    }
+  }
+
+  // ===== 搜索相关 =====
 
   void _onScroll() {
     if (_scrollController.position.pixels >=
@@ -159,27 +219,31 @@ class _SearchPageState extends State<SearchPage> {
     } catch (e) {
       debugPrint('搜索失败: $e');
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _isLoading = false);
       }
     }
   }
 
   void _onSearch() {
-    if (_searchController.text.trim().isEmpty) return;
+    final keyword = _searchController.text.trim();
+    if (keyword.isEmpty) return;
     _focusNode.unfocus();
+    _addToHistory(keyword);
+    setState(() => _hasSearched = true);
     _loadPosts(refresh: true);
   }
 
+  void _onHistoryTap(String keyword) {
+    _searchController.text = keyword;
+    _onSearch();
+  }
+
   void _onHotPostTap(int postId) {
-    // 如果有 onPostTap 回调（三栏布局），则使用回调
     if (widget.onPostTap != null) {
       widget.onPostTap!(postId);
       return;
     }
-    
-    // 否则 push 新页面
+
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => PostDetailPage(
@@ -221,8 +285,26 @@ class _SearchPageState extends State<SearchPage> {
                 fontSize: 14,
               ),
               border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
               isDense: true,
+              suffixIcon: ValueListenableBuilder<TextEditingValue>(
+                valueListenable: _searchController,
+                builder: (context, value, child) {
+                  if (value.text.isEmpty) return const SizedBox.shrink();
+                  return IconButton(
+                    icon: Icon(Icons.clear,
+                        size: 18, color: context.textSecondaryColor),
+                    onPressed: () {
+                      _searchController.clear();
+                      setState(() {
+                        _posts.clear();
+                        _hasSearched = false;
+                      });
+                    },
+                  );
+                },
+              ),
             ),
             style: TextStyle(fontSize: 14, color: context.textPrimaryColor),
             textInputAction: TextInputAction.search,
@@ -236,10 +318,7 @@ class _SearchPageState extends State<SearchPage> {
               onPressed: _onSearch,
               child: const Text(
                 '搜索',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: AppColors.primary,
-                ),
+                style: TextStyle(fontSize: 14, color: AppColors.primary),
               ),
             ),
           ),
@@ -250,41 +329,31 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   Widget _buildBody() {
-    // 如果还没有搜索，显示热榜帖子
-    if (_posts.isEmpty && !_isLoading && _searchController.text.isEmpty) {
-      return _buildHotPosts();
+    // 未执行过搜索时显示历史和热榜
+    if (!_hasSearched) {
+      return _buildDiscoveryContent();
     }
 
-    // 加载中
     if (_isLoading && _posts.isEmpty) {
       return const LoadingIndicator.center(message: '搜索中...');
     }
 
-    // 无结果
     if (_posts.isEmpty && !_isLoading) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.search_off,
-              size: 64,
-              color: context.textSecondaryColor,
-            ),
+            Icon(Icons.search_off, size: 64, color: context.textSecondaryColor),
             const SizedBox(height: 16),
             Text(
-              '未找到"${_searchController.text}"相关内容',
-              style: TextStyle(
-                fontSize: 14,
-                color: context.textSecondaryColor,
-              ),
+              '未找到相关内容',
+              style: TextStyle(fontSize: 14, color: context.textSecondaryColor),
             ),
           ],
         ),
       );
     }
 
-    // 搜索结果列表
     return ListView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.only(top: 8),
@@ -297,7 +366,8 @@ class _SearchPageState extends State<SearchPage> {
         return PostCard(
           post: post,
           onTap: () async {
-            final result = await Navigator.of(context).push<Map<String, dynamic>?>(
+            final result =
+                await Navigator.of(context).push<Map<String, dynamic>?>(
               MaterialPageRoute(
                 builder: (_) => PostDetailPage(
                   postId: post.id,
@@ -305,15 +375,10 @@ class _SearchPageState extends State<SearchPage> {
                 ),
               ),
             );
-            // 处理返回的数据
             if (result != null) {
               if (result['deleted'] == true) {
-                // 删除帖子：从列表中移除
-                setState(() {
-                  _posts.removeWhere((p) => p.id == post.id);
-                });
+                setState(() => _posts.removeWhere((p) => p.id == post.id));
               } else {
-                // 更新点赞状态
                 final newIsLiked = result['isLiked'] as bool?;
                 final newLikeCount = result['likeCount'] as int?;
                 if (newIsLiked != null && newLikeCount != null) {
@@ -338,101 +403,216 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
+  /// 发现内容：搜索历史 + 热榜
+  Widget _buildDiscoveryContent() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 搜索历史（始终显示）
+          _buildSearchHistory(),
+          const SizedBox(height: 24),
+          // 热榜
+          _buildHotPosts(),
+        ],
+      ),
+    );
+  }
+
+  /// 搜索历史区域
+  Widget _buildSearchHistory() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.history, size: 18, color: context.textSecondaryColor),
+            const SizedBox(width: 6),
+            Text(
+              '搜索历史',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: context.textPrimaryColor,
+              ),
+            ),
+            const Spacer(),
+            if (_searchHistory.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: TextButton(
+                  onPressed: _clearAllHistory,
+                  child: const Text(
+                    '清空',
+                    style: TextStyle(fontSize: 14, color: AppColors.primary),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        if (_searchHistory.isEmpty)
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Text(
+                '暂无搜索历史',
+                style: TextStyle(fontSize: 13, color: context.textTertiaryColor),
+              ),
+            ),
+          )
+        else
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _searchHistory.map((keyword) {
+              return GestureDetector(
+                onTap: () => _onHistoryTap(keyword),
+                onLongPress: () => _deleteHistoryItem(keyword),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: context.surfaceColor,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        keyword,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: context.textSecondaryColor,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      GestureDetector(
+                        onTap: () => _deleteHistoryItem(keyword),
+                        child: Icon(
+                          Icons.close,
+                          size: 14,
+                          color: context.textTertiaryColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+      ],
+    );
+  }
+
+  /// 热榜区域
   Widget _buildHotPosts() {
     if (_isLoadingHotPosts) {
-      return const LoadingIndicator.center(message: '加载中...');
-    }
-
-    if (_hotPosts.isEmpty) {
-      return Center(
-        child: Text(
-          '暂无热榜数据',
-          style: TextStyle(
-            fontSize: 16,
-            color: context.textSecondaryColor,
-          ),
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32),
+          child: CircularProgressIndicator(strokeWidth: 2),
         ),
       );
     }
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                '热榜',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+    if (_hotPosts.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    // 分成两列显示
+    final leftColumn = <PostModel>[];
+    final rightColumn = <PostModel>[];
+    for (int i = 0; i < _hotPosts.length; i++) {
+      if (i % 2 == 0) {
+        leftColumn.add(_hotPosts[i]);
+      } else {
+        rightColumn.add(_hotPosts[i]);
+      }
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.local_fire_department, size: 18, color: AppColors.error),
+            const SizedBox(width: 6),
+            Text(
+              '热榜',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: context.textPrimaryColor,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        // 两列布局
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                children: leftColumn.asMap().entries.map((entry) {
+                  final index = entry.key * 2; // 实际排名
+                  final post = entry.value;
+                  return _buildHotPostItem(post, index);
+                }).toList(),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                children: rightColumn.asMap().entries.map((entry) {
+                  final index = entry.key * 2 + 1; // 实际排名
+                  final post = entry.value;
+                  return _buildHotPostItem(post, index);
+                }).toList(),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHotPostItem(PostModel post, int index) {
+    const textStyle = TextStyle(fontSize: 13, height: 1.4);
+    return GestureDetector(
+      onTap: () => _onHotPostTap(post.id),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: context.surfaceColor,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 排名数字
+            Text(
+              '${index + 1}',
+              style: textStyle.copyWith(
+                fontWeight: FontWeight.bold,
+                color: index < 3 ? AppColors.error : context.textSecondaryColor,
+              ),
+            ),
+            const SizedBox(width: 6),
+            // 标题
+            Expanded(
+              child: Text(
+                post.title,
+                style: textStyle.copyWith(
                   color: context.textPrimaryColor,
                 ),
               ),
-              const Spacer(),
-              Text(
-                '${_hotPosts.length} 条热门',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: context.textTertiaryColor,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // 热榜帖子列表
-          ...List.generate(_hotPosts.length, (index) {
-            final post = _hotPosts[index];
-            return GestureDetector(
-              onTap: () => _onHotPostTap(post.id),
-              child: Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: context.surfaceColor,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    // 排名
-                    SizedBox(
-                      width: 32,
-                      child: Text(
-                        '${index + 1}',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: index < 3 ? AppColors.error : context.textSecondaryColor,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    // 帖子信息
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            post.title,
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
-                              color: context.textPrimaryColor,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
