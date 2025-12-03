@@ -172,22 +172,22 @@ class _PostCardState extends State<PostCard> {
   }
 
   Widget _buildRatingBadge() {
+    final isDark = context.isDark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            Colors.white.withOpacity(0.95),
-            const Color(0xFFF8FAFC).withOpacity(0.9),
-          ],
+          colors: isDark
+              ? [context.surfaceColor.withOpacity(0.95), context.surfaceColor.withOpacity(0.9)]
+              : [Colors.white.withOpacity(0.95), const Color(0xFFF8FAFC).withOpacity(0.9)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE2E8F0).withOpacity(0.8)),
+        border: Border.all(color: context.dividerColor.withOpacity(0.8)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
