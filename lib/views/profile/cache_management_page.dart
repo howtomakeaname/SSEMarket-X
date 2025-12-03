@@ -12,30 +12,62 @@ class CacheManagementPage extends StatefulWidget {
   State<CacheManagementPage> createState() => _CacheManagementPageState();
 }
 
-class _CacheManagementPageState extends State<CacheManagementPage> {
+class _CacheManagementPageState extends State<CacheManagementPage>
+    with SingleTickerProviderStateMixin {
   final MediaCacheService _cacheService = MediaCacheService();
   List<CacheFileInfo> _cacheFiles = [];
+  Map<CacheCategory, List<CacheFileInfo>> _categorizedFiles = {};
   Set<String> _selectedFiles = {};
   bool _isLoading = true;
   bool _isSelectionMode = false;
   int _totalSize = 0;
+  CacheCategory? _currentCategory; // null 表示全部
+
+  late TabController _tabController;
+  final List<CacheCategory?> _tabs = [null, ...CacheCategory.values];
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: _tabs.length, vsync: this);
+    _tabController.addListener(_onTabChanged);
     _loadCacheFiles();
+  }
+
+  @override
+  void dispose() {
+    _tabController.removeListener(_onTabChanged);
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  void _onTabChanged() {
+    if (_tabController.indexIsChanging) return;
+    setState(() {
+      _currentCategory = _tabs[_tabController.index];
+    });
   }
 
   Future<void> _loadCacheFiles() async {
     setState(() => _isLoading = true);
-    
+
     try {
       final files = await _cacheService.getCacheFiles();
       final size = await _cacheService.getCacheSize();
-      
+
+      // 按分类整理
+      final Map<CacheCategory, List<CacheFileInfo>> categorized = {};
+      for (final cat in CacheCategory.values) {
+        categorized[cat] = [];
+      }
+      for (final file in files) {
+        categorized[file.category]!.add(file);
+      }
+
       if (mounted) {
         setState(() {
           _cacheFiles = files;
+          _categorizedFiles = categorized;
           _totalSize = size;
           _isLoading = false;
         });
@@ -46,6 +78,12 @@ class _CacheManagementPageState extends State<CacheManagementPage> {
         SnackBarHelper.show(context, '加载缓存失败');
       }
     }
+  }
+
+
+  List<CacheFileInfo> get _displayFiles {
+    if (_currentCategory == null) return _cacheFiles;
+    return _categorizedFiles[_currentCategory] ?? [];
   }
 
   void _toggleSelection(String fileName) {
@@ -61,16 +99,20 @@ class _CacheManagementPageState extends State<CacheManagementPage> {
 
   void _selectAll() {
     setState(() {
-      if (_selectedFiles.length == _cacheFiles.length) {
-        _selectedFiles.clear();
-        _isSelectionMode = false;
+      final currentFiles = _displayFiles;
+      final allSelected = currentFiles.every((f) => _selectedFiles.contains(f.fileName));
+      if (allSelected) {
+        for (final f in currentFiles) {
+          _selectedFiles.remove(f.fileName);
+        }
       } else {
-        _selectedFiles = _cacheFiles.map((f) => f.fileName).toSet();
-        _isSelectionMode = true;
+        for (final f in currentFiles) {
+          _selectedFiles.add(f.fileName);
+        }
       }
+      _isSelectionMode = _selectedFiles.isNotEmpty;
     });
   }
-
 
   void _cancelSelection() {
     setState(() {
@@ -99,7 +141,7 @@ class _CacheManagementPageState extends State<CacheManagementPage> {
           .toList();
 
       final deletedCount = await _cacheService.deleteFiles(filesToDelete);
-      
+
       if (mounted) {
         SnackBarHelper.show(context, '已删除 $deletedCount 个文件');
         _cancelSelection();
@@ -137,6 +179,11 @@ class _CacheManagementPageState extends State<CacheManagementPage> {
         .fold(0, (sum, f) => sum + f.size);
   }
 
+  int _getCategorySize(CacheCategory? category) {
+    if (category == null) return _totalSize;
+    return _categorizedFiles[category]?.fold<int>(0, (sum, f) => sum + f.size) ?? 0;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -149,12 +196,11 @@ class _CacheManagementPageState extends State<CacheManagementPage> {
             _isSelectionMode ? Icons.close : Icons.arrow_back,
             color: context.textPrimaryColor,
           ),
-          onPressed: _isSelectionMode ? _cancelSelection : () => Navigator.pop(context),
+          onPressed:
+              _isSelectionMode ? _cancelSelection : () => Navigator.pop(context),
         ),
         title: Text(
-          _isSelectionMode 
-              ? '已选择 ${_selectedFiles.length} 项'
-              : '缓存管理',
+          _isSelectionMode ? '已选择 ${_selectedFiles.length} 项' : '缓存管理',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -168,28 +214,86 @@ class _CacheManagementPageState extends State<CacheManagementPage> {
             TextButton(
               onPressed: _selectAll,
               child: Text(
-                _selectedFiles.length == _cacheFiles.length ? '取消全选' : '全选',
+                _displayFiles.every((f) => _selectedFiles.contains(f.fileName))
+                    ? '取消全选'
+                    : '全选',
                 style: const TextStyle(color: AppColors.primary),
               ),
             ),
           ] else if (_cacheFiles.isNotEmpty) ...[
-            IconButton(
-              icon: Icon(Icons.delete_outline, color: context.textPrimaryColor),
+            TextButton(
               onPressed: _clearAllCache,
-              tooltip: '清除全部',
+              child: Text(
+                '清除全部',
+                style: TextStyle(color: context.textSecondaryColor),
+              ),
             ),
+            const SizedBox(width: 8),
           ],
         ],
+        bottom: _cacheFiles.isNotEmpty && !_isSelectionMode
+            ? PreferredSize(
+                preferredSize: const Size.fromHeight(48),
+                child: _buildTabBar(),
+              )
+            : null,
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+          ? const Center(
+              child: CircularProgressIndicator(color: AppColors.primary))
           : _cacheFiles.isEmpty
               ? _buildEmptyState()
-              : _buildCacheList(),
+              : _buildCacheContent(),
       bottomNavigationBar: _isSelectionMode ? _buildBottomBar() : null,
     );
   }
 
+
+  Widget _buildTabBar() {
+    return Container(
+      color: context.surfaceColor,
+      child: TabBar(
+        controller: _tabController,
+        isScrollable: true,
+        labelColor: AppColors.primary,
+        unselectedLabelColor: context.textSecondaryColor,
+        indicatorColor: AppColors.primary,
+        indicatorSize: TabBarIndicatorSize.label,
+        tabAlignment: TabAlignment.start,
+        tabs: _tabs.map((cat) {
+          final count = cat == null
+              ? _cacheFiles.length
+              : (_categorizedFiles[cat]?.length ?? 0);
+          final label = cat?.label ?? '全部';
+          return Tab(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(label),
+                if (count > 0) ...[
+                  const SizedBox(width: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: context.backgroundColor,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '$count',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: context.textSecondaryColor,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
 
   Widget _buildEmptyState() {
     return Center(
@@ -214,17 +318,30 @@ class _CacheManagementPageState extends State<CacheManagementPage> {
     );
   }
 
-  Widget _buildCacheList() {
+  Widget _buildCacheContent() {
+    final files = _displayFiles;
+    if (files.isEmpty) {
+      return Center(
+        child: Text(
+          '该分类暂无缓存',
+          style: TextStyle(
+            fontSize: 14,
+            color: context.textSecondaryColor,
+          ),
+        ),
+      );
+    }
+
     return Column(
       children: [
-        // 缓存统计
+        // 当前分类统计
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           color: context.surfaceColor,
           child: Row(
             children: [
               Text(
-                '共 ${_cacheFiles.length} 个文件',
+                '${files.length} 个文件',
                 style: TextStyle(
                   fontSize: 14,
                   color: context.textSecondaryColor,
@@ -232,7 +349,7 @@ class _CacheManagementPageState extends State<CacheManagementPage> {
               ),
               const Spacer(),
               Text(
-                '总计 ${_cacheService.formatCacheSize(_totalSize)}',
+                _cacheService.formatCacheSize(_getCategorySize(_currentCategory)),
                 style: TextStyle(
                   fontSize: 14,
                   color: context.textSecondaryColor,
@@ -242,7 +359,7 @@ class _CacheManagementPageState extends State<CacheManagementPage> {
           ),
         ),
         Divider(height: 1, color: context.dividerColor),
-        // 文件列表
+        // 文件网格
         Expanded(
           child: GridView.builder(
             padding: const EdgeInsets.all(8),
@@ -252,9 +369,9 @@ class _CacheManagementPageState extends State<CacheManagementPage> {
               mainAxisSpacing: 8,
               childAspectRatio: 1,
             ),
-            itemCount: _cacheFiles.length,
+            itemCount: files.length,
             itemBuilder: (context, index) {
-              final fileInfo = _cacheFiles[index];
+              final fileInfo = files[index];
               final isSelected = _selectedFiles.contains(fileInfo.fileName);
               return _buildCacheItem(fileInfo, isSelected);
             },
