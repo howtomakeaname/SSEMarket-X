@@ -221,6 +221,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       appBar: AppBar(
         backgroundColor: AppColors.surface,
         elevation: 0,
+        centerTitle: false,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
           onPressed: _goBack,
@@ -233,7 +234,6 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
             color: AppColors.textPrimary,
           ),
         ),
-        centerTitle: true,
       ),
       body: _buildBodyContent(),
     );

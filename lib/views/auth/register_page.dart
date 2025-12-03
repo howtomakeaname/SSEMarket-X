@@ -175,6 +175,7 @@ class _RegisterPageState extends State<RegisterPage> {
       appBar: AppBar(
         backgroundColor: AppColors.surface,
         elevation: 0,
+        centerTitle: false,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
           onPressed: () {
@@ -195,7 +196,6 @@ class _RegisterPageState extends State<RegisterPage> {
             color: AppColors.textPrimary,
           ),
         ),
-        centerTitle: true,
       ),
       body: _buildBodyContent(),
     );
