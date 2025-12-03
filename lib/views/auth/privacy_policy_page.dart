@@ -48,6 +48,7 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
         backgroundColor: AppColors.surface,
         elevation: 0,
         centerTitle: false,
+        titleSpacing: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
           onPressed: () => Navigator.of(context).pop(),
