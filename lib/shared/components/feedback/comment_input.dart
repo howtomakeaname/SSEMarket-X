@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/views/post/markdown_help_page.dart';
 import 'package:sse_market_x/shared/components/markdown/latex_markdown.dart';
+import 'package:sse_market_x/shared/components/media/image_editor.dart';
 import 'package:sse_market_x/shared/components/utils/snackbar_helper.dart';
 import 'package:sse_market_x/shared/components/inputs/toolbar_icon_button.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
@@ -535,23 +536,39 @@ class _CommentInputState extends State<CommentInput> {
   /// 选择并上传图片
   Future<void> _pickAndUploadImage() async {
     try {
-      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 2048,
+        maxHeight: 2048,
+      );
       if (image == null) return;
+
+      final imageBytes = await image.readAsBytes();
+      
+      if (!mounted) return;
+      
+      // 打开图片编辑器
+      final editedBytes = await ImageEditorPage.show(
+        context,
+        imageBytes: imageBytes,
+        enableCrop: true,
+        enableAdjust: true,
+      );
+      
+      if (editedBytes == null || !mounted) return;
 
       setState(() {
         _isUploading = true;
       });
       
-      final bytes = await image.readAsBytes();
-      final fileName = image.name;
-      
-      final imageUrl = await widget.apiService.uploadPhoto(bytes, fileName);
+      final fileName = 'img_${DateTime.now().millisecondsSinceEpoch}.png';
+      final imageUrl = await widget.apiService.uploadPhoto(editedBytes, fileName);
       
       if (imageUrl != null && mounted) {
         // URL encode the image URL to handle special characters
         final encodedUrl = Uri.encodeFull(imageUrl);
         // 插入 Markdown 格式的图片链接
-        final markdownImage = '![${fileName}]($encodedUrl)';
+        final markdownImage = '![$fileName]($encodedUrl)';
         final currentText = _controller.text;
         final selection = _controller.selection;
         final cursorPos = selection.baseOffset >= 0 ? selection.baseOffset : currentText.length;

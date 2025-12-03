@@ -160,6 +160,54 @@ String _getOriginalImageUrl(String url) {
   return url.replaceAll('/resized/', '/uploads/');
 }
 
+/// 对图片 URL 进行编码处理
+/// 处理 URL 中的中文、空格等特殊字符
+String _encodeImageUrl(String url) {
+  if (url.isEmpty) return url;
+
+  // 使用正则匹配 URL 结构
+  final urlPattern = RegExp(r'^(https?://[^/]+)(/.*)$');
+  final match = urlPattern.firstMatch(url);
+
+  if (match != null) {
+    final baseUrl = match.group(1)!; // http://host:port
+    final pathAndQuery = match.group(2)!; // /path?query
+
+    // 分离路径和查询参数
+    final queryIndex = pathAndQuery.indexOf('?');
+    String path;
+    String query = '';
+
+    if (queryIndex != -1) {
+      path = pathAndQuery.substring(0, queryIndex);
+      query = pathAndQuery.substring(queryIndex);
+    } else {
+      path = pathAndQuery;
+    }
+
+    // 对路径中的每个段进行编码
+    final encodedPath = path
+        .split('/')
+        .map((segment) {
+          if (segment.isEmpty) return segment;
+          // 先解码（处理已编码的情况），再重新编码
+          try {
+            final decoded = Uri.decodeComponent(segment);
+            return Uri.encodeComponent(decoded);
+          } catch (e) {
+            // 如果解码失败，直接编码
+            return Uri.encodeComponent(segment);
+          }
+        })
+        .join('/');
+
+    return '$baseUrl$encodedPath$query';
+  }
+
+  // 如果不匹配标准 URL 格式，尝试直接编码
+  return Uri.encodeFull(url);
+}
+
 /// 缓存的 Markdown 图片组件
 class _CachedMarkdownImage extends StatefulWidget {
   final String url;
@@ -181,8 +229,8 @@ class _CachedMarkdownImageState extends State<_CachedMarkdownImage>
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
 
-  /// 获取原图 URL
-  String get _originalUrl => _getOriginalImageUrl(widget.url);
+  /// 获取编码后的原图 URL
+  String get _originalUrl => _encodeImageUrl(_getOriginalImageUrl(widget.url));
 
   @override
   void initState() {
@@ -314,6 +362,36 @@ SpanNodeGeneratorWithTag cachedImageGenerator = SpanNodeGeneratorWithTag(
   },
 );
 
+/// 预处理 Markdown 文本，对图片 URL 进行编码
+/// 匹配 ![alt](url) 格式，对 url 部分进行编码
+String _preprocessMarkdownImageUrls(String markdown) {
+  // 匹配 Markdown 图片语法: ![alt](url)
+  // 使用更宽松的匹配，允许 URL 中包含空格和中文
+  // 匹配从 ![ 开始，到 ]( 之间是 alt，然后到最后一个 ) 之前是 URL
+  final imagePattern = RegExp(r'!\[([^\]]*)\]\(([^)]+)\)');
+
+  return markdown.replaceAllMapped(imagePattern, (match) {
+    final alt = match.group(1) ?? '';
+    var urlPart = match.group(2) ?? '';
+
+    // 检查是否有 title（以空格+"开头）
+    String title = '';
+    final titleMatch = RegExp(r'^(.+?)\s+"([^"]*)"$').firstMatch(urlPart);
+    String url;
+    if (titleMatch != null) {
+      url = titleMatch.group(1)!.trim();
+      title = ' "${titleMatch.group(2)}"';
+    } else {
+      url = urlPart.trim();
+    }
+
+    // 对 URL 进行编码
+    final encodedUrl = _encodeImageUrl(url);
+
+    return '![$alt]($encodedUrl$title)';
+  });
+}
+
 /// 支持 LaTeX 渲染的 Markdown 组件
 class LatexMarkdown extends StatelessWidget {
   final String data;
@@ -346,8 +424,11 @@ class LatexMarkdown extends StatelessWidget {
       generators.add(cachedImageGenerator);
     }
 
+    // 预处理 Markdown 文本，对图片 URL 进行编码
+    final processedData = _preprocessMarkdownImageUrls(data);
+
     return MarkdownBlock(
-      data: data,
+      data: processedData,
       selectable: selectable,
       config: config.copy(configs: [
         PConfig(textStyle: TextStyle(
