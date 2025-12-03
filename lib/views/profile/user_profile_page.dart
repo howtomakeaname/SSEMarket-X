@@ -86,23 +86,23 @@ class _UserProfilePageState extends State<UserProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.backgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.surfaceColor,
         elevation: 0,
         automaticallyImplyLeading: false,
         leading: widget.isEmbedded
             ? null
             : IconButton(
-                icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+                icon: Icon(Icons.arrow_back, color: context.textPrimaryColor),
                 onPressed: () => Navigator.of(context).pop(),
               ),
-        title: const Text(
+        title: Text(
           '用户详情',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+            color: context.textPrimaryColor,
           ),
         ),
         centerTitle: false,
@@ -154,7 +154,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.surfaceColor,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -179,12 +179,12 @@ class _UserProfilePageState extends State<UserProfilePage> {
             ? Image.network(
                 _user!.avatar,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const Icon(Icons.person, size: 40, color: AppColors.textSecondary),
+                errorBuilder: (_, __, ___) => Icon(Icons.person, size: 40, color: context.textSecondaryColor),
               )
             : Container(
-                color: AppColors.background,
+                color: context.backgroundColor,
                 alignment: Alignment.center,
-                child: const Icon(Icons.person, size: 40, color: AppColors.textSecondary),
+                child: Icon(Icons.person, size: 40, color: context.textSecondaryColor),
               ),
       ),
     );
@@ -204,10 +204,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
           children: [
             Text(
               _user!.name,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
+                color: context.textPrimaryColor,
               ),
             ),
             const SizedBox(width: 8),
@@ -233,9 +233,9 @@ class _UserProfilePageState extends State<UserProfilePage> {
           _user!.intro.isNotEmpty ? _user!.intro : '暂无简介',
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 13,
-            color: AppColors.textSecondary,
+            color: context.textSecondaryColor,
           ),
         ),
         const SizedBox(height: 12),
@@ -245,14 +245,14 @@ class _UserProfilePageState extends State<UserProfilePage> {
           child: LinearProgressIndicator(
             value: progress,
             minHeight: 6,
-            backgroundColor: AppColors.divider,
+            backgroundColor: context.dividerColor,
             valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFF4D4D)),
           ),
         ),
         const SizedBox(height: 4),
         Text(
           '经验：$score / $nextExp',
-          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+          style: TextStyle(fontSize: 12, color: context.textSecondaryColor),
         ),
       ],
     );

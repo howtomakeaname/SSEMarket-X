@@ -203,23 +203,23 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.surfaceColor,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.surfaceColor,
         elevation: 0,
         automaticallyImplyLeading: false,
         leading: widget.isEmbedded
             ? null
             : IconButton(
-                icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+                icon: Icon(Icons.arrow_back, color: context.textPrimaryColor),
                 onPressed: () => Navigator.of(context).pop(),
               ),
         title: Text(
           widget.targetUser.name,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+            color: context.textPrimaryColor,
           ),
         ),
         centerTitle: false,
@@ -232,10 +232,10 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _messages.isEmpty
-                    ? const Center(
+                    ? Center(
                         child: Text(
                           '开始聊天吧',
-                          style: TextStyle(color: AppColors.textSecondary),
+                          style: TextStyle(color: context.textSecondaryColor),
                         ),
                       )
                     : ListView.builder(
@@ -254,9 +254,9 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
           // Input Area
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: const BoxDecoration(
-              color: AppColors.surface,
-              border: Border(top: BorderSide(color: AppColors.divider)),
+            decoration: BoxDecoration(
+              color: context.surfaceColor,
+              border: Border(top: BorderSide(color: context.dividerColor)),
             ),
             child: SafeArea(
               top: false,
@@ -268,7 +268,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                     child: Container(
                       constraints: const BoxConstraints(minHeight: 36),
                       decoration: BoxDecoration(
-                        color: AppColors.background,
+                        color: context.backgroundColor,
                         borderRadius: BorderRadius.circular(18),
                       ),
                       child: TextField(
@@ -277,17 +277,17 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                         maxLines: 5,
                         minLines: 1,
                         textInputAction: TextInputAction.newline,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           hintText: '发送消息...',
-                          hintStyle: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                          hintStyle: TextStyle(color: context.textSecondaryColor, fontSize: 14),
                           border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(
+                          contentPadding: const EdgeInsets.symmetric(
                             horizontal: 14,
                             vertical: 8,
                           ),
                           isDense: true,
                         ),
-                        style: const TextStyle(fontSize: 14),
+                        style: TextStyle(fontSize: 14, color: context.textPrimaryColor),
                       ),
                     ),
                   ),
@@ -309,7 +309,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                     child: Container(
                       decoration: BoxDecoration(
                         color: _messageController.text.trim().isEmpty
-                            ? AppColors.textSecondary.withAlpha(100)
+                            ? context.textSecondaryColor.withAlpha(100)
                             : AppColors.primary,
                         borderRadius: BorderRadius.circular(17),
                       ),
@@ -393,9 +393,9 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
             padding: const EdgeInsets.symmetric(vertical: 12),
             child: Text(
               _formatMessageTime(message.createdAt),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
-                color: AppColors.textSecondary,
+                color: context.textSecondaryColor,
               ),
             ),
           ),
@@ -426,7 +426,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
-                color: isMe ? AppColors.primary : AppColors.background,
+                color: isMe ? AppColors.primary : context.backgroundColor,
                 borderRadius: BorderRadius.circular(16).copyWith(
                   topLeft: isMe ? const Radius.circular(16) : const Radius.circular(4),
                   topRight: isMe ? const Radius.circular(4) : const Radius.circular(16),
@@ -435,7 +435,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
               child: Text(
                 message.content,
                 style: TextStyle(
-                  color: isMe ? Colors.white : AppColors.textPrimary,
+                  color: isMe ? Colors.white : context.textPrimaryColor,
                 ),
               ),
             ),

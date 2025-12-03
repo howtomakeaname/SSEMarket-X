@@ -158,7 +158,7 @@ class _ChatListPageState extends State<ChatListPage> {
     return _isLoading
         ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
         : _contacts.isEmpty
-            ? _buildEmptyState()
+            ? _buildEmptyState(context)
             : RefreshIndicator(
                 onRefresh: () async {
                   _initWebSocket();
@@ -170,13 +170,13 @@ class _ChatListPageState extends State<ChatListPage> {
                   itemCount: _contacts.length,
                   itemBuilder: (context, index) {
                     final contact = _contacts[index];
-                    return _buildContactItem(contact);
+                    return _buildContactItem(context, contact);
                   },
                 ),
               );
   }
 
-  Widget _buildContactItem(ChatContact contact) {
+  Widget _buildContactItem(BuildContext context, ChatContact contact) {
     final hasUnread = contact.unreadCount > 0;
     final lastMsg = contact.lastMessage ?? contact.intro ?? '';
     final timeStr = _formatTime(contact.lastMessageTime);
@@ -184,7 +184,7 @@ class _ChatListPageState extends State<ChatListPage> {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.surfaceColor,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Material(
@@ -205,17 +205,17 @@ class _ChatListPageState extends State<ChatListPage> {
                       height: 48,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: AppColors.background,
-                        border: Border.all(color: AppColors.divider, width: 0.5),
+                        color: context.backgroundColor,
+                        border: Border.all(color: context.dividerColor, width: 0.5),
                       ),
                       clipBehavior: Clip.antiAlias,
                       child: contact.avatarUrl.isNotEmpty 
                           ? Image.network(
                               contact.avatarUrl,
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => const Icon(Icons.person, size: 24, color: AppColors.textSecondary),
+                              errorBuilder: (_, __, ___) => Icon(Icons.person, size: 24, color: context.textSecondaryColor),
                             )
-                          : const Icon(Icons.person, size: 24, color: AppColors.textSecondary),
+                          : Icon(Icons.person, size: 24, color: context.textSecondaryColor),
                     ),
                     // 未读红点
                     if (hasUnread)
@@ -227,7 +227,7 @@ class _ChatListPageState extends State<ChatListPage> {
                           decoration: BoxDecoration(
                             color: AppColors.error,
                             borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: AppColors.surface, width: 1.5),
+                            border: Border.all(color: context.surfaceColor, width: 1.5),
                           ),
                           constraints: const BoxConstraints(minWidth: 18, minHeight: 16),
                           child: Center(
@@ -258,7 +258,7 @@ class _ChatListPageState extends State<ChatListPage> {
                               style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: hasUnread ? FontWeight.w600 : FontWeight.w500,
-                                color: AppColors.textPrimary,
+                                color: context.textPrimaryColor,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -269,7 +269,7 @@ class _ChatListPageState extends State<ChatListPage> {
                               timeStr,
                               style: TextStyle(
                                 fontSize: 12,
-                                color: hasUnread ? AppColors.primary : AppColors.textTertiary,
+                                color: hasUnread ? AppColors.primary : context.textTertiaryColor,
                               ),
                             ),
                         ],
@@ -281,7 +281,7 @@ class _ChatListPageState extends State<ChatListPage> {
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 13,
-                          color: hasUnread ? AppColors.textPrimary : AppColors.textSecondary,
+                          color: hasUnread ? context.textPrimaryColor : context.textSecondaryColor,
                           height: 1.3,
                         ),
                       ),
@@ -293,7 +293,7 @@ class _ChatListPageState extends State<ChatListPage> {
                 Icon(
                   Icons.chevron_right,
                   size: 20,
-                  color: AppColors.textTertiary,
+                  color: context.textTertiaryColor,
                 ),
               ],
             ),
@@ -303,7 +303,7 @@ class _ChatListPageState extends State<ChatListPage> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -312,28 +312,28 @@ class _ChatListPageState extends State<ChatListPage> {
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              color: AppColors.background,
+              color: context.backgroundColor,
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.chat_bubble_outline,
               size: 40,
-              color: AppColors.textTertiary,
+              color: context.textTertiaryColor,
             ),
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             '暂无私信',
             style: TextStyle(
-              color: AppColors.textSecondary,
+              color: context.textSecondaryColor,
               fontSize: 15,
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             '去用户主页发起私信吧',
             style: TextStyle(
-              color: AppColors.textTertiary,
+              color: context.textTertiaryColor,
               fontSize: 13,
             ),
           ),

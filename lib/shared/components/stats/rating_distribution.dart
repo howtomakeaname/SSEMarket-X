@@ -37,9 +37,9 @@ class RatingDistribution extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       width: double.infinity, // Ensure full width
       decoration: BoxDecoration(
-        color: AppColors.background,
+        color: context.backgroundColor,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.divider),
+        border: Border.all(color: context.dividerColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -65,13 +65,13 @@ class RatingDistribution extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 4),
-                      const Padding(
-                        padding: EdgeInsets.only(bottom: 6),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
                         child: Text(
                           '分',
                           style: TextStyle(
                             fontSize: 14,
-                            color: Color(0xFF757575), // Colors.grey[600]
+                            color: context.textSecondaryColor,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -81,9 +81,9 @@ class RatingDistribution extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     '$_totalRatings 人参与',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
-                      color: Color(0xFF757575), // Colors.grey[600]
+                      color: context.textSecondaryColor,
                     ),
                   ),
                 ],
@@ -94,11 +94,11 @@ class RatingDistribution extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    const Text(
+                    Text(
                       '我的评分',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Color(0xFF757575), // Colors.grey[600]
+                        color: context.textSecondaryColor,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -114,7 +114,7 @@ class RatingDistribution extends StatelessWidget {
                               size: 24,
                               color: starNum <= userRating
                                   ? AppColors.primary
-                                  : const Color(0xFFE0E0E0), // Colors.grey[300]
+                                  : context.dividerColor,
                             ),
                           ),
                         );
@@ -125,7 +125,7 @@ class RatingDistribution extends StatelessWidget {
                       userRating > 0 ? '$userRating 分' : '点击评分',
                       style: TextStyle(
                         fontSize: 11,
-                        color: userRating > 0 ? AppColors.primary : const Color(0xFF9E9E9E), // Colors.grey[500]
+                        color: userRating > 0 ? AppColors.primary : context.textTertiaryColor,
                       ),
                     ),
                   ],
@@ -134,13 +134,13 @@ class RatingDistribution extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           // 下部分：评分分布条
-          _buildRatingBars(),
+          _buildRatingBars(context),
         ],
       ),
     );
   }
 
-  Widget _buildRatingBars() {
+  Widget _buildRatingBars(BuildContext context) {
     final starCounts = _normalizedStars;
     return Column(
       children: List.generate(5, (index) {
@@ -156,9 +156,9 @@ class RatingDistribution extends StatelessWidget {
                 width: 24,
                 child: Text(
                   '$starLevel星',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
-                    color: Color(0xFF757575), // Colors.grey[600]
+                    color: context.textSecondaryColor,
                   ),
                 ),
               ),
@@ -167,7 +167,7 @@ class RatingDistribution extends StatelessWidget {
                 child: Container(
                   height: 6,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5F5), // Colors.grey[100]
+                    color: context.dividerColor,
                     borderRadius: BorderRadius.circular(3),
                   ),
                   child: Stack(
@@ -175,7 +175,7 @@ class RatingDistribution extends StatelessWidget {
                       // 背景槽
                       Container(
                         decoration: BoxDecoration(
-                          color: const Color(0xFFEEEEEE), // Colors.grey[200]
+                          color: context.dividerColor,
                           borderRadius: BorderRadius.circular(3),
                         ),
                       ),
@@ -199,9 +199,9 @@ class RatingDistribution extends StatelessWidget {
                 width: 40,
                 child: Text(
                   '$count', // Show count instead of percentage
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
-                    color: Color(0xFF757575), // Colors.grey[600]
+                    color: context.textSecondaryColor,
                   ),
                   textAlign: TextAlign.right,
                 ),

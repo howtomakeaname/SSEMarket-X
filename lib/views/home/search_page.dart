@@ -193,36 +193,36 @@ class _SearchPageState extends State<SearchPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.backgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.surfaceColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back, color: context.textPrimaryColor),
           onPressed: () => Navigator.of(context).pop(),
         ),
         titleSpacing: 0,
         title: Container(
-          height: 36, // 与首页header一致
+          height: 36,
           margin: const EdgeInsets.only(right: 8),
           decoration: BoxDecoration(
-            color: AppColors.background,
-            borderRadius: BorderRadius.circular(18), // 与首页header一致
+            color: context.backgroundColor,
+            borderRadius: BorderRadius.circular(18),
           ),
           child: TextField(
             controller: _searchController,
             focusNode: _focusNode,
             decoration: InputDecoration(
               hintText: '在$_displayPartition分区内搜索',
-              hintStyle: const TextStyle(
-                color: AppColors.textSecondary,
+              hintStyle: TextStyle(
+                color: context.textSecondaryColor,
                 fontSize: 14,
               ),
               border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9), // 调整为36px高度的垂直居中
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
               isDense: true,
             ),
-            style: const TextStyle(fontSize: 14),
+            style: TextStyle(fontSize: 14, color: context.textPrimaryColor),
             textInputAction: TextInputAction.search,
             onSubmitted: (_) => _onSearch(),
           ),
@@ -264,17 +264,17 @@ class _SearchPageState extends State<SearchPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
+            Icon(
               Icons.search_off,
               size: 64,
-              color: AppColors.textSecondary,
+              color: context.textSecondaryColor,
             ),
             const SizedBox(height: 16),
             Text(
               '未找到"${_searchController.text}"相关内容',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
-                color: AppColors.textSecondary,
+                color: context.textSecondaryColor,
               ),
             ),
           ],
@@ -342,12 +342,12 @@ class _SearchPageState extends State<SearchPage> {
     }
 
     if (_hotPosts.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
           '暂无热榜数据',
           style: TextStyle(
             fontSize: 16,
-            color: AppColors.textSecondary,
+            color: context.textSecondaryColor,
           ),
         ),
       );
@@ -360,20 +360,20 @@ class _SearchPageState extends State<SearchPage> {
         children: [
           Row(
             children: [
-              const Text(
+              Text(
                 '热榜',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
+                  color: context.textPrimaryColor,
                 ),
               ),
               const Spacer(),
               Text(
                 '${_hotPosts.length} 条热门',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
-                  color: AppColors.textTertiary,
+                  color: context.textTertiaryColor,
                 ),
               ),
             ],
@@ -388,7 +388,7 @@ class _SearchPageState extends State<SearchPage> {
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: context.surfaceColor,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -401,7 +401,7 @@ class _SearchPageState extends State<SearchPage> {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: index < 3 ? AppColors.error : AppColors.textSecondary,
+                          color: index < 3 ? AppColors.error : context.textSecondaryColor,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -414,10 +414,10 @@ class _SearchPageState extends State<SearchPage> {
                         children: [
                           Text(
                             post.title,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w500,
-                              color: AppColors.textPrimary,
+                              color: context.textPrimaryColor,
                             ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,

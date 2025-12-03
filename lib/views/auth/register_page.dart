@@ -160,7 +160,7 @@ class _RegisterPageState extends State<RegisterPage> {
       builder: (context, constraints) {
         if (constraints.maxWidth >= 800) {
           return Scaffold(
-            backgroundColor: AppColors.surface,
+            backgroundColor: context.surfaceColor,
             body: _buildDesktopLayout(),
           );
         }
@@ -171,14 +171,14 @@ class _RegisterPageState extends State<RegisterPage> {
 
   Widget _buildMobileLayout() {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.backgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.surfaceColor,
         elevation: 0,
         centerTitle: false,
         titleSpacing: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back, color: context.textPrimaryColor),
           onPressed: () {
             if (_currentStep > 1) {
               setState(() {
@@ -189,12 +189,12 @@ class _RegisterPageState extends State<RegisterPage> {
             }
           },
         ),
-        title: const Text(
+        title: Text(
           '注册',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+            color: context.textPrimaryColor,
           ),
         ),
       ),
@@ -211,7 +211,7 @@ class _RegisterPageState extends State<RegisterPage> {
           Row(
             children: [
               IconButton(
-                icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+                icon: Icon(Icons.arrow_back, color: context.textPrimaryColor),
                 onPressed: () {
                   if (_currentStep > 1) {
                     setState(() {
@@ -222,14 +222,14 @@ class _RegisterPageState extends State<RegisterPage> {
                   }
                 },
               ),
-              const Expanded(
+              Expanded(
                 child: Center(
                   child: Text(
                     '注册新账号',
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                      color: context.textPrimaryColor,
                     ),
                   ),
                 ),
@@ -284,7 +284,7 @@ class _RegisterPageState extends State<RegisterPage> {
           height: 32,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: isActive ? AppColors.primary : AppColors.divider,
+            color: isActive ? AppColors.primary : context.dividerColor,
           ),
           alignment: Alignment.center,
           child: Text(
@@ -300,7 +300,7 @@ class _RegisterPageState extends State<RegisterPage> {
           label,
           style: TextStyle(
             fontSize: 12,
-            color: isActive ? AppColors.primary : AppColors.textSecondary,
+            color: isActive ? AppColors.primary : context.textSecondaryColor,
           ),
         ),
       ],
@@ -311,7 +311,7 @@ class _RegisterPageState extends State<RegisterPage> {
     return Container(
       width: 40,
       height: 2,
-      color: AppColors.divider,
+      color: context.dividerColor,
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
     );
   }
@@ -356,11 +356,11 @@ class _RegisterPageState extends State<RegisterPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text(
+              Text(
                 '已有账号？',
                 style: TextStyle(
                   fontSize: 14,
-                  color: AppColors.textSecondary,
+                  color: context.textSecondaryColor,
                 ),
               ),
               const SizedBox(width: 8),
@@ -386,7 +386,7 @@ class _RegisterPageState extends State<RegisterPage> {
       children: [
         Text(
           '验证码已发送至 ${_emailController.text}',
-          style: const TextStyle(color: AppColors.textSecondary),
+          style: TextStyle(color: context.textSecondaryColor),
         ),
         const SizedBox(height: 24),
         _buildTextField(
@@ -399,7 +399,7 @@ class _RegisterPageState extends State<RegisterPage> {
         if (_countdown > 0)
           Text(
             '${_countdown ~/ 60}分${_countdown % 60}秒后可重新发送',
-            style: const TextStyle(color: AppColors.textSecondary),
+            style: TextStyle(color: context.textSecondaryColor),
           )
         else
           TextButton(
@@ -551,10 +551,10 @@ class _RegisterPageState extends State<RegisterPage> {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w500,
-            color: AppColors.textPrimary,
+            color: context.textPrimaryColor,
           ),
         ),
         const SizedBox(height: 8),
@@ -562,15 +562,17 @@ class _RegisterPageState extends State<RegisterPage> {
           controller: controller,
           obscureText: obscureText,
           onChanged: (_) => setState(() {}),
+          style: TextStyle(color: context.textPrimaryColor),
           decoration: InputDecoration(
             hintText: hint,
+            hintStyle: TextStyle(color: context.textTertiaryColor),
             prefixIcon: Padding(
               padding: const EdgeInsets.only(left: 12, right: 8),
-              child: Icon(icon, color: AppColors.textSecondary),
+              child: Icon(icon, color: context.textSecondaryColor),
             ),
             prefixIconConstraints: const BoxConstraints(minWidth: 48),
             filled: true,
-            fillColor: AppColors.surface,
+            fillColor: context.inputFillColor,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide.none,

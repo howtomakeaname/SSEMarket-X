@@ -118,10 +118,10 @@ class _ScorePageState extends State<ScorePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           '打分',
           style: TextStyle(
-            color: AppColors.textPrimary,
+            color: context.textPrimaryColor,
             fontWeight: FontWeight.bold,
             fontSize: 18,
           ),
@@ -145,13 +145,13 @@ class _ScorePageState extends State<ScorePage> {
             ),
           ),
         ],
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.surfaceColor,
         elevation: 0,
-        scrolledUnderElevation: 0, // 防止滚动时改变背景色
-        centerTitle: false, // 标题居左
+        scrolledUnderElevation: 0,
+        centerTitle: false,
         automaticallyImplyLeading: false,
       ),
-      backgroundColor: AppColors.background, // Use consistent background color
+      backgroundColor: context.backgroundColor,
       body: Padding(
         padding: const EdgeInsets.only(top: 8),
         child: _buildBody(),
@@ -169,9 +169,9 @@ class _ScorePageState extends State<ScorePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text(
+            Text(
               '暂无打分数据',
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 16),
+              style: TextStyle(color: context.textSecondaryColor, fontSize: 16),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
@@ -240,12 +240,12 @@ class _ScorePageState extends State<ScorePage> {
           
           // No more data footer
           if (!_hasMore && _posts.isNotEmpty) {
-             return const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
+             return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
               child: Center(
                 child: Text(
                   '已经到底啦',
-                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  style: TextStyle(fontSize: 12, color: context.textSecondaryColor),
                 ),
               ),
             );
