@@ -3,8 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/services/media_cache_service.dart';
 import 'package:sse_market_x/views/auth/reset_password_page.dart';
-import 'package:sse_market_x/shared/components/overlays/custom_dialog.dart';
-import 'package:sse_market_x/shared/components/utils/snackbar_helper.dart';
+import 'package:sse_market_x/views/profile/cache_management_page.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -27,7 +26,6 @@ class _SettingsPageState extends State<SettingsPage> {
   
   final MediaCacheService _cacheService = MediaCacheService();
   String _cacheSize = '计算中...';
-  int _cacheFileCount = 0;
   bool _isLoadingCacheInfo = true;
 
   @override
@@ -43,12 +41,10 @@ class _SettingsPageState extends State<SettingsPage> {
     
     try {
       final size = await _cacheService.getCacheSize();
-      final count = await _cacheService.getCacheFileCount();
       
       if (mounted) {
         setState(() {
           _cacheSize = _cacheService.formatCacheSize(size);
-          _cacheFileCount = count;
           _isLoadingCacheInfo = false;
         });
       }
@@ -268,7 +264,7 @@ class _SettingsPageState extends State<SettingsPage> {
   /// 构建缓存管理项
   Widget _buildCacheItem() {
     return InkWell(
-      onTap: _showClearCacheDialog,
+      onTap: _openCacheManagement,
       borderRadius: BorderRadius.circular(12),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -279,7 +275,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '清除缓存',
+                    '缓存管理',
                     style: TextStyle(
                       fontSize: 16,
                       color: context.textPrimaryColor,
@@ -287,7 +283,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '清除图片、视频等媒体缓存',
+                    '查看和清理图片、视频等媒体缓存',
                     style: TextStyle(
                       fontSize: 12,
                       color: context.textSecondaryColor,
@@ -327,38 +323,14 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  /// 显示清除缓存确认对话框
-  Future<void> _showClearCacheDialog() async {
-    final cacheInfo = _cacheFileCount > 0 
-        ? '当前缓存：$_cacheSize（$_cacheFileCount 个文件）\n\n确定要清除所有缓存吗？'
-        : '当前没有缓存数据';
-    
-    final confirm = await showCustomDialog(
-      context: context,
-      title: '清除缓存',
-      content: cacheInfo,
-      cancelText: '取消',
-      confirmText: '清除',
-      confirmColor: AppColors.error,
+  /// 打开缓存管理页面
+  Future<void> _openCacheManagement() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const CacheManagementPage(),
+      ),
     );
-
-    if (confirm == true && mounted) {
-      // 显示加载状态
-      setState(() {
-        _isLoadingCacheInfo = true;
-      });
-
-      final success = await _cacheService.clearCache();
-      
-      if (mounted) {
-        if (success) {
-          SnackBarHelper.show(context, '缓存已清除');
-        } else {
-          SnackBarHelper.show(context, '清除缓存失败');
-        }
-        // 重新加载缓存信息
-        _loadCacheInfo();
-      }
-    }
+    // 返回后刷新缓存信息
+    _loadCacheInfo();
   }
 }

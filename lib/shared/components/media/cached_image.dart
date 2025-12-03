@@ -51,7 +51,7 @@ class _CachedImageState extends State<CachedImage>
     );
     _fadeAnimation = CurvedAnimation(
       parent: _fadeController,
-      curve: Curves.easeIn,
+      curve: Curves.easeOutCubic,
     );
     _loadImage();
   }
