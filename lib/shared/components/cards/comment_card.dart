@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sse_market_x/core/models/comment_model.dart';
 import 'package:sse_market_x/core/utils/level_utils.dart';
 import 'package:sse_market_x/core/utils/time_utils.dart';
+import 'package:sse_market_x/shared/components/markdown/latex_markdown.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 
 /// 评论卡片组件
@@ -281,7 +282,7 @@ class _CommentCardState extends State<CommentCard> {
   Widget _buildContent() {
     return MarkdownBody(
       data: widget.comment.content,
-      styleSheet: MarkdownStyleSheet(
+      styleSheet: getAdaptiveMarkdownStyleSheet(context).copyWith(
         p: TextStyle(
           fontSize: 14,
           color: context.textPrimaryColor,
@@ -289,12 +290,8 @@ class _CommentCardState extends State<CommentCard> {
         ),
         code: TextStyle(
           fontSize: 12,
-          color: Colors.red,
-          backgroundColor: context.backgroundColor,
-        ),
-        a: const TextStyle(
           color: AppColors.primary,
-          decoration: TextDecoration.none,
+          backgroundColor: context.backgroundColor,
         ),
       ),
     );

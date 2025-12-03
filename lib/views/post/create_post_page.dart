@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
@@ -706,18 +705,6 @@ class _CreatePostPageState extends State<CreatePostPage> {
             )
           : LatexMarkdown(
               data: _contentController.text,
-              styleSheet: MarkdownStyleSheet(
-                p: TextStyle(fontSize: 15, color: context.textPrimaryColor),
-                h1: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: context.textPrimaryColor),
-                h2: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: context.textPrimaryColor),
-                h3: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: context.textPrimaryColor),
-                code: TextStyle(
-                  fontSize: 13,
-                  backgroundColor: context.backgroundColor,
-                  color: AppColors.primary,
-                ),
-                blockquote: TextStyle(fontSize: 14, color: context.textSecondaryColor),
-              ),
             ),
     );
   }

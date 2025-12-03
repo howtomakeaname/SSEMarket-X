@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/comment_model.dart';
@@ -551,50 +550,6 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
 
     return LatexMarkdown(
       data: _post.content,
-      styleSheet: MarkdownStyleSheet(
-        p: TextStyle(
-          fontSize: 16,
-          color: context.textPrimaryColor,
-          height: 1.5,
-        ),
-        h1: TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-          color: context.textPrimaryColor,
-        ),
-        h2: TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-          color: context.textPrimaryColor,
-        ),
-        h3: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          color: context.textPrimaryColor,
-        ),
-        code: TextStyle(
-          fontSize: 14,
-          color: Colors.red,
-          backgroundColor: context.backgroundColor,
-        ),
-        codeblockDecoration: BoxDecoration(
-          color: context.backgroundColor,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        blockquoteDecoration: BoxDecoration(
-          color: context.backgroundColor,
-          border: const Border(
-            left: BorderSide(
-              color: AppColors.primary,
-              width: 4,
-            ),
-          ),
-        ),
-        a: const TextStyle(
-          color: AppColors.primary,
-          decoration: TextDecoration.none,
-        ),
-      ),
     );
   }
 
