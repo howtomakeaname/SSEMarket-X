@@ -270,12 +270,12 @@ class _LoginFormState extends State<LoginForm> {
               Text('已阅读并同意', style: TextStyle(fontSize: 14, color: context.textSecondaryColor)),
               GestureDetector(
                 onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TermsOfServicePage())),
-                child: const Text('《服务政策》', style: TextStyle(fontSize: 14, color: AppColors.primary)),
+                child: const Text('《服务协议》', style: TextStyle(fontSize: 14, color: AppColors.primary)),
               ),
               Text('和', style: TextStyle(fontSize: 14, color: context.textSecondaryColor)),
               GestureDetector(
                 onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PrivacyPolicyPage())),
-                child: const Text('《隐私条款》', style: TextStyle(fontSize: 14, color: AppColors.primary)),
+                child: const Text('《隐私政策》', style: TextStyle(fontSize: 14, color: AppColors.primary)),
               ),
             ],
           ),
