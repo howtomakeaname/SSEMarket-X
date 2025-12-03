@@ -5,6 +5,8 @@ import 'package:sse_market_x/core/utils/email_validator.dart';
 import 'package:sse_market_x/core/services/storage_service.dart';
 import 'package:sse_market_x/views/auth/register_page.dart';
 import 'package:sse_market_x/views/auth/reset_password_page.dart';
+import 'package:sse_market_x/views/auth/terms_of_service_page.dart';
+import 'package:sse_market_x/views/auth/privacy_policy_page.dart';
 import 'package:sse_market_x/shared/components/layout/auth_desktop_layout.dart';
 import 'package:sse_market_x/shared/components/utils/snackbar_helper.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
@@ -58,7 +60,7 @@ class _LoginFormState extends State<LoginForm> {
   final TextEditingController _passwordController = TextEditingController();
 
   bool _isLoading = false;
-  bool _rememberMe = true;
+  bool _agreedToTerms = true;
   bool _obscurePassword = true;
 
   final ApiService _apiService = ApiService();
@@ -106,7 +108,7 @@ class _LoginFormState extends State<LoginForm> {
 
         if (user.userId != 0) { // 简单检查 user 是否有效
            // 保存用户信息
-           await StorageService().setUser(user, token, rememberMe: _rememberMe);
+           await StorageService().setUser(user, token, rememberMe: true);
            
            SnackBarHelper.show(context, '登录成功');
 
@@ -242,7 +244,7 @@ class _LoginFormState extends State<LoginForm> {
   Widget _buildForm(ThemeData theme, {bool isDesktop = false}) {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
-    final canSubmit = !_isLoading && email.isNotEmpty && password.isNotEmpty;
+    final canSubmit = !_isLoading && email.isNotEmpty && password.isNotEmpty && _agreedToTerms;
 
     return Padding(
       padding: isDesktop ? EdgeInsets.zero : const EdgeInsets.symmetric(horizontal: 32),
@@ -265,24 +267,59 @@ class _LoginFormState extends State<LoginForm> {
           ),
           const SizedBox(height: 20),
           Row(
-            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Checkbox(
-                value: _rememberMe,
-                onChanged: (value) {
-                  if (value == null) return;
-                  setState(() {
-                    _rememberMe = value;
-                  });
-                },
-                activeColor: appPrimaryColor,
+              SizedBox(
+                width: 24,
+                height: 24,
+                child: Checkbox(
+                  value: _agreedToTerms,
+                  onChanged: (value) {
+                    if (value == null) return;
+                    setState(() {
+                      _agreedToTerms = value;
+                    });
+                  },
+                  activeColor: appPrimaryColor,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
               ),
               const SizedBox(width: 8),
-              const Text(
-                '记住我',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: appTextSecondary,
+              Expanded(
+                child: Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    const Text(
+                      '已阅读并同意',
+                      style: TextStyle(fontSize: 14, color: appTextSecondary),
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const TermsOfServicePage()),
+                        );
+                      },
+                      child: const Text(
+                        '《服务政策》',
+                        style: TextStyle(fontSize: 14, color: appPrimaryColor),
+                      ),
+                    ),
+                    const Text(
+                      '和',
+                      style: TextStyle(fontSize: 14, color: appTextSecondary),
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const PrivacyPolicyPage()),
+                        );
+                      },
+                      child: const Text(
+                        '《隐私条款》',
+                        style: TextStyle(fontSize: 14, color: appPrimaryColor),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
