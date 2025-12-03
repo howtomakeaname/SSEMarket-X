@@ -39,7 +39,7 @@ class _ReplyModalState extends State<ReplyModal> {
         ),
         child: Container(
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: context.surfaceColor,
             borderRadius: BorderRadius.circular(16),
           ),
         child: Column(
@@ -48,10 +48,10 @@ class _ReplyModalState extends State<ReplyModal> {
             // 标题栏
             Container(
               padding: const EdgeInsets.all(16),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 border: Border(
                   bottom: BorderSide(
-                    color: AppColors.divider,
+                    color: context.dividerColor,
                     width: 0.5,
                   ),
                 ),
@@ -60,10 +60,10 @@ class _ReplyModalState extends State<ReplyModal> {
                 children: [
                   Text(
                     '回复 ${widget.replyToName}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+                      color: context.textPrimaryColor,
                     ),
                   ),
                   const Spacer(),
@@ -71,10 +71,10 @@ class _ReplyModalState extends State<ReplyModal> {
                     onTap: () => Navigator.of(context).pop(),
                     child: Container(
                       padding: const EdgeInsets.all(4),
-                      child: const Icon(
+                      child: Icon(
                         Icons.close,
                         size: 20,
-                        color: AppColors.textSecondary,
+                        color: context.textSecondaryColor,
                       ),
                     ),
                   ),

@@ -33,7 +33,7 @@ class CustomDialog extends StatelessWidget {
         ),
         child: Container(
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: context.surfaceColor,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
@@ -51,10 +51,10 @@ class CustomDialog extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
                 child: Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                    color: context.textPrimaryColor,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -64,9 +64,9 @@ class CustomDialog extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                 child: Text(
                   content,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
-                    color: AppColors.textSecondary,
+                    color: context.textSecondaryColor,
                     height: 1.5,
                   ),
                   textAlign: TextAlign.center,
@@ -75,7 +75,7 @@ class CustomDialog extends StatelessWidget {
               // 分割线
               Container(
                 height: 0.5,
-                color: AppColors.divider,
+                color: context.dividerColor,
               ),
               // 按钮区域
               Row(
@@ -94,7 +94,7 @@ class CustomDialog extends StatelessWidget {
                     Container(
                       width: 0.5,
                       height: 52,
-                      color: AppColors.divider,
+                      color: context.dividerColor,
                     ),
                   // 确认按钮
                   if (confirmText != null)
@@ -147,7 +147,7 @@ class _DialogButton extends StatelessWidget {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w500,
-              color: color ?? AppColors.textSecondary,
+              color: color ?? context.textSecondaryColor,
             ),
           ),
         ),
