@@ -3,6 +3,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/user_model.dart';
 import 'package:sse_market_x/core/services/storage_service.dart';
+import 'package:sse_market_x/shared/components/media/image_cropper.dart';
 import 'package:sse_market_x/shared/components/utils/snackbar_helper.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 
@@ -25,6 +26,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   late TextEditingController _introController;
   String _avatarUrl = '';
   bool _isSubmitting = false;
+  bool _isUploadingAvatar = false;
   final ImagePicker _picker = ImagePicker();
 
   @override
@@ -43,22 +45,52 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Future<void> _pickAvatar() async {
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (_isUploadingAvatar) return;
+    
+    final XFile? image = await _picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 2048, // 限制最大尺寸，避免超大图片
+      maxHeight: 2048,
+    );
     if (image == null) return;
 
     try {
-      final bytes = await image.readAsBytes();
-      final url = await widget.apiService.uploadPhoto(bytes, image.name);
-      if (url != null) {
+      // 读取图片字节
+      final imageBytes = await image.readAsBytes();
+      
+      if (!mounted) return;
+      
+      // 打开裁剪页面
+      final croppedBytes = await ImageCropperPage.show(
+        context,
+        imageBytes: imageBytes,
+        aspectRatio: 1.0, // 头像使用1:1比例
+      );
+      
+      if (croppedBytes == null || !mounted) return;
+
+      // 显示上传状态
+      setState(() => _isUploadingAvatar = true);
+
+      // 上传裁剪后的图片
+      final fileName = 'avatar_${DateTime.now().millisecondsSinceEpoch}.png';
+      final url = await widget.apiService.uploadPhoto(croppedBytes, fileName);
+      
+      if (url != null && mounted) {
         setState(() {
           _avatarUrl = url;
+          _isUploadingAvatar = false;
         });
         SnackBarHelper.show(context, '头像上传成功');
-      } else {
+      } else if (mounted) {
+        setState(() => _isUploadingAvatar = false);
         SnackBarHelper.show(context, '头像上传失败');
       }
     } catch (e) {
-      SnackBarHelper.show(context, '头像上传失败');
+      if (mounted) {
+        setState(() => _isUploadingAvatar = false);
+        SnackBarHelper.show(context, '头像上传失败');
+      }
     }
   }
 
@@ -187,14 +219,57 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   GestureDetector(
-                    onTap: _isSubmitting ? null : _pickAvatar,
-                    child: CircleAvatar(
-                      radius: 40,
-                      backgroundColor: context.backgroundColor,
-                      backgroundImage: _avatarUrl.isNotEmpty ? NetworkImage(_avatarUrl) : null,
-                      child: _avatarUrl.isEmpty
-                          ? Icon(Icons.person, size: 40, color: context.textSecondaryColor)
-                          : null,
+                    onTap: (_isSubmitting || _isUploadingAvatar) ? null : _pickAvatar,
+                    child: Stack(
+                      children: [
+                        CircleAvatar(
+                          radius: 40,
+                          backgroundColor: context.backgroundColor,
+                          backgroundImage: _avatarUrl.isNotEmpty ? NetworkImage(_avatarUrl) : null,
+                          child: _avatarUrl.isEmpty
+                              ? Icon(Icons.person, size: 40, color: context.textSecondaryColor)
+                              : null,
+                        ),
+                        // 上传中遮罩
+                        if (_isUploadingAvatar)
+                          Positioned.fill(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.5),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Center(
+                                child: SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        // 编辑图标
+                        if (!_isUploadingAvatar)
+                          Positioned(
+                            right: 0,
+                            bottom: 0,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: context.surfaceColor, width: 2),
+                              ),
+                              child: const Icon(
+                                Icons.camera_alt,
+                                size: 14,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 8),
