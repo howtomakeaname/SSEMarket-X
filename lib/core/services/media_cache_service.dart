@@ -174,4 +174,89 @@ class MediaCacheService {
     }
     return count;
   }
+
+  /// 获取所有缓存文件信息
+  Future<List<CacheFileInfo>> getCacheFiles() async {
+    if (!_initialized) await init();
+    if (_cacheDir == null) return [];
+
+    final List<CacheFileInfo> files = [];
+    try {
+      if (await _cacheDir!.exists()) {
+        await for (final entity in _cacheDir!.list(recursive: true)) {
+          if (entity is File) {
+            final stat = await entity.stat();
+            files.add(CacheFileInfo(
+              file: entity,
+              size: stat.size,
+              modifiedTime: stat.modified,
+            ));
+          }
+        }
+      }
+      // 按修改时间降序排序（最新的在前）
+      files.sort((a, b) => b.modifiedTime.compareTo(a.modifiedTime));
+    } catch (e) {
+      debugPrint('MediaCache: Get files error: $e');
+    }
+    return files;
+  }
+
+  /// 删除指定缓存文件
+  Future<bool> deleteFile(File file) async {
+    try {
+      if (await file.exists()) {
+        await file.delete();
+        return true;
+      }
+    } catch (e) {
+      debugPrint('MediaCache: Delete file error: $e');
+    }
+    return false;
+  }
+
+  /// 批量删除缓存文件
+  Future<int> deleteFiles(List<File> files) async {
+    int deletedCount = 0;
+    for (final file in files) {
+      if (await deleteFile(file)) {
+        deletedCount++;
+      }
+    }
+    return deletedCount;
+  }
+}
+
+/// 缓存文件信息
+class CacheFileInfo {
+  final File file;
+  final int size;
+  final DateTime modifiedTime;
+
+  CacheFileInfo({
+    required this.file,
+    required this.size,
+    required this.modifiedTime,
+  });
+
+  /// 获取文件名
+  String get fileName => file.path.split('/').last;
+
+  /// 判断是否为图片
+  bool get isImage {
+    final ext = fileName.toLowerCase();
+    return ext.endsWith('.jpg') ||
+        ext.endsWith('.jpeg') ||
+        ext.endsWith('.png') ||
+        ext.endsWith('.gif') ||
+        ext.endsWith('.webp');
+  }
+
+  /// 判断是否为视频
+  bool get isVideo {
+    final ext = fileName.toLowerCase();
+    return ext.endsWith('.mp4') ||
+        ext.endsWith('.mov') ||
+        ext.endsWith('.avi');
+  }
 }
