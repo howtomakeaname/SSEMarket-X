@@ -86,9 +86,8 @@ class _PostCardState extends State<PostCard> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.surfaceColor,
         borderRadius: BorderRadius.circular(12),
-        // Removed box shadow as requested, relying on background color contrast
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
@@ -134,10 +133,10 @@ class _PostCardState extends State<PostCard> {
                 children: [
                   Text(
                     authorName,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
-                      fontWeight: FontWeight.w500, // Medium
-                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w500,
+                      color: context.textPrimaryColor,
                     ),
                   ),
                   // 等级显示
@@ -157,9 +156,9 @@ class _PostCardState extends State<PostCard> {
               const SizedBox(height: 2),
               Text(
                 TimeUtils.formatRelativeTime(widget.post.createdAt),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
-                  color: AppColors.textSecondary,
+                  color: context.textSecondaryColor,
                 ),
               ),
             ],
@@ -259,9 +258,9 @@ class _PostCardState extends State<PostCard> {
     return Container(
       width: 40,
       height: 40,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: AppColors.background,
+        color: context.backgroundColor,
       ),
       clipBehavior: Clip.antiAlias,
       child: widget.post.authorAvatar.isNotEmpty
@@ -301,7 +300,7 @@ class _PostCardState extends State<PostCard> {
             style: TextStyle(
               fontSize: widget.isDense ? 16 : 18,
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              color: context.textPrimaryColor,
               height: 1.3,
             ),
             maxLines: widget.isDense ? 1 : 2,
@@ -313,11 +312,11 @@ class _PostCardState extends State<PostCard> {
         if (widget.post.content.isNotEmpty && (!widget.isDense || widget.showContentInDense)) ...[
           Text(
             widget.post.content,
-            maxLines: widget.isDense ? 2 : 3, // 紧凑模式最多2行
+            maxLines: widget.isDense ? 2 : 3,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
-              color: AppColors.textSecondary,
+              color: context.textSecondaryColor,
               height: 1.5,
             ),
           ),
@@ -328,7 +327,7 @@ class _PostCardState extends State<PostCard> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: AppColors.background,
+              color: context.backgroundColor,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
@@ -374,6 +373,7 @@ class _PostCardState extends State<PostCard> {
   }
 
   Widget _buildMetaItem(String iconAsset, int count, {Color? color}) {
+    final defaultColor = context.textSecondaryColor;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -382,7 +382,7 @@ class _PostCardState extends State<PostCard> {
           width: 18,
           height: 18,
           colorFilter: ColorFilter.mode(
-            color ?? AppColors.textSecondary,
+            color ?? defaultColor,
             BlendMode.srcIn,
           ),
         ),
@@ -391,7 +391,7 @@ class _PostCardState extends State<PostCard> {
           '$count',
           style: TextStyle(
             fontSize: 13,
-            color: color ?? AppColors.textSecondary,
+            color: color ?? defaultColor,
           ),
         ),
       ],
