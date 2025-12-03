@@ -87,7 +87,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.surfaceColor,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -109,14 +109,14 @@ class _EmojiPickerState extends State<EmojiPicker> {
                     margin: const EdgeInsets.only(right: 8),
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: isActive ? AppColors.background : Colors.transparent,
+                      color: isActive ? context.backgroundColor : Colors.transparent,
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
                       entry.value,
                       style: TextStyle(
                         fontSize: 12,
-                        color: isActive ? AppColors.primary : AppColors.textSecondary,
+                        color: isActive ? AppColors.primary : context.textSecondaryColor,
                       ),
                     ),
                   ),
@@ -147,7 +147,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
                   child: Container(
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: AppColors.background,
+                      color: context.backgroundColor,
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
@@ -282,10 +282,10 @@ class _EmojiPickerButtonState extends State<EmojiPickerButton> {
       width: widget.size,
       height: widget.size,
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.surfaceColor,
         borderRadius: BorderRadius.circular(widget.size / 2),
         border: Border.all(
-          color: AppColors.divider,
+          color: context.dividerColor,
           width: 0.5,
         ),
         boxShadow: [
@@ -301,7 +301,7 @@ class _EmojiPickerButtonState extends State<EmojiPickerButton> {
         icon: Icon(Icons.emoji_emotions_outlined, size: widget.size * 0.5),
         color: isActive 
             ? (widget.activeColor ?? AppColors.primary) 
-            : (widget.inactiveColor ?? AppColors.textSecondary),
+            : (widget.inactiveColor ?? context.textSecondaryColor),
         padding: EdgeInsets.zero,
         constraints: const BoxConstraints(),
       ),

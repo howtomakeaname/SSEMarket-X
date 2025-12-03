@@ -5,6 +5,53 @@ import 'package:markdown/markdown.dart' as m;
 import 'package:markdown_widget/markdown_widget.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 
+/// 获取适配深色模式的 MarkdownStyleSheet
+MarkdownStyleSheet getAdaptiveMarkdownStyleSheet(BuildContext context) {
+  final textPrimaryColor = context.textPrimaryColor;
+  final textSecondaryColor = context.textSecondaryColor;
+  final backgroundColor = context.backgroundColor;
+  final surfaceColor = context.surfaceColor;
+
+  return MarkdownStyleSheet(
+    p: TextStyle(fontSize: 16, color: textPrimaryColor, height: 1.5),
+    h1: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: textPrimaryColor),
+    h2: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: textPrimaryColor),
+    h3: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textPrimaryColor),
+    h4: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: textPrimaryColor),
+    h5: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: textPrimaryColor),
+    h6: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: textPrimaryColor),
+    em: TextStyle(fontStyle: FontStyle.italic, color: textPrimaryColor),
+    strong: TextStyle(fontWeight: FontWeight.bold, color: textPrimaryColor),
+    del: TextStyle(decoration: TextDecoration.lineThrough, color: textSecondaryColor),
+    blockquote: TextStyle(fontSize: 16, color: textSecondaryColor, fontStyle: FontStyle.italic),
+    img: const TextStyle(),
+    checkbox: TextStyle(color: AppColors.primary),
+    listBullet: TextStyle(fontSize: 16, color: textPrimaryColor),
+    tableHead: TextStyle(fontWeight: FontWeight.bold, color: textPrimaryColor),
+    tableBody: TextStyle(color: textPrimaryColor),
+    code: TextStyle(
+      fontSize: 14,
+      color: AppColors.primary,
+      backgroundColor: backgroundColor,
+      fontFamily: 'monospace',
+    ),
+    codeblockDecoration: BoxDecoration(
+      color: backgroundColor,
+      borderRadius: BorderRadius.circular(8),
+    ),
+    blockquoteDecoration: BoxDecoration(
+      color: surfaceColor,
+      border: const Border(
+        left: BorderSide(color: AppColors.primary, width: 4),
+      ),
+    ),
+    horizontalRuleDecoration: BoxDecoration(
+      border: Border(top: BorderSide(color: context.dividerColor, width: 1)),
+    ),
+    a: const TextStyle(color: AppColors.primary, decoration: TextDecoration.none),
+  );
+}
+
 // 1. Custom tag
 const _latexTag = 'latex';
 
@@ -109,46 +156,50 @@ class LatexMarkdown extends StatelessWidget {
         ? MarkdownConfig.darkConfig
         : MarkdownConfig.defaultConfig;
 
+    final textPrimaryColor = context.textPrimaryColor;
+    final textSecondaryColor = context.textSecondaryColor;
+    final backgroundColor = context.backgroundColor;
+
     return MarkdownBlock(
       data: data,
       selectable: selectable,
       config: config.copy(configs: [
-        PConfig(textStyle: const TextStyle(
+        PConfig(textStyle: TextStyle(
           fontSize: 16,
-          color: AppColors.textPrimary,
+          color: textPrimaryColor,
           height: 1.5,
         )),
-        H1Config(style: const TextStyle(
+        H1Config(style: TextStyle(
           fontSize: 24,
           fontWeight: FontWeight.bold,
-          color: AppColors.textPrimary,
+          color: textPrimaryColor,
         )),
-        H2Config(style: const TextStyle(
+        H2Config(style: TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.bold,
-          color: AppColors.textPrimary,
+          color: textPrimaryColor,
         )),
-        H3Config(style: const TextStyle(
+        H3Config(style: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.bold,
-          color: AppColors.textPrimary,
+          color: textPrimaryColor,
         )),
-        CodeConfig(style: const TextStyle(
+        CodeConfig(style: TextStyle(
           fontSize: 14,
           color: Colors.red,
-          backgroundColor: AppColors.background,
+          backgroundColor: backgroundColor,
         )),
         PreConfig(
           decoration: BoxDecoration(
-            color: AppColors.background,
+            color: backgroundColor,
             borderRadius: BorderRadius.circular(8),
           ),
         ),
         BlockquoteConfig(
           sideColor: AppColors.primary,
-          textColor: AppColors.textSecondary,
+          textColor: textSecondaryColor,
         ),
-        LinkConfig(style: const TextStyle(
+        const LinkConfig(style: TextStyle(
           color: AppColors.primary,
           decoration: TextDecoration.none,
         )),

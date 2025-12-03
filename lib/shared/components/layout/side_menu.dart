@@ -80,10 +80,10 @@ class _SideMenuState extends State<SideMenu> {
 
     return Container(
       width: 280,
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
+      decoration: BoxDecoration(
+        color: context.surfaceColor,
         border: Border(
-          right: BorderSide(color: AppColors.divider, width: 1),
+          right: BorderSide(color: context.dividerColor, width: 1),
         ),
       ),
       child: Column(
@@ -112,7 +112,7 @@ class _SideMenuState extends State<SideMenu> {
           
           const Spacer(),
           
-          const Divider(height: 1, color: AppColors.divider),
+          Divider(height: 1, color: context.dividerColor),
           // User Avatar / My Page - 响应用户信息变更
           ValueListenableBuilder<UserModel?>(
             valueListenable: storage.userNotifier,
@@ -126,18 +126,18 @@ class _SideMenuState extends State<SideMenu> {
                       Container(
                         width: 40,
                         height: 40,
-                        decoration: const BoxDecoration(
+                        decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: AppColors.background,
+                          color: context.backgroundColor,
                         ),
                         clipBehavior: Clip.antiAlias,
                         child: user?.avatar.isNotEmpty == true
                             ? Image.network(
                                 user!.avatar,
                                 fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => const Icon(Icons.person, color: AppColors.textSecondary),
+                                errorBuilder: (_, __, ___) => Icon(Icons.person, color: context.textSecondaryColor),
                               )
-                            : const Icon(Icons.person, color: AppColors.textSecondary),
+                            : Icon(Icons.person, color: context.textSecondaryColor),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -146,10 +146,10 @@ class _SideMenuState extends State<SideMenu> {
                           children: [
                             Text(
                               user?.name ?? '未登录',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.w600,
                                 fontSize: 14,
-                                color: AppColors.textPrimary,
+                                color: context.textPrimaryColor,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -157,9 +157,9 @@ class _SideMenuState extends State<SideMenu> {
                             if (user != null)
                               Text(
                                 LevelUtils.getLevelName(user.score),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 12,
-                                  color: AppColors.textSecondary,
+                                  color: context.textSecondaryColor,
                                 ),
                               ),
                           ],
@@ -200,7 +200,7 @@ class _SideMenuState extends State<SideMenu> {
                   Icon(
                     isSelected ? (iconDataSelected ?? iconData) : iconData,
                     size: 24,
-                    color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                    color: isSelected ? AppColors.primary : context.textSecondaryColor,
                   ),
                 // 未读消息红点
                 if (badgeCount > 0)
@@ -234,7 +234,7 @@ class _SideMenuState extends State<SideMenu> {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                color: isSelected ? AppColors.primary : context.textPrimaryColor,
               ),
             ),
           ],

@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sse_market_x/core/models/comment_model.dart';
 import 'package:sse_market_x/core/utils/level_utils.dart';
 import 'package:sse_market_x/core/utils/time_utils.dart';
+import 'package:sse_market_x/shared/components/markdown/latex_markdown.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 
 /// 评论卡片组件
@@ -135,7 +136,7 @@ class _CommentCardState extends State<CommentCard> {
       padding: const EdgeInsets.all(12),
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.surfaceColor,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -171,9 +172,9 @@ class _CommentCardState extends State<CommentCard> {
               Container(
                 width: 32,
                 height: 32,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.background,
+                  color: context.backgroundColor,
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: widget.comment.authorAvatar.isNotEmpty
@@ -228,10 +229,10 @@ class _CommentCardState extends State<CommentCard> {
                       widget.comment.authorName.isNotEmpty
                           ? widget.comment.authorName
                           : '匿名用户',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: AppColors.textPrimary,
+                        color: context.textPrimaryColor,
                       ),
                     ),
                   ),
@@ -255,7 +256,7 @@ class _CommentCardState extends State<CommentCard> {
                           child: Icon(
                             index < widget.comment.postRating! ? Icons.star_rounded : Icons.star_border_rounded,
                             size: 14,
-                            color: index < widget.comment.postRating! ? AppColors.ratingStar : AppColors.textTertiary,
+                            color: index < widget.comment.postRating! ? AppColors.ratingStar : context.textTertiaryColor,
                           ),
                         );
                       }),
@@ -266,9 +267,9 @@ class _CommentCardState extends State<CommentCard> {
               const SizedBox(height: 2),
               Text(
                 TimeUtils.formatRelativeTime(widget.comment.commentTime),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
-                  color: AppColors.textSecondary,
+                  color: context.textSecondaryColor,
                 ),
               ),
             ],
@@ -281,20 +282,16 @@ class _CommentCardState extends State<CommentCard> {
   Widget _buildContent() {
     return MarkdownBody(
       data: widget.comment.content,
-      styleSheet: MarkdownStyleSheet(
-        p: const TextStyle(
+      styleSheet: getAdaptiveMarkdownStyleSheet(context).copyWith(
+        p: TextStyle(
           fontSize: 14,
-          color: AppColors.textPrimary,
+          color: context.textPrimaryColor,
           height: 1.5,
         ),
-        code: const TextStyle(
+        code: TextStyle(
           fontSize: 12,
-          color: Colors.red,
-          backgroundColor: AppColors.background,
-        ),
-        a: const TextStyle(
           color: AppColors.primary,
-          decoration: TextDecoration.none,
+          backgroundColor: context.backgroundColor,
         ),
       ),
     );
@@ -316,7 +313,7 @@ class _CommentCardState extends State<CommentCard> {
                 width: 16,
                 height: 16,
                 colorFilter: ColorFilter.mode(
-                  _isLiked ? Colors.red : AppColors.textSecondary,
+                  _isLiked ? Colors.red : context.textSecondaryColor,
                   BlendMode.srcIn,
                 ),
               ),
@@ -325,7 +322,7 @@ class _CommentCardState extends State<CommentCard> {
                 '$_likeCount',
                 style: TextStyle(
                   fontSize: 12,
-                  color: _isLiked ? Colors.red : AppColors.textSecondary,
+                  color: _isLiked ? Colors.red : context.textSecondaryColor,
                 ),
               ),
             ],
@@ -335,16 +332,16 @@ class _CommentCardState extends State<CommentCard> {
         // 回复
         GestureDetector(
           onTap: widget.onReplyTap,
-          child: const Row(
+          child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.reply, size: 16, color: AppColors.textSecondary),
-              SizedBox(width: 4),
+              Icon(Icons.reply, size: 16, color: context.textSecondaryColor),
+              const SizedBox(width: 4),
               Text(
                 '回复',
                 style: TextStyle(
                   fontSize: 12,
-                  color: AppColors.textSecondary,
+                  color: context.textSecondaryColor,
                 ),
               ),
             ],
@@ -397,7 +394,7 @@ class _CommentCardState extends State<CommentCard> {
       margin: const EdgeInsets.only(top: 12),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.background,
+        color: context.backgroundColor,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -427,9 +424,9 @@ class _CommentCardState extends State<CommentCard> {
                 child: Container(
                   width: 28,
                   height: 28,
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: AppColors.surface,
+                    color: context.surfaceColor,
                   ),
                   clipBehavior: Clip.antiAlias,
                   child: subComment.authorAvatar.isNotEmpty
@@ -460,10 +457,10 @@ class _CommentCardState extends State<CommentCard> {
                   subComment.authorName.isNotEmpty
                       ? subComment.authorName
                       : '匿名用户',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.textPrimary,
+                    color: context.textPrimaryColor,
                   ),
                 ),
               ),
@@ -480,11 +477,11 @@ class _CommentCardState extends State<CommentCard> {
               ],
               // 显示回复对象
               const SizedBox(width: 4),
-              const Text(
+              Text(
                 '回复',
                 style: TextStyle(
                   fontSize: 12,
-                  color: AppColors.textSecondary,
+                  color: context.textSecondaryColor,
                 ),
               ),
               const SizedBox(width: 4),
@@ -492,18 +489,18 @@ class _CommentCardState extends State<CommentCard> {
                 subComment.targetUserName.isNotEmpty
                     ? subComment.targetUserName
                     : '层主',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
-                  color: AppColors.textPrimary,
+                  color: context.textPrimaryColor,
                 ),
               ),
               const Spacer(),
               Text(
                 TimeUtils.formatRelativeTime(subComment.commentTime),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11,
-                  color: AppColors.textSecondary,
+                  color: context.textSecondaryColor,
                 ),
               ),
             ],
@@ -511,9 +508,9 @@ class _CommentCardState extends State<CommentCard> {
           const SizedBox(height: 4),
           Text(
             subComment.content,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
-              color: AppColors.textPrimary,
+              color: context.textPrimaryColor,
               height: 1.4,
             ),
           ),
@@ -530,14 +527,14 @@ class _CommentCardState extends State<CommentCard> {
                     Icon(
                       (_subCommentLikes[subComment.id] ?? false) ? Icons.favorite : Icons.favorite_border,
                       size: 14,
-                      color: (_subCommentLikes[subComment.id] ?? false) ? Colors.red : AppColors.textSecondary,
+                      color: (_subCommentLikes[subComment.id] ?? false) ? Colors.red : context.textSecondaryColor,
                     ),
                     const SizedBox(width: 2),
                     Text(
                       '${_subCommentLikeCounts[subComment.id] ?? 0}',
                       style: TextStyle(
                         fontSize: 11,
-                        color: (_subCommentLikes[subComment.id] ?? false) ? Colors.red : AppColors.textSecondary,
+                        color: (_subCommentLikes[subComment.id] ?? false) ? Colors.red : context.textSecondaryColor,
                       ),
                     ),
                   ],
@@ -556,16 +553,16 @@ class _CommentCardState extends State<CommentCard> {
                     );
                   }
                 },
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.reply, size: 14, color: AppColors.textSecondary),
-                    SizedBox(width: 2),
+                    Icon(Icons.reply, size: 14, color: context.textSecondaryColor),
+                    const SizedBox(width: 2),
                     Text(
                       '回复',
                       style: TextStyle(
                         fontSize: 11,
-                        color: AppColors.textSecondary,
+                        color: context.textSecondaryColor,
                       ),
                     ),
                   ],

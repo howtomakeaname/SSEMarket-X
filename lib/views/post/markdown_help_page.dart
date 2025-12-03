@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:sse_market_x/shared/components/markdown/latex_markdown.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 
 /// Markdown语法帮助页面
@@ -61,21 +62,21 @@ class _MarkdownHelpPageState extends State<MarkdownHelpPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.backgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.surfaceColor,
         elevation: 0,
         centerTitle: false,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back, color: context.textPrimaryColor),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
+        title: Text(
           'Markdown语法帮助',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+            color: context.textPrimaryColor,
           ),
         ),
         titleSpacing: 0,
@@ -100,18 +101,18 @@ class _MarkdownHelpPageState extends State<MarkdownHelpPage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.surfaceColor,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             '常用语法',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              color: context.textPrimaryColor,
             ),
           ),
           const SizedBox(height: 16),
@@ -129,18 +130,18 @@ class _MarkdownHelpPageState extends State<MarkdownHelpPage> {
         children: [
           Text(
             item.title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w500,
-              color: AppColors.textPrimary,
+              color: context.textPrimaryColor,
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             '语法:',
             style: TextStyle(
               fontSize: 14,
-              color: AppColors.textSecondary,
+              color: context.textSecondaryColor,
             ),
           ),
           const SizedBox(height: 4),
@@ -148,24 +149,24 @@ class _MarkdownHelpPageState extends State<MarkdownHelpPage> {
             width: double.infinity,
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.background,
+              color: context.backgroundColor,
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(
               item.syntax,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 fontFamily: 'monospace',
-                color: AppColors.textPrimary,
+                color: context.textPrimaryColor,
               ),
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             '效果:',
             style: TextStyle(
               fontSize: 14,
-              color: AppColors.textSecondary,
+              color: context.textSecondaryColor,
             ),
           ),
           const SizedBox(height: 4),
@@ -173,22 +174,21 @@ class _MarkdownHelpPageState extends State<MarkdownHelpPage> {
             width: double.infinity,
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.background,
+              color: context.backgroundColor,
               borderRadius: BorderRadius.circular(4),
             ),
             child: MarkdownBody(
               data: item.example,
-              styleSheet: MarkdownStyleSheet(
-                p: const TextStyle(fontSize: 14, color: AppColors.textPrimary),
-                h1: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-                h2: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-                h3: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+              styleSheet: getAdaptiveMarkdownStyleSheet(context).copyWith(
+                p: TextStyle(fontSize: 14, color: context.textPrimaryColor),
+                h1: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: context.textPrimaryColor),
+                h2: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: context.textPrimaryColor),
+                h3: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: context.textPrimaryColor),
                 code: TextStyle(
                   fontSize: 12,
-                  backgroundColor: AppColors.background,
+                  backgroundColor: context.backgroundColor,
                   color: AppColors.primary,
                 ),
-                blockquote: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
               ),
             ),
           ),
@@ -201,18 +201,18 @@ class _MarkdownHelpPageState extends State<MarkdownHelpPage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.surfaceColor,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             '练习区域',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              color: context.textPrimaryColor,
             ),
           ),
           const SizedBox(height: 16),
@@ -227,14 +227,14 @@ class _MarkdownHelpPageState extends State<MarkdownHelpPage> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: AppColors.background,
+                    color: context.backgroundColor,
                     borderRadius: BorderRadius.circular(4),
                   ),
-                  child: const Text(
+                  child: Text(
                     '清空',
                     style: TextStyle(
                       fontSize: 14,
-                      color: AppColors.textSecondary,
+                      color: context.textSecondaryColor,
                     ),
                   ),
                 ),
@@ -249,7 +249,7 @@ class _MarkdownHelpPageState extends State<MarkdownHelpPage> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: AppColors.background,
+                    color: context.backgroundColor,
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
@@ -270,23 +270,23 @@ class _MarkdownHelpPageState extends State<MarkdownHelpPage> {
               constraints: const BoxConstraints(minHeight: 200),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.background,
+                color: context.backgroundColor,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: _practiceController.text.trim().isEmpty
-                  ? const Center(
+                  ? Center(
                       child: Text(
                         '请输入Markdown内容进行预览',
                         style: TextStyle(
                           fontSize: 14,
-                          color: AppColors.textSecondary,
+                          color: context.textSecondaryColor,
                         ),
                       ),
                     )
                   : MarkdownBody(
                       data: _practiceController.text,
-                      styleSheet: MarkdownStyleSheet(
-                        p: const TextStyle(fontSize: 14, color: AppColors.textPrimary),
+                      styleSheet: getAdaptiveMarkdownStyleSheet(context).copyWith(
+                        p: TextStyle(fontSize: 14, color: context.textPrimaryColor),
                       ),
                     ),
             )
@@ -296,21 +296,21 @@ class _MarkdownHelpPageState extends State<MarkdownHelpPage> {
               maxLines: 8,
               decoration: InputDecoration(
                 hintText: '在这里输入Markdown语法进行练习...',
-                hintStyle: const TextStyle(
-                  color: AppColors.textSecondary,
+                hintStyle: TextStyle(
+                  color: context.textSecondaryColor,
                   fontSize: 14,
                 ),
                 filled: true,
-                fillColor: AppColors.background,
+                fillColor: context.backgroundColor,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                   borderSide: BorderSide.none,
                 ),
                 contentPadding: const EdgeInsets.all(12),
               ),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
-                color: AppColors.textPrimary,
+                color: context.textPrimaryColor,
               ),
               onChanged: (_) => setState(() {}),
             ),

@@ -52,9 +52,9 @@ class LoadingIndicator extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               message!,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
-                color: AppColors.textSecondary,
+                color: context.textSecondaryColor,
               ),
             ),
           ],
@@ -96,9 +96,9 @@ class LoadingRow extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             message,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
-              color: AppColors.textSecondary,
+              color: context.textSecondaryColor,
             ),
           ),
         ],

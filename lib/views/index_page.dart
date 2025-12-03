@@ -31,13 +31,6 @@ enum DetailContentType {
   chatDetail
 }
 
-const Color appBackgroundColor = AppColors.background;
-const Color appSurfaceColor = AppColors.surface;
-const Color appTextPrimary = AppColors.textPrimary;
-const Color appTextSecondary = AppColors.textSecondary;
-const Color appPrimaryColor = AppColors.primary;
-const Color appDividerColor = AppColors.divider;
-
 class IndexPage extends StatefulWidget {
   const IndexPage({super.key, required this.apiService});
 
@@ -141,23 +134,23 @@ class _IndexPageState extends State<IndexPage> {
 
   Widget _buildMobileLayout() {
     return Scaffold(
-      backgroundColor: appSurfaceColor,
+      backgroundColor: context.surfaceColor,
       body: SafeArea(
         child: _buildBodyForTab(_getMobileTabIndex(_currentIndex), isDesktop: false, isThreeColumn: false),
       ),
       bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: appSurfaceColor,
+        decoration: BoxDecoration(
+          color: context.surfaceColor,
           border: Border(
-            top: BorderSide(color: appDividerColor, width: 0.5),
+            top: BorderSide(color: context.dividerColor, width: 0.5),
           ),
         ),
         child: BottomNavigationBar(
           currentIndex: _currentIndex,
           type: BottomNavigationBarType.fixed,
-          backgroundColor: appSurfaceColor,
-          selectedItemColor: appPrimaryColor,
-          unselectedItemColor: appTextSecondary,
+          backgroundColor: context.surfaceColor,
+          selectedItemColor: AppColors.primary,
+          unselectedItemColor: context.textSecondaryColor,
           elevation: 0,
           selectedFontSize: 12,
           unselectedFontSize: 12,
@@ -277,7 +270,7 @@ class _IndexPageState extends State<IndexPage> {
           ? (postId, {isScorePost = false, post}) => _navigateToPostDetail(postId, isScorePost: isScorePost, post: post)
           : null,
       child: Scaffold(
-        backgroundColor: appSurfaceColor,
+        backgroundColor: context.surfaceColor,
         body: Row(
           children: [
             // Side Menu
@@ -309,8 +302,8 @@ class _IndexPageState extends State<IndexPage> {
             Expanded(
               flex: 5,
               child: Container(
-                decoration: const BoxDecoration(
-                  border: Border(right: BorderSide(color: AppColors.divider, width: 1)),
+                decoration: BoxDecoration(
+                  border: Border(right: BorderSide(color: context.dividerColor, width: 1)),
                 ),
                 // Use IndexedStack to preserve state of each tab
                 child: IndexedStack(
@@ -513,11 +506,11 @@ class _IndexPageState extends State<IndexPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 64, color: AppColors.divider),
+          Icon(icon, size: 64, color: context.dividerColor),
           const SizedBox(height: 16),
           Text(
             message, 
-            style: const TextStyle(fontSize: 16, color: AppColors.textSecondary),
+            style: TextStyle(fontSize: 16, color: context.textSecondaryColor),
           ),
         ],
       ),
@@ -689,13 +682,13 @@ class _IndexPageState extends State<IndexPage> {
     return Container(
       width: double.infinity,
       height: double.infinity,
-      color: appSurfaceColor,
+      color: context.surfaceColor,
       child: Center(
         child: Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 22,
-            color: appTextPrimary,
+            color: context.textPrimaryColor,
           ),
         ),
       ),

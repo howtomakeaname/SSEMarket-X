@@ -104,16 +104,16 @@ class _NoticePageState extends State<NoticePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.backgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.surfaceColor,
         elevation: 0,
-        title: const Text(
+        title: Text(
           '消息',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+            color: context.textPrimaryColor,
           ),
         ),
         centerTitle: false,
@@ -169,7 +169,7 @@ class _NoticePageState extends State<NoticePage> {
   Widget _buildTabs() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: AppColors.surface,
+      color: context.surfaceColor,
       child: Row(
         children: [
           _buildTabButton('私信', 0, badgeCount: _chatUnreadCount),
@@ -184,7 +184,7 @@ class _NoticePageState extends State<NoticePage> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 decoration: BoxDecoration(
-                  color: AppColors.background,
+                  color: context.backgroundColor,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: const Text(
@@ -214,14 +214,14 @@ class _NoticePageState extends State<NoticePage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             decoration: BoxDecoration(
-              color: isSelected ? AppColors.primary : AppColors.background,
+              color: isSelected ? AppColors.primary : context.backgroundColor,
               borderRadius: BorderRadius.circular(16),
             ),
             child: Text(
               text,
               style: TextStyle(
                 fontSize: 14,
-                color: isSelected ? Colors.white : AppColors.textPrimary,
+                color: isSelected ? Colors.white : context.textPrimaryColor,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
@@ -235,7 +235,7 @@ class _NoticePageState extends State<NoticePage> {
                 decoration: BoxDecoration(
                   color: const Color(0xFFFF4D4D),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.surface, width: 1),
+                  border: Border.all(color: context.surfaceColor, width: 1),
                 ),
                 constraints: const BoxConstraints(minWidth: 16, minHeight: 14),
                 child: Center(
@@ -258,7 +258,7 @@ class _NoticePageState extends State<NoticePage> {
   Widget _buildNoticeList(List<Notice> notices, {required bool isUnread}) {
     if (notices.isEmpty) {
       return Center(
-        child: Text(isUnread ? '暂无未读通知' : '暂无已读通知', style: const TextStyle(fontSize: 16, color: AppColors.textTertiary)),
+        child: Text(isUnread ? '暂无未读通知' : '暂无已读通知', style: TextStyle(fontSize: 16, color: context.textTertiaryColor)),
       );
     }
 
@@ -274,7 +274,7 @@ class _NoticePageState extends State<NoticePage> {
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: context.surfaceColor,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -282,9 +282,9 @@ class _NoticePageState extends State<NoticePage> {
               children: [
                 CircleAvatar(
                   radius: 20,
-                  backgroundColor: AppColors.background,
+                  backgroundColor: context.backgroundColor,
                   backgroundImage: notice.senderAvatar.isNotEmpty ? NetworkImage(notice.senderAvatar) : null,
-                  child: notice.senderAvatar.isEmpty ? const Icon(Icons.person, color: AppColors.textSecondary) : null,
+                  child: notice.senderAvatar.isEmpty ? Icon(Icons.person, color: context.textSecondaryColor) : null,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -296,13 +296,13 @@ class _NoticePageState extends State<NoticePage> {
                         children: [
                           Text(
                             notice.senderName,
-                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: context.textPrimaryColor),
                           ),
                           Text(
                             notice.postId == 0
                                 ? ''
                                 : TimeUtils.formatNoticeTime(notice.time),
-                            style: const TextStyle(fontSize: 12, color: AppColors.textTertiary),
+                            style: TextStyle(fontSize: 12, color: context.textTertiaryColor),
                           ),
                         ],
                       ),
@@ -311,15 +311,15 @@ class _NoticePageState extends State<NoticePage> {
                         notice.content,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.3),
+                        style: TextStyle(fontSize: 14, color: context.textSecondaryColor, height: 1.3),
                       ),
                       if (notice.postId == 0) ...[
                         const SizedBox(height: 4),
-                        const Text(
+                        Text(
                           '该评论已删除',
                           style: TextStyle(
                             fontSize: 12,
-                            color: AppColors.textTertiary,
+                            color: context.textTertiaryColor,
                           ),
                         ),
                       ],
@@ -392,7 +392,7 @@ class _NoticePageState extends State<NoticePage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: AppColors.background,
+          color: context.backgroundColor,
           borderRadius: BorderRadius.circular(4),
         ),
         child: Text(text, style: const TextStyle(fontSize: 12, color: AppColors.primary)),

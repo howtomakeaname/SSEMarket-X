@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/comment_model.dart';
@@ -290,24 +289,24 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
         }
       },
       child: Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: context.backgroundColor,
         appBar: AppBar(
-          backgroundColor: AppColors.surface,
+          backgroundColor: context.surfaceColor,
           elevation: 0,
           automaticallyImplyLeading: false,
           leading: widget.previewPost == null ? IconButton(
-            icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+            icon: Icon(Icons.arrow_back, color: context.textPrimaryColor),
             onPressed: _onBack,
           ) : null,
           centerTitle: false,
         titleSpacing: widget.previewPost == null ? 0 : 16,
         title: widget.previewPost != null 
-          ? const Text(
+          ? Text(
               '预览',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
+                color: context.textPrimaryColor,
               ),
             )
           : Stack(
@@ -316,12 +315,12 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
             AnimatedOpacity(
               opacity: _showPostTitle ? 0.0 : 1.0,
               duration: const Duration(milliseconds: 200),
-              child: const Text(
+              child: Text(
                 '详情',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
+                  color: context.textPrimaryColor,
                 ),
               ),
             ),
@@ -330,10 +329,10 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
               duration: const Duration(milliseconds: 200),
               child: Text(
                 _post.title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
+                  color: context.textPrimaryColor,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -353,7 +352,7 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
                   IconButton(
                     icon: Icon(
                       _isSaved ? Icons.bookmark : Icons.bookmark_border,
-                      color: AppColors.textPrimary,
+                      color: context.textPrimaryColor,
                     ),
                     onPressed: _onSavePost,
                   ),
@@ -366,7 +365,7 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
           : RefreshIndicator(
               onRefresh: _loadPostDetail,
               color: AppColors.primary,
-              backgroundColor: AppColors.surface,
+              backgroundColor: context.surfaceColor,
               child: SingleChildScrollView(
                 controller: _scrollController,
                 physics: const AlwaysScrollableScrollPhysics(),
@@ -374,7 +373,7 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
                   children: [
                     // 帖子内容区
                     Container(
-                      color: AppColors.surface,
+                      color: context.surfaceColor,
                       padding: const EdgeInsets.all(16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -416,19 +415,11 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
         // 头像
         GestureDetector(
           onTap: () {
-            // Assuming we can get user ID from post somehow or need to pass it.
-            // Currently PostModel has authorName and authorPhone, but ID might be missing or we need to rely on phone?
-            // Wait, PostModel has `id` (post ID), but author ID?
-            // Let's check PostModel definition again. 
-            // It doesn't seem to have authorId explicitly exposed in constructor but let's check if we can use phone or add it.
-            // PostModel has authorPhone. We can use that for now if UserProfilePage supports it.
-            // UserProfilePage supports userPhone.
-            
             Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => UserProfilePage(
                   apiService: widget.apiService,
-                  userId: 0, // If we don't have ID
+                  userId: 0,
                   userPhone: _post.authorPhone,
                   isEmbedded: false,
                 ),
@@ -443,9 +434,9 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
                 Container(
                   width: 40,
                   height: 40,
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.background,
+                  color: context.backgroundColor,
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: _post.authorAvatar.isNotEmpty
@@ -505,10 +496,10 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
                     },
                     child: Text(
                       _post.authorName.isNotEmpty ? _post.authorName : '匿名用户',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
-                        color: AppColors.textPrimary,
+                        color: context.textPrimaryColor,
                       ),
                     ),
                   ),
@@ -528,9 +519,9 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
               const SizedBox(height: 2),
               Text(
                 TimeUtils.formatRelativeTime(_post.createdAt),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
-                  color: AppColors.textSecondary,
+                  color: context.textSecondaryColor,
                 ),
               ),
             ],
@@ -545,10 +536,10 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
 
     return Text(
       _post.title,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 20,
         fontWeight: FontWeight.bold,
-        color: AppColors.textPrimary,
+        color: context.textPrimaryColor,
         height: 1.3,
       ),
     );
@@ -559,50 +550,6 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
 
     return LatexMarkdown(
       data: _post.content,
-      styleSheet: MarkdownStyleSheet(
-        p: const TextStyle(
-          fontSize: 16,
-          color: AppColors.textPrimary,
-          height: 1.5,
-        ),
-        h1: const TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-          color: AppColors.textPrimary,
-        ),
-        h2: const TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-          color: AppColors.textPrimary,
-        ),
-        h3: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          color: AppColors.textPrimary,
-        ),
-        code: const TextStyle(
-          fontSize: 14,
-          color: Colors.red,
-          backgroundColor: AppColors.background,
-        ),
-        codeblockDecoration: BoxDecoration(
-          color: AppColors.background,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        blockquoteDecoration: const BoxDecoration(
-          color: AppColors.background,
-          border: Border(
-            left: BorderSide(
-              color: AppColors.primary,
-              width: 4,
-            ),
-          ),
-        ),
-        a: const TextStyle(
-          color: AppColors.primary,
-          decoration: TextDecoration.none,
-        ),
-      ),
     );
   }
 
@@ -610,7 +557,7 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16),
       decoration: BoxDecoration(
-        color: AppColors.background,
+        color: context.backgroundColor,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -623,7 +570,7 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
             child: _buildMetaItem(
               _isLiked ? 'assets/icons/ic_like_filled.svg' : 'assets/icons/ic_like.svg',
               _likeCount,
-              color: _isLiked ? Colors.red : AppColors.textSecondary,
+              color: _isLiked ? Colors.red : context.textSecondaryColor,
             ),
           ),
         ],
@@ -640,7 +587,7 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
           width: 20,
           height: 20,
           colorFilter: ColorFilter.mode(
-            color ?? AppColors.textSecondary,
+            color ?? context.textSecondaryColor,
             BlendMode.srcIn,
           ),
         ),
@@ -649,7 +596,7 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
           '$count',
           style: TextStyle(
             fontSize: 14,
-            color: color ?? AppColors.textSecondary,
+            color: color ?? context.textSecondaryColor,
           ),
         ),
       ],
@@ -658,7 +605,7 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
 
   Widget _buildCommentSection() {
     return Container(
-      color: AppColors.background,
+      color: context.backgroundColor,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -667,20 +614,20 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
             padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
             child: Row(
               children: [
-                const Text(
+                Text(
                   '回复',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.textPrimary,
+                    color: context.textPrimaryColor,
                   ),
                 ),
                 const SizedBox(width: 8),
                 Text(
                   '${_comments.length}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
-                    color: AppColors.textSecondary,
+                    color: context.textSecondaryColor,
                   ),
                 ),
               ],
@@ -691,7 +638,7 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: context.surfaceColor,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: CommentInput(
@@ -731,14 +678,14 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
                 ),
               )
             else if (_comments.isEmpty)
-              const Padding(
-                padding: EdgeInsets.all(32),
+              Padding(
+                padding: const EdgeInsets.all(32),
                 child: Center(
                   child: Text(
                     '暂无评论',
                     style: TextStyle(
                       fontSize: 14,
-                      color: AppColors.textSecondary,
+                      color: context.textSecondaryColor,
                     ),
                   ),
                 ),

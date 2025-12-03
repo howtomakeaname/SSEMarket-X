@@ -26,20 +26,20 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.backgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.surfaceColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back, color: context.textPrimaryColor),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
+        title: Text(
           '设置',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+            color: context.textPrimaryColor,
           ),
         ),
         centerTitle: false,
@@ -113,9 +113,9 @@ class _SettingsPageState extends State<SettingsPage> {
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 12,
-          color: AppColors.textSecondary,
+          color: context.textSecondaryColor,
         ),
       ),
     );
@@ -125,7 +125,7 @@ class _SettingsPageState extends State<SettingsPage> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.surfaceColor,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -136,7 +136,7 @@ class _SettingsPageState extends State<SettingsPage> {
             children: [
               widget,
               if (index < children.length - 1)
-                const Divider(height: 1, color: AppColors.divider, indent: 16, endIndent: 16),
+                Divider(height: 1, color: context.dividerColor, indent: 16, endIndent: 16),
             ],
           );
         }).toList(),
@@ -160,17 +160,17 @@ class _SettingsPageState extends State<SettingsPage> {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
-                    color: AppColors.textPrimary,
+                    color: context.textPrimaryColor,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.textSecondary,
+                    color: context.textSecondaryColor,
                   ),
                 ),
               ],
@@ -204,17 +204,17 @@ class _SettingsPageState extends State<SettingsPage> {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
-                      color: AppColors.textPrimary,
+                      color: context.textPrimaryColor,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     subtitle,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
-                      color: AppColors.textSecondary,
+                      color: context.textSecondaryColor,
                     ),
                   ),
                 ],
@@ -224,7 +224,7 @@ class _SettingsPageState extends State<SettingsPage> {
               'assets/icons/ic_arrow_right.svg',
               width: 16,
               height: 16,
-              colorFilter: const ColorFilter.mode(AppColors.divider, BlendMode.srcIn),
+              colorFilter: ColorFilter.mode(context.dividerColor, BlendMode.srcIn),
             ),
           ],
         ),

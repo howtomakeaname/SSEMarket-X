@@ -108,7 +108,9 @@ class _ToastWidgetState extends State<_ToastWidget> with SingleTickerProviderSta
                   constraints: const BoxConstraints(maxWidth: 300),
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   decoration: BoxDecoration(
-                    color: AppColors.textPrimary.withOpacity(0.85),
+                    color: context.isDark 
+                        ? context.surfaceColor.withOpacity(0.95)
+                        : context.textPrimaryColor.withOpacity(0.85),
                     borderRadius: BorderRadius.circular(24),
                     border: Border.all(
                       color: Colors.white.withOpacity(0.1),

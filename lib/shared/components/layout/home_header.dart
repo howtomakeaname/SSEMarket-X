@@ -42,7 +42,7 @@ class HomeHeader extends StatelessWidget {
     return Column(
       children: [
         Container(
-          color: AppColors.surface,
+          color: context.surfaceColor,
           padding: EdgeInsets.fromLTRB(horizontalPadding, verticalPaddingTop, horizontalPadding, verticalPaddingBottom),
           child: Row(
             children: [
@@ -52,9 +52,9 @@ class HomeHeader extends StatelessWidget {
                   child: Container(
                     width: 32,
                     height: 32,
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: AppColors.background,
+                      color: context.backgroundColor,
                     ),
                     clipBehavior: Clip.antiAlias,
                     child: user.avatar.isNotEmpty
@@ -64,16 +64,16 @@ class HomeHeader extends StatelessWidget {
                             frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
                               if (wasSynchronouslyLoaded) return child;
                               return AnimatedOpacity(
-                                child: child,
                                 opacity: frame == null ? 0 : 1,
                                 duration: const Duration(milliseconds: 300),
                                 curve: Curves.easeOut,
+                                child: child,
                               );
                             },
-                            errorBuilder: (_, __, ___) => const Icon(Icons.person,
-                                size: 18, color: AppColors.divider),
+                            errorBuilder: (_, __, ___) => Icon(Icons.person,
+                                size: 18, color: context.dividerColor),
                           )
-                        : const Icon(Icons.person, size: 18, color: AppColors.divider),
+                        : Icon(Icons.person, size: 18, color: context.dividerColor),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -84,7 +84,7 @@ class HomeHeader extends StatelessWidget {
                   child: Container(
                     height: 36,
                     decoration: BoxDecoration(
-                      color: AppColors.background,
+                      color: context.backgroundColor,
                       borderRadius: BorderRadius.circular(18),
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -100,9 +100,9 @@ class HomeHeader extends StatelessWidget {
                         Expanded(
                           child: Text(
                             '在$currentPartition分区内搜索',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
-                              color: AppColors.textSecondary,
+                              color: context.textSecondaryColor,
                             ),
                           ),
                         ),
@@ -137,7 +137,7 @@ class HomeHeader extends StatelessWidget {
         ),
         Container(
           height: 40,
-          color: AppColors.surface,
+          color: context.surfaceColor,
           padding: EdgeInsets.fromLTRB(horizontalPadding, 0, horizontalPadding, 4),
           child: SingleChildScrollView(
             controller: tabScrollController,
@@ -159,7 +159,7 @@ class HomeHeader extends StatelessWidget {
                           horizontal: 16, vertical: 6),
                       decoration: BoxDecoration(
                         color:
-                            selected ? AppColors.primary : AppColors.background,
+                            selected ? AppColors.primary : context.backgroundColor,
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Text(
@@ -167,7 +167,7 @@ class HomeHeader extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 14,
                           color:
-                              selected ? Colors.white : AppColors.textPrimary,
+                              selected ? Colors.white : context.textPrimaryColor,
                           fontWeight:
                               selected ? FontWeight.w600 : FontWeight.normal,
                         ),

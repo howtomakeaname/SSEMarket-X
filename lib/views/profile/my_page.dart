@@ -14,13 +14,6 @@ import 'package:sse_market_x/views/profile/settings_page.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 import 'package:sse_market_x/shared/components/overlays/custom_dialog.dart';
 
-const Color appBackgroundColor = AppColors.background;
-const Color appSurfaceColor = AppColors.surface;
-const Color appTextPrimary = AppColors.textPrimary;
-const Color appTextSecondary = AppColors.textSecondary;
-const Color appPrimaryColor = AppColors.primary;
-const Color appDividerColor = AppColors.divider;
-
 class MyPage extends StatefulWidget {
   const MyPage({super.key, required this.apiService});
 
@@ -61,11 +54,11 @@ class _MyPageState extends State<MyPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: appBackgroundColor,
+      backgroundColor: context.backgroundColor,
       body: SafeArea(
         child: Column(
           children: [
-            _buildHeader(),
+            _buildHeader(context),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.only(bottom: 16),
@@ -84,18 +77,18 @@ class _MyPageState extends State<MyPage> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     return Container(
       height: 56,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       alignment: Alignment.centerLeft,
-      color: appSurfaceColor,
-      child: const Text(
+      color: context.surfaceColor,
+      child: Text(
         '我的',
         style: TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.bold,
-          color: appTextPrimary,
+          color: context.textPrimaryColor,
         ),
       ),
     );
@@ -106,22 +99,22 @@ class _MyPageState extends State<MyPage> {
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: appSurfaceColor,
+        color: context.surfaceColor,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          _buildAvatar(),
+          _buildAvatar(context),
           const SizedBox(width: 16),
-          Expanded(child: _buildUserTextsAndExp()),
-          const Icon(Icons.chevron_right, size: 18, color: appDividerColor),
+          Expanded(child: _buildUserTextsAndExp(context)),
+          Icon(Icons.chevron_right, size: 18, color: context.dividerColor),
         ],
       ),
     );
   }
 
-  Widget _buildAvatar() {
+  Widget _buildAvatar(BuildContext context) {
     final hasAvatar = _user.avatar.isNotEmpty;
     return SizedBox(
       width: 60,
@@ -131,7 +124,7 @@ class _MyPageState extends State<MyPage> {
         child: hasAvatar
             ? Image.network(_user.avatar, fit: BoxFit.cover)
             : Container(
-                color: appBackgroundColor,
+                color: context.backgroundColor,
                 alignment: Alignment.center,
                 child: SvgPicture.asset(
                   'assets/icons/default_avatar.svg',
@@ -143,7 +136,7 @@ class _MyPageState extends State<MyPage> {
     );
   }
 
-  Widget _buildUserTextsAndExp() {
+  Widget _buildUserTextsAndExp(BuildContext context) {
     final name = _user.name.isNotEmpty ? _user.name : '匿名用户';
     final score = _user.score;
     final levelName = LevelUtils.getLevelName(score);
@@ -159,17 +152,17 @@ class _MyPageState extends State<MyPage> {
           children: [
             Text(
               name,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: appTextPrimary,
+                color: context.textPrimaryColor,
               ),
             ),
             const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: appBackgroundColor,
+                color: context.backgroundColor,
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
@@ -177,7 +170,7 @@ class _MyPageState extends State<MyPage> {
                 style: const TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
-                  color: appPrimaryColor,
+                  color: AppColors.primary,
                 ),
               ),
             ),
@@ -189,16 +182,16 @@ class _MyPageState extends State<MyPage> {
             intro,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
-              color: appTextSecondary,
+              color: context.textSecondaryColor,
             ),
           ),
         ],
         const SizedBox(height: 8),
         Text(
           '经验: $score / $nextExp',
-          style: const TextStyle(fontSize: 12, color: appTextSecondary),
+          style: TextStyle(fontSize: 12, color: context.textSecondaryColor),
         ),
         const SizedBox(height: 4),
         ClipRRect(
@@ -206,14 +199,14 @@ class _MyPageState extends State<MyPage> {
           child: LinearProgressIndicator(
             value: progress,
             minHeight: 6,
-            backgroundColor: appDividerColor,
+            backgroundColor: context.dividerColor,
             valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFF4D4D)),
           ),
         ),
         const SizedBox(height: 4),
         Text(
           '下一级: ${LevelUtils.getNextLevelName(score)}',
-          style: const TextStyle(fontSize: 12, color: appTextSecondary),
+          style: TextStyle(fontSize: 12, color: context.textSecondaryColor),
         ),
       ],
     );
@@ -223,7 +216,7 @@ class _MyPageState extends State<MyPage> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        color: appSurfaceColor,
+        color: context.surfaceColor,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -247,7 +240,7 @@ class _MyPageState extends State<MyPage> {
               });
             },
           ),
-          const Divider(height: 1, color: Color(0xFFF0F0F0), indent: 16, endIndent: 16),
+          Divider(height: 1, color: context.dividerColor, indent: 16, endIndent: 16),
           _buildMenuItem(
             context,
             title: '我的收藏',
@@ -260,7 +253,7 @@ class _MyPageState extends State<MyPage> {
               );
             },
           ),
-          const Divider(height: 1, color: Color(0xFFF0F0F0), indent: 16, endIndent: 16),
+          Divider(height: 1, color: context.dividerColor, indent: 16, endIndent: 16),
           _buildMenuItem(
             context,
             title: '设置',
@@ -285,7 +278,7 @@ class _MyPageState extends State<MyPage> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        color: appSurfaceColor,
+        color: context.surfaceColor,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -302,7 +295,7 @@ class _MyPageState extends State<MyPage> {
               );
             },
           ),
-          const Divider(height: 1, color: Color(0xFFF0F0F0), indent: 16, endIndent: 16),
+          Divider(height: 1, color: context.dividerColor, indent: 16, endIndent: 16),
           _buildMenuItem(
             context,
             title: '反馈',
@@ -315,13 +308,13 @@ class _MyPageState extends State<MyPage> {
               );
             },
           ),
-          const Divider(height: 1, color: Color(0xFFF0F0F0), indent: 16, endIndent: 16),
+          Divider(height: 1, color: context.dividerColor, indent: 16, endIndent: 16),
           _buildMenuItem(
             context,
             title: '退出登录',
             iconSvg: 'assets/icons/ic_logout.svg',
-            iconColor: const Color(0xFFE53935),
-            textColor: const Color(0xFFE53935),
+            iconColor: AppColors.error,
+            textColor: AppColors.error,
             onTap: () {
               () async {
                 final confirm = await showCustomDialog(
@@ -355,27 +348,30 @@ class _MyPageState extends State<MyPage> {
     BuildContext context, {
     required String title,
     required String iconSvg,
-    Color iconColor = appTextSecondary,
-    Color textColor = appTextPrimary,
+    Color? iconColor,
+    Color? textColor,
     required VoidCallback onTap,
   }) {
+    final effectiveIconColor = iconColor ?? context.textSecondaryColor;
+    final effectiveTextColor = textColor ?? context.textPrimaryColor;
+    
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
       leading: SvgPicture.asset(
         iconSvg,
         width: 24,
         height: 24,
-        colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+        colorFilter: ColorFilter.mode(effectiveIconColor, BlendMode.srcIn),
       ),
       title: Text(
         title,
-        style: TextStyle(fontSize: 16, color: textColor),
+        style: TextStyle(fontSize: 16, color: effectiveTextColor),
       ),
       trailing: SvgPicture.asset(
         'assets/icons/ic_arrow_right.svg',
         width: 18,
         height: 18,
-        colorFilter: const ColorFilter.mode(appDividerColor, BlendMode.srcIn),
+        colorFilter: ColorFilter.mode(context.dividerColor, BlendMode.srcIn),
       ),
       onTap: onTap,
     );
