@@ -1,8 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:markdown/markdown.dart' as m;
-import 'package:markdown_widget/markdown_widget.dart';
+import 'package:markdown_widget/markdown_widget.dart' hide ImageViewer;
+import 'package:sse_market_x/core/services/media_cache_service.dart';
+import 'package:sse_market_x/shared/components/media/image_viewer.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 
 /// 获取适配深色模式的 MarkdownStyleSheet
@@ -135,17 +138,184 @@ class LatexSyntax extends m.InlineSyntax {
   }
 }
 
+/// 自定义图片节点生成器 - 支持缓存和点击放大
+class CachedImageNode extends SpanNode {
+  final String url;
+  final String alt;
+  final MarkdownConfig config;
+
+  CachedImageNode(this.url, this.alt, this.config);
+
+  @override
+  InlineSpan build() {
+    return WidgetSpan(
+      child: _CachedMarkdownImage(url: url, alt: alt),
+    );
+  }
+}
+
+/// 缓存的 Markdown 图片组件
+class _CachedMarkdownImage extends StatefulWidget {
+  final String url;
+  final String alt;
+
+  const _CachedMarkdownImage({required this.url, required this.alt});
+
+  @override
+  State<_CachedMarkdownImage> createState() => _CachedMarkdownImageState();
+}
+
+class _CachedMarkdownImageState extends State<_CachedMarkdownImage>
+    with SingleTickerProviderStateMixin {
+  final MediaCacheService _cacheService = MediaCacheService();
+  File? _cachedFile;
+  bool _isLoading = true;
+  bool _hasError = false;
+
+  late AnimationController _fadeController;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeOutCubic,
+    );
+    _loadImage();
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadImage() async {
+    if (widget.url.isEmpty) {
+      setState(() {
+        _hasError = true;
+        _isLoading = false;
+      });
+      return;
+    }
+
+    try {
+      final file = await _cacheService.getOrDownload(
+        widget.url,
+        category: CacheCategory.post,
+      );
+      if (mounted) {
+        setState(() {
+          _cachedFile = file;
+          _isLoading = false;
+          _hasError = file == null;
+        });
+        if (file != null) {
+          _fadeController.forward();
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _hasError = true;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Container(
+        height: 200,
+        margin: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          color: context.backgroundColor,
+          borderRadius: BorderRadius.circular(8),
+        ),
+      );
+    }
+
+    if (_hasError || _cachedFile == null) {
+      return Container(
+        height: 120,
+        margin: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          color: context.backgroundColor,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.broken_image_outlined, color: context.textTertiaryColor, size: 32),
+              const SizedBox(height: 8),
+              Text(
+                '图片加载失败',
+                style: TextStyle(fontSize: 12, color: context.textTertiaryColor),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return GestureDetector(
+      onTap: () => ImageViewer.show(context, widget.url, cachedFile: _cachedFile),
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 8),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: Image.file(
+              _cachedFile!,
+              fit: BoxFit.cover,
+              width: double.infinity,
+              errorBuilder: (_, __, ___) => Container(
+                height: 120,
+                color: context.backgroundColor,
+                child: Center(
+                  child: Icon(Icons.broken_image_outlined, color: context.textTertiaryColor),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 自定义图片节点生成器
+SpanNodeGeneratorWithTag cachedImageGenerator = SpanNodeGeneratorWithTag(
+  tag: 'img',
+  generator: (e, config, visitor) {
+    final url = e.attributes['src'] ?? '';
+    final alt = e.attributes['alt'] ?? '';
+    return CachedImageNode(url, alt, config);
+  },
+);
+
 /// 支持 LaTeX 渲染的 Markdown 组件
 class LatexMarkdown extends StatelessWidget {
   final String data;
   final bool selectable;
   final MarkdownStyleSheet? styleSheet;
+  final bool enableImageCache;
 
   const LatexMarkdown({
     super.key,
     required this.data,
     this.selectable = false,
     this.styleSheet,
+    this.enableImageCache = true,
   });
 
   @override
@@ -159,6 +329,11 @@ class LatexMarkdown extends StatelessWidget {
     final textPrimaryColor = context.textPrimaryColor;
     final textSecondaryColor = context.textSecondaryColor;
     final backgroundColor = context.backgroundColor;
+
+    final generators = <SpanNodeGeneratorWithTag>[latexGenerator];
+    if (enableImageCache) {
+      generators.add(cachedImageGenerator);
+    }
 
     return MarkdownBlock(
       data: data,
@@ -186,7 +361,7 @@ class LatexMarkdown extends StatelessWidget {
         )),
         CodeConfig(style: TextStyle(
           fontSize: 14,
-          color: Colors.red,
+          color: AppColors.primary,
           backgroundColor: backgroundColor,
         )),
         PreConfig(
@@ -205,7 +380,7 @@ class LatexMarkdown extends StatelessWidget {
         )),
       ]),
       generator: MarkdownGenerator(
-        generators: [latexGenerator],
+        generators: generators,
         inlineSyntaxList: [LatexSyntax()],
       ),
     );
