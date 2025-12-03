@@ -23,8 +23,8 @@ class ToolbarIconButton extends StatelessWidget {
     final bool enabled = onPressed != null;
 
     final Color iconColor = !enabled
-        ? AppColors.divider
-        : (isActive ? AppColors.primary : AppColors.textSecondary);
+        ? context.dividerColor
+        : (isActive ? AppColors.primary : context.textSecondaryColor);
 
     return Tooltip(
       message: tooltip,
@@ -36,14 +36,11 @@ class ToolbarIconButton extends StatelessWidget {
           child: InkWell(
             borderRadius: BorderRadius.circular(999),
             onTap: enabled ? onPressed : null,
-            // 不需要水波纹效果
             splashColor: Colors.transparent,
             highlightColor: Colors.transparent,
-            // 鼠标悬停时改变背景色（Web / Desktop）
             hoverColor: AppColors.primary.withOpacity(0.06),
             child: Container(
               decoration: BoxDecoration(
-                // 默认背景透明，仅在激活态高亮
                 color: isActive
                     ? AppColors.primary.withOpacity(0.08)
                     : Colors.transparent,

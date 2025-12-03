@@ -244,7 +244,7 @@ class _CommentInputState extends State<CommentInput> {
           // 虚线分割线
           CustomPaint(
             size: const Size(double.infinity, 1),
-            painter: DashedLinePainter(),
+            painter: DashedLinePainter(color: context.dividerColor),
           ),
           const SizedBox(height: 6),
           // 输入框或预览
@@ -266,10 +266,10 @@ class _CommentInputState extends State<CommentInput> {
                     width: 32,
                     height: 32,
                     decoration: BoxDecoration(
-                      color: AppColors.surface,
+                      color: context.surfaceColor,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: AppColors.divider,
+                        color: context.dividerColor,
                         width: 0.5,
                       ),
                       boxShadow: [
@@ -283,7 +283,7 @@ class _CommentInputState extends State<CommentInput> {
                     child: IconButton(
                       onPressed: _toggleKaomoji,
                       icon: const Icon(Icons.emoji_emotions_outlined, size: 16),
-                      color: _kaomojiOverlay != null ? AppColors.primary : AppColors.textSecondary,
+                      color: _kaomojiOverlay != null ? AppColors.primary : context.textSecondaryColor,
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                     ),
@@ -295,7 +295,7 @@ class _CommentInputState extends State<CommentInput> {
                     height: 32,
                     decoration: BoxDecoration(
                       color: _controller.text.trim().isEmpty 
-                          ? AppColors.textSecondary.withAlpha(100)
+                          ? context.textSecondaryColor.withAlpha(100)
                           : AppColors.primary,
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
@@ -338,7 +338,7 @@ class _CommentInputState extends State<CommentInput> {
         return Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: context.surfaceColor,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Column(
@@ -360,14 +360,14 @@ class _CommentInputState extends State<CommentInput> {
                         margin: const EdgeInsets.only(right: 8),
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: isActive ? AppColors.background : Colors.transparent,
+                          color: isActive ? context.backgroundColor : Colors.transparent,
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
                           entry.value,
                           style: TextStyle(
                             fontSize: 12,
-                            color: isActive ? AppColors.primary : AppColors.textSecondary,
+                            color: isActive ? AppColors.primary : context.textSecondaryColor,
                           ),
                         ),
                       ),
@@ -381,8 +381,8 @@ class _CommentInputState extends State<CommentInput> {
                 height: 160,
                 child: GridView.builder(
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: _activeTab == 'emoji' ? 6 : 4, // emoji显示6列，其他显示4列
-                    childAspectRatio: _activeTab == 'emoji' ? 1.0 : 2.0, // emoji正方形，其他长方形
+                    crossAxisCount: _activeTab == 'emoji' ? 6 : 4,
+                    childAspectRatio: _activeTab == 'emoji' ? 1.0 : 2.0,
                     crossAxisSpacing: 4,
                     mainAxisSpacing: 4,
                   ),
@@ -398,12 +398,12 @@ class _CommentInputState extends State<CommentInput> {
                       child: Container(
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
-                          color: AppColors.background,
+                          color: context.backgroundColor,
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
                           kaomoji,
-                          style: TextStyle(fontSize: isEmoji ? 20 : 14), // emoji更大
+                          style: TextStyle(fontSize: isEmoji ? 20 : 14),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -512,20 +512,20 @@ class _CommentInputState extends State<CommentInput> {
       maxLines: 6,
       minLines: 3,
       onChanged: (value) {
-        setState(() {}); // 更新发送按钮状态
+        setState(() {});
       },
       decoration: InputDecoration(
         hintText: widget.placeholder,
-        hintStyle: const TextStyle(
-          color: AppColors.textSecondary,
+        hintStyle: TextStyle(
+          color: context.textSecondaryColor,
           fontSize: 14,
         ),
-        border: InputBorder.none, // 无边框
+        border: InputBorder.none,
         contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       ),
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 14,
-        color: AppColors.textPrimary,
+        color: context.textPrimaryColor,
         height: 1.5,
       ),
     );
@@ -589,29 +589,29 @@ class _CommentInputState extends State<CommentInput> {
       constraints: const BoxConstraints(minHeight: 80),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       child: _controller.text.trim().isEmpty
-          ? const Text(
+          ? Text(
               '预览内容将在这里显示...',
               style: TextStyle(
-                color: AppColors.textSecondary,
+                color: context.textSecondaryColor,
                 fontSize: 14,
               ),
             )
           : MarkdownBody(
               data: _controller.text,
               styleSheet: MarkdownStyleSheet(
-                p: const TextStyle(
+                p: TextStyle(
                   fontSize: 14,
-                  color: AppColors.textPrimary,
+                  color: context.textPrimaryColor,
                   height: 1.5,
                 ),
                 code: TextStyle(
                   fontSize: 13,
                   color: AppColors.primary,
-                  backgroundColor: AppColors.surface,
+                  backgroundColor: context.surfaceColor,
                 ),
-                blockquote: const TextStyle(
+                blockquote: TextStyle(
                   fontSize: 14,
-                  color: AppColors.textSecondary,
+                  color: context.textSecondaryColor,
                   fontStyle: FontStyle.italic,
                 ),
               ),
@@ -622,10 +622,14 @@ class _CommentInputState extends State<CommentInput> {
 
 /// 虚线分割线绘制器
 class DashedLinePainter extends CustomPainter {
+  final Color? color;
+  
+  DashedLinePainter({this.color});
+  
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = AppColors.divider
+      ..color = color ?? const Color(0xFFE0E0E0)
       ..strokeWidth = 1
       ..style = PaintingStyle.stroke;
 
