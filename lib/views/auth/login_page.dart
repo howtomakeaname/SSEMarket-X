@@ -59,6 +59,7 @@ class _LoginFormState extends State<LoginForm> {
 
   bool _isLoading = false;
   bool _rememberMe = true;
+  bool _obscurePassword = true;
 
   final ApiService _apiService = ApiService();
 
@@ -134,13 +135,13 @@ class _LoginFormState extends State<LoginForm> {
 
   void _onRegisterPressed() {
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => RegisterPage(apiService: _apiService)),
+      MaterialPageRoute(builder: (_) => RegisterPage(apiService: _apiService, fromLogin: true)),
     );
   }
 
   void _onResetPasswordPressed() {
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => ResetPasswordPage(apiService: _apiService)),
+      MaterialPageRoute(builder: (_) => ResetPasswordPage(apiService: _apiService, fromLogin: true)),
     );
   }
 
@@ -260,11 +261,7 @@ class _LoginFormState extends State<LoginForm> {
           const SizedBox(height: 20),
           _buildLabeledField(
             label: '密码',
-            child: _buildTextField(
-              controller: _passwordController,
-              hintText: '请输入密码',
-              obscureText: true,
-            ),
+            child: _buildPasswordField(),
           ),
           const SizedBox(height: 20),
           Row(
@@ -371,6 +368,43 @@ class _LoginFormState extends State<LoginForm> {
             borderSide: BorderSide.none,
           ),
           contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPasswordField() {
+    return SizedBox(
+      height: 50,
+      child: TextField(
+        controller: _passwordController,
+        obscureText: _obscurePassword,
+        onChanged: (_) {
+          setState(() {});
+        },
+        decoration: InputDecoration(
+          hintText: '请输入密码',
+          filled: true,
+          fillColor: appBackgroundColor,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+          suffixIcon: Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: IconButton(
+              icon: Icon(
+                _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                color: appTextSecondary,
+              ),
+              onPressed: () {
+                setState(() {
+                  _obscurePassword = !_obscurePassword;
+                });
+              },
+            ),
+          ),
         ),
       ),
     );

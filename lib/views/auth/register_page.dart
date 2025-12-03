@@ -9,8 +9,9 @@ import 'package:sse_market_x/shared/theme/app_colors.dart';
 
 class RegisterPage extends StatefulWidget {
   final ApiService apiService;
+  final bool fromLogin;
 
-  const RegisterPage({super.key, required this.apiService});
+  const RegisterPage({super.key, required this.apiService, this.fromLogin = false});
 
   @override
   State<RegisterPage> createState() => _RegisterPageState();
@@ -83,7 +84,7 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   void _startCountdown() {
-    _countdown = 60;
+    _countdown = 300; // 5分钟
     _countdownTimer?.cancel();
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (mounted) {
@@ -333,11 +334,12 @@ class _RegisterPageState extends State<RegisterPage> {
         const SizedBox(height: 32),
         SizedBox(
           width: double.infinity,
-          height: 48,
+          height: 50,
           child: ElevatedButton(
-            onPressed: _sendCode,
+            onPressed: (_emailController.text.trim().isNotEmpty && _cdKeyController.text.trim().isNotEmpty) ? _sendCode : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
+              disabledBackgroundColor: AppColors.primary.withOpacity(0.4),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -348,6 +350,32 @@ class _RegisterPageState extends State<RegisterPage> {
             ),
           ),
         ),
+        if (widget.fromLogin) ...[
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                '已有账号？',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: () => Navigator.of(context).pop(),
+                child: const Text(
+                  '返回登录',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ],
     );
   }
@@ -369,7 +397,7 @@ class _RegisterPageState extends State<RegisterPage> {
         const SizedBox(height: 16),
         if (_countdown > 0)
           Text(
-            '$_countdown秒后可重新发送',
+            '${_countdown ~/ 60}分${_countdown % 60}秒后可重新发送',
             style: const TextStyle(color: AppColors.textSecondary),
           )
         else
@@ -378,22 +406,52 @@ class _RegisterPageState extends State<RegisterPage> {
             child: const Text('重新发送'),
           ),
         const SizedBox(height: 32),
-        SizedBox(
-          width: double.infinity,
-          height: 48,
-          child: ElevatedButton(
-            onPressed: _verifyCode,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+        Row(
+          children: [
+            Expanded(
+              child: SizedBox(
+                height: 50,
+                child: OutlinedButton(
+                  onPressed: () {
+                    setState(() {
+                      _currentStep--;
+                    });
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                    side: const BorderSide(color: AppColors.primary),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text(
+                    '返回上一步',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                ),
               ),
             ),
-            child: const Text(
-              '下一步',
-              style: TextStyle(fontSize: 16, color: Colors.white),
+            const SizedBox(width: 16),
+            Expanded(
+              child: SizedBox(
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: _valiCodeController.text.trim().isNotEmpty ? _verifyCode : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    disabledBackgroundColor: AppColors.primary.withOpacity(0.4),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text(
+                    '继续',
+                    style: TextStyle(fontSize: 16, color: Colors.white),
+                  ),
+                ),
+              ),
             ),
-          ),
+          ],
         ),
       ],
     );
@@ -425,22 +483,56 @@ class _RegisterPageState extends State<RegisterPage> {
           obscureText: true,
         ),
         const SizedBox(height: 32),
-        SizedBox(
-          width: double.infinity,
-          height: 48,
-          child: ElevatedButton(
-            onPressed: _register,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+        Row(
+          children: [
+            Expanded(
+              child: SizedBox(
+                height: 50,
+                child: OutlinedButton(
+                  onPressed: () {
+                    setState(() {
+                      _currentStep--;
+                    });
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                    side: const BorderSide(color: AppColors.primary),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text(
+                    '返回上一步',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                ),
               ),
             ),
-            child: const Text(
-              '注册',
-              style: TextStyle(fontSize: 16, color: Colors.white),
+            const SizedBox(width: 16),
+            Expanded(
+              child: SizedBox(
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: (_usernameController.text.trim().isNotEmpty &&
+                          _passwordController.text.length >= 6 &&
+                          _password2Controller.text.isNotEmpty)
+                      ? _register
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    disabledBackgroundColor: AppColors.primary.withOpacity(0.4),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text(
+                    '注册',
+                    style: TextStyle(fontSize: 16, color: Colors.white),
+                  ),
+                ),
+              ),
             ),
-          ),
+          ],
         ),
       ],
     );
@@ -468,9 +560,14 @@ class _RegisterPageState extends State<RegisterPage> {
         TextField(
           controller: controller,
           obscureText: obscureText,
+          onChanged: (_) => setState(() {}),
           decoration: InputDecoration(
             hintText: hint,
-            prefixIcon: Icon(icon, color: AppColors.textSecondary),
+            prefixIcon: Padding(
+              padding: const EdgeInsets.only(left: 12, right: 8),
+              child: Icon(icon, color: AppColors.textSecondary),
+            ),
+            prefixIconConstraints: const BoxConstraints(minWidth: 48),
             filled: true,
             fillColor: AppColors.surface,
             border: OutlineInputBorder(
