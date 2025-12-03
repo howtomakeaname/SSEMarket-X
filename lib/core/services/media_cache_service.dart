@@ -30,12 +30,31 @@ class MediaCacheService {
     }
   }
 
-  /// 根据 URL 生成缓存文件名
-  String _getCacheFileName(String url) {
+  /// 根据 URL 生成缓存文件名（包含分类前缀）
+  String _getCacheFileName(String url, {CacheCategory? category}) {
     final bytes = utf8.encode(url);
     final digest = md5.convert(bytes);
     final extension = _getFileExtension(url);
-    return '${digest.toString()}$extension';
+    final cat = category ?? _guessCategory(url);
+    return '${cat.prefix}_${digest.toString()}$extension';
+  }
+
+  /// 根据 URL 猜测分类
+  CacheCategory _guessCategory(String url) {
+    final lowerUrl = url.toLowerCase();
+    if (lowerUrl.contains('avatar') || lowerUrl.contains('head')) {
+      return CacheCategory.avatar;
+    }
+    if (lowerUrl.contains('product') || lowerUrl.contains('goods') || lowerUrl.contains('item')) {
+      return CacheCategory.product;
+    }
+    if (lowerUrl.contains('post') || lowerUrl.contains('article') || lowerUrl.contains('content')) {
+      return CacheCategory.post;
+    }
+    if (lowerUrl.contains('chat') || lowerUrl.contains('message')) {
+      return CacheCategory.chat;
+    }
+    return CacheCategory.other;
   }
 
   /// 获取文件扩展名
@@ -227,6 +246,27 @@ class MediaCacheService {
   }
 }
 
+/// 缓存分类
+enum CacheCategory {
+  avatar('avatar', '头像'),
+  post('post', '帖子'),
+  product('product', '闲置'),
+  chat('chat', '聊天'),
+  other('other', '其他');
+
+  final String prefix;
+  final String label;
+  const CacheCategory(this.prefix, this.label);
+
+  static CacheCategory fromFileName(String fileName) {
+    if (fileName.startsWith('avatar_')) return CacheCategory.avatar;
+    if (fileName.startsWith('post_')) return CacheCategory.post;
+    if (fileName.startsWith('product_')) return CacheCategory.product;
+    if (fileName.startsWith('chat_')) return CacheCategory.chat;
+    return CacheCategory.other;
+  }
+}
+
 /// 缓存文件信息
 class CacheFileInfo {
   final File file;
@@ -241,6 +281,9 @@ class CacheFileInfo {
 
   /// 获取文件名
   String get fileName => file.path.split('/').last;
+
+  /// 获取分类
+  CacheCategory get category => CacheCategory.fromFileName(fileName);
 
   /// 判断是否为图片
   bool get isImage {
