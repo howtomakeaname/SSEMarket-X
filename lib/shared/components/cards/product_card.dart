@@ -18,7 +18,7 @@ class ProductCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: context.surfaceColor,
           borderRadius: BorderRadius.circular(12),
         ),
         clipBehavior: Clip.antiAlias,
@@ -29,7 +29,7 @@ class ProductCard extends StatelessWidget {
             Expanded(
               child: Container(
                 width: double.infinity,
-                color: AppColors.background,
+                color: context.backgroundColor,
                 child: product.firstPhoto.isNotEmpty
                     ? Image.network(
                         product.firstPhoto,
@@ -37,25 +37,25 @@ class ProductCard extends StatelessWidget {
                         frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
                           if (wasSynchronouslyLoaded) return child;
                           return AnimatedOpacity(
-                            child: child,
                             opacity: frame == null ? 0 : 1,
                             duration: const Duration(milliseconds: 300),
                             curve: Curves.easeOut,
+                            child: child,
                           );
                         },
-                        errorBuilder: (_, __, ___) => const Center(
+                        errorBuilder: (_, __, ___) => Center(
                           child: Icon(
                             Icons.image_not_supported_outlined,
                             size: 48,
-                            color: AppColors.textSecondary,
+                            color: context.textSecondaryColor,
                           ),
                         ),
                       )
-                    : const Center(
+                    : Center(
                         child: Icon(
                           Icons.image_outlined,
                           size: 48,
-                          color: AppColors.textSecondary,
+                          color: context.textSecondaryColor,
                         ),
                       ),
               ),
@@ -68,9 +68,9 @@ class ProductCard extends StatelessWidget {
                 children: [
                   Text(
                     product.name,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
-                      color: AppColors.textPrimary,
+                      color: context.textPrimaryColor,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -94,14 +94,14 @@ class ProductCard extends StatelessWidget {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.textSecondary.withOpacity(0.2),
+                            color: context.textSecondaryColor.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(4),
                           ),
-                          child: const Text(
+                          child: Text(
                             '已售',
                             style: TextStyle(
                               fontSize: 10,
-                              color: AppColors.textSecondary,
+                              color: context.textSecondaryColor,
                             ),
                           ),
                         ),

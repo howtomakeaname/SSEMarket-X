@@ -29,7 +29,7 @@ class RatingCard extends StatelessWidget {
         post: post,
         isDense: isDense,
         showRating: false,
-        topWidget: _buildEmbeddedRating(),
+        topWidget: _buildEmbeddedRating(context),
         onTap: onTap,
         onLikeTap: onLikeTap,
       );
@@ -48,13 +48,13 @@ class RatingCard extends StatelessWidget {
         Positioned(
           top: 16,
           right: 16,
-          child: _buildRatingBadge(),
+          child: _buildRatingBadge(context),
         ),
       ],
     );
   }
 
-  Widget _buildEmbeddedRating() {
+  Widget _buildEmbeddedRating(BuildContext context) {
     final totalRatings = _getTotalRatings();
     
     return Row(
@@ -89,9 +89,9 @@ class RatingCard extends StatelessWidget {
         const SizedBox(width: 8),
         Text(
           '$totalRatings人评分',
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
-            color: AppColors.textSecondary,
+            color: context.textSecondaryColor,
           ),
         ),
         
@@ -102,14 +102,14 @@ class RatingCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
-              color: AppColors.background,
+              color: context.backgroundColor,
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(
               '#${post.partition}',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
-                color: AppColors.textSecondary,
+                color: context.textSecondaryColor,
               ),
             ),
           ),
@@ -117,7 +117,7 @@ class RatingCard extends StatelessWidget {
     );
   }
 
-  Widget _buildRatingBadge() {
+  Widget _buildRatingBadge(BuildContext context) {
     final totalRatings = _getTotalRatings();
     
     return Container(
@@ -155,9 +155,9 @@ class RatingCard extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             '$totalRatings人',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
-              color: AppColors.textSecondary,
+              color: context.textSecondaryColor,
             ),
           ),
         ],
