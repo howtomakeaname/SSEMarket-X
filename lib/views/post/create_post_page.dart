@@ -378,20 +378,20 @@ class _CreatePostPageState extends State<CreatePostPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.backgroundColor,
       appBar: widget.isEmbedded ? null : AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.surfaceColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back, color: context.textPrimaryColor),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
+        title: Text(
           '新建帖子',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+            color: context.textPrimaryColor,
           ),
         ),
         centerTitle: false,
@@ -403,7 +403,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
               '提交',
               style: TextStyle(
                 fontSize: 16,
-                color: _isSubmitting ? AppColors.textSecondary : AppColors.primary,
+                color: _isSubmitting ? context.textSecondaryColor : AppColors.primary,
               ),
             ),
           ),
@@ -415,17 +415,17 @@ class _CreatePostPageState extends State<CreatePostPage> {
           // Custom header for embedded mode
           if (widget.isEmbedded)
             Container(
-              color: AppColors.surface,
+              color: context.surfaceColor,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       '新建',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                        color: context.textPrimaryColor,
                       ),
                     ),
                   ),
@@ -435,7 +435,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
                       '提交',
                       style: TextStyle(
                         fontSize: 16,
-                        color: _isSubmitting ? AppColors.textSecondary : AppColors.primary,
+                        color: _isSubmitting ? context.textSecondaryColor : AppColors.primary,
                       ),
                     ),
                   ),
@@ -458,7 +458,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
   Widget _buildUnifiedComposer() {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.surfaceColor,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -484,10 +484,10 @@ class _CreatePostPageState extends State<CreatePostPage> {
       height: 1,
       margin: const EdgeInsets.symmetric(horizontal: 16),
       child: LayoutBuilder(
-        builder: (context, constraints) {
+        builder: (ctx, constraints) {
           return CustomPaint(
             size: Size(constraints.maxWidth, 1),
-            painter: DashedLinePainter(),
+            painter: DashedLinePainter(color: context.dividerColor),
           );
         },
       ),
@@ -500,13 +500,13 @@ class _CreatePostPageState extends State<CreatePostPage> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
       child: Row(
         children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
             child: Text(
               '标题',
               style: TextStyle(
                 fontSize: 15,
-                color: AppColors.textSecondary,
+                color: context.textSecondaryColor,
               ),
             ),
           ),
@@ -514,19 +514,19 @@ class _CreatePostPageState extends State<CreatePostPage> {
           Expanded(
             child: TextField(
               controller: _titleController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: '请输入标题',
                 hintStyle: TextStyle(
-                  color: AppColors.textTertiary,
+                  color: context.textTertiaryColor,
                   fontSize: 15,
                 ),
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(vertical: 12),
+                contentPadding: const EdgeInsets.symmetric(vertical: 12),
                 isDense: true,
               ),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
-                color: AppColors.textPrimary,
+                color: context.textPrimaryColor,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -542,13 +542,13 @@ class _CreatePostPageState extends State<CreatePostPage> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2), // 与标题区域一致
       child: Row(
         children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12), // 与标题区域保持一致
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12), // 与标题区域保持一致
             child: Text(
               '分区',
               style: TextStyle(
                 fontSize: 15,
-                color: AppColors.textSecondary,
+                color: context.textSecondaryColor,
               ),
             ),
           ),
@@ -671,18 +671,18 @@ class _CreatePostPageState extends State<CreatePostPage> {
       controller: _contentController,
       maxLines: null,
       minLines: 20, // 增加初始高度
-      decoration: const InputDecoration(
+      decoration: InputDecoration(
         hintText: '请输入内容，支持 Markdown 格式...',
         hintStyle: TextStyle(
-          color: AppColors.textSecondary,
+          color: context.textSecondaryColor,
           fontSize: 15,
         ),
         border: InputBorder.none,
-        contentPadding: EdgeInsets.fromLTRB(16, 8, 16, 16),
+        contentPadding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       ),
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 15,
-        color: AppColors.textPrimary,
+        color: context.textPrimaryColor,
         height: 1.5,
       ),
     );
@@ -695,28 +695,28 @@ class _CreatePostPageState extends State<CreatePostPage> {
       constraints: const BoxConstraints(minHeight: 400), // 增加预览最小高度
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       child: _contentController.text.trim().isEmpty
-          ? const Center(
+          ? Center(
               child: Text(
                 '暂无内容预览',
                 style: TextStyle(
                   fontSize: 14,
-                  color: AppColors.textSecondary,
+                  color: context.textSecondaryColor,
                 ),
               ),
             )
           : LatexMarkdown(
               data: _contentController.text,
               styleSheet: MarkdownStyleSheet(
-                p: const TextStyle(fontSize: 15, color: AppColors.textPrimary),
-                h1: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-                h2: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-                h3: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                p: TextStyle(fontSize: 15, color: context.textPrimaryColor),
+                h1: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: context.textPrimaryColor),
+                h2: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: context.textPrimaryColor),
+                h3: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: context.textPrimaryColor),
                 code: TextStyle(
                   fontSize: 13,
-                  backgroundColor: AppColors.background,
+                  backgroundColor: context.backgroundColor,
                   color: AppColors.primary,
                 ),
-                blockquote: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
+                blockquote: TextStyle(fontSize: 14, color: context.textSecondaryColor),
               ),
             ),
     );
@@ -725,10 +725,14 @@ class _CreatePostPageState extends State<CreatePostPage> {
 
 /// 虚线绘制器
 class DashedLinePainter extends CustomPainter {
+  final Color color;
+  
+  DashedLinePainter({this.color = AppColors.divider});
+  
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = AppColors.divider
+      ..color = color
       ..strokeWidth = 1;
 
     const dashWidth = 4.0;
@@ -746,5 +750,5 @@ class DashedLinePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant DashedLinePainter oldDelegate) => oldDelegate.color != color;
 }
