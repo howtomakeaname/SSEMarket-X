@@ -9,20 +9,20 @@ class AboutPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.backgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.surfaceColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back, color: context.textPrimaryColor),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
+        title: Text(
           '关于',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+            color: context.textPrimaryColor,
           ),
         ),
         centerTitle: false,
@@ -35,11 +35,11 @@ class AboutPage extends StatelessWidget {
               child: SingleChildScrollView(
                 child: Column(
                   children: [
-                    _buildHeader(),
+                    _buildHeader(context),
                     const SizedBox(height: 8),
                     _buildInfoList(context),
                     const SizedBox(height: 32),
-                    _buildFooter(),
+                    _buildFooter(context),
                   ],
                 ),
               ),
@@ -50,11 +50,11 @@ class AboutPage extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 40),
-      color: AppColors.surface,
+      color: context.surfaceColor,
       child: Column(
         children: [
           Container(
@@ -64,27 +64,27 @@ class AboutPage extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
               color: Colors.transparent,
             ),
-			clipBehavior: Clip.antiAlias,
-			child: Image.asset(
-			  'assets/images/logo.png',
-			  fit: BoxFit.cover,
-			),
+            clipBehavior: Clip.antiAlias,
+            child: Image.asset(
+              'assets/images/logo.png',
+              fit: BoxFit.cover,
+            ),
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'SSE Market',
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              color: context.textPrimaryColor,
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             '软工集市',
             style: TextStyle(
               fontSize: 14,
-              color: AppColors.textSecondary,
+              color: context.textSecondaryColor,
             ),
           ),
         ],
@@ -94,20 +94,23 @@ class AboutPage extends StatelessWidget {
 
   Widget _buildInfoList(BuildContext context) {
     return Container(
-      color: AppColors.surface,
+      color: context.surfaceColor,
       child: Column(
         children: [
           _buildInfoItem(
+            context,
             title: '版本号',
             value: '1.0.0',
           ),
-          const Divider(height: 1, color: AppColors.divider, indent: 16, endIndent: 16),
+          Divider(height: 1, color: context.dividerColor, indent: 16, endIndent: 16),
           _buildInfoItem(
+            context,
             title: '联系方式',
             value: 'ssemarket@126.com',
           ),
-          const Divider(height: 1, color: AppColors.divider, indent: 16, endIndent: 16),
+          Divider(height: 1, color: context.dividerColor, indent: 16, endIndent: 16),
           _buildInfoItem(
+            context,
             title: '隐私政策',
             value: '',
             showArrow: true,
@@ -122,7 +125,8 @@ class AboutPage extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoItem({
+  Widget _buildInfoItem(
+    BuildContext context, {
     required String title,
     required String value,
     bool showArrow = false,
@@ -136,17 +140,17 @@ class AboutPage extends StatelessWidget {
           children: [
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
-                color: AppColors.textPrimary,
+                color: context.textPrimaryColor,
               ),
             ),
             const Spacer(),
             Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
-                color: AppColors.textSecondary,
+                color: context.textSecondaryColor,
               ),
             ),
             if (showArrow) ...[
@@ -155,7 +159,7 @@ class AboutPage extends StatelessWidget {
                 'assets/icons/ic_arrow_right.svg',
                 width: 16,
                 height: 16,
-                colorFilter: const ColorFilter.mode(AppColors.divider, BlendMode.srcIn),
+                colorFilter: ColorFilter.mode(context.dividerColor, BlendMode.srcIn),
               ),
             ],
           ],
@@ -164,25 +168,25 @@ class AboutPage extends StatelessWidget {
     );
   }
 
-  Widget _buildFooter() {
+  Widget _buildFooter(BuildContext context) {
     return Column(
-      children: const [
+      children: [
         Text(
           'Copyright © 2025 SSE Market',
           style: TextStyle(
             fontSize: 12,
-            color: AppColors.textSecondary,
+            color: context.textSecondaryColor,
           ),
         ),
-        SizedBox(height: 4),
+        const SizedBox(height: 4),
         Text(
           'All Rights Reserved',
           style: TextStyle(
             fontSize: 12,
-            color: AppColors.textSecondary,
+            color: context.textSecondaryColor,
           ),
         ),
-        SizedBox(height: 32),
+        const SizedBox(height: 32),
       ],
     );
   }
