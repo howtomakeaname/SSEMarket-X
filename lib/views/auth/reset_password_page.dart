@@ -206,7 +206,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       builder: (context, constraints) {
         if (constraints.maxWidth >= 800) {
           return Scaffold(
-            backgroundColor: AppColors.surface,
+            backgroundColor: context.surfaceColor,
             body: _buildDesktopLayout(),
           );
         }

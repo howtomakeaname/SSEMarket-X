@@ -714,7 +714,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
 class DashedLinePainter extends CustomPainter {
   final Color color;
   
-  DashedLinePainter({this.color = AppColors.divider});
+  DashedLinePainter({this.color = const Color(0xFFE0E0E0)});
   
   @override
   void paint(Canvas canvas, Size size) {

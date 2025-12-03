@@ -105,9 +105,9 @@ class _PrivacyPolicyModalState extends State<PrivacyPolicyModal> {
   Widget build(BuildContext context) {
     return Container(
       height: MediaQuery.of(context).size.height * 0.8,
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      decoration: BoxDecoration(
+        color: context.surfaceColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
       ),
       child: Column(
         children: [
@@ -118,7 +118,7 @@ class _PrivacyPolicyModalState extends State<PrivacyPolicyModal> {
               height: 4,
               margin: const EdgeInsets.symmetric(vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.grey[300],
+                color: context.dividerColor,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -127,27 +127,27 @@ class _PrivacyPolicyModalState extends State<PrivacyPolicyModal> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Column(
-              children: const [
+              children: [
                 Text(
                   '隐私政策',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+                    color: context.textPrimaryColor,
                   ),
                 ),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Text(
                   '请仔细阅读并同意我们的隐私政策',
                   style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.textSecondary,
+                    color: context.textSecondaryColor,
                   ),
                 ),
               ],
             ),
           ),
-          const Divider(height: 1, color: AppColors.divider),
+          Divider(height: 1, color: context.dividerColor),
           // WebView
           Expanded(
             child: Stack(
@@ -157,15 +157,15 @@ class _PrivacyPolicyModalState extends State<PrivacyPolicyModal> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.error_outline,
                           size: 48,
-                          color: AppColors.textSecondary,
+                          color: context.textSecondaryColor,
                         ),
                         const SizedBox(height: 16),
-                        const Text(
+                        Text(
                           '无法加载内容',
-                          style: TextStyle(color: AppColors.textSecondary),
+                          style: TextStyle(color: context.textSecondaryColor),
                         ),
                         const SizedBox(height: 8),
                         if (_isWebviewSupported)
@@ -201,9 +201,9 @@ class _PrivacyPolicyModalState extends State<PrivacyPolicyModal> {
           // 底部按钮
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: const BoxDecoration(
-              color: AppColors.surface,
-              border: Border(top: BorderSide(color: AppColors.divider)),
+            decoration: BoxDecoration(
+              color: context.surfaceColor,
+              border: Border(top: BorderSide(color: context.dividerColor)),
             ),
             child: SafeArea(
               child: ElevatedButton(

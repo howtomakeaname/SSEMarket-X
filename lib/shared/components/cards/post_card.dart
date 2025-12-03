@@ -365,7 +365,7 @@ class _PostCardState extends State<PostCard> {
           child: _buildMetaItem(
             _isLiked ? 'assets/icons/ic_like_filled.svg' : 'assets/icons/ic_like.svg',
             _likeCount,
-            color: _isLiked ? Colors.red : AppColors.textSecondary,
+            color: _isLiked ? Colors.red : context.textSecondaryColor,
           ),
         ),
       ],
