@@ -62,20 +62,20 @@ class _FeedbackPageState extends State<FeedbackPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.backgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.surfaceColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back, color: context.textPrimaryColor),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
+        title: Text(
           '反馈',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+            color: context.textPrimaryColor,
           ),
         ),
         centerTitle: false,
@@ -87,7 +87,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
               '提交',
               style: TextStyle(
                 fontSize: 16,
-                color: _isSubmitting ? AppColors.textSecondary : AppColors.primary,
+                color: _isSubmitting ? context.textSecondaryColor : AppColors.primary,
               ),
             ),
           ),
@@ -99,18 +99,18 @@ class _FeedbackPageState extends State<FeedbackPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               '请在下方输入您的反馈信息',
               style: TextStyle(
                 fontSize: 14,
-                color: AppColors.textSecondary,
+                color: context.textSecondaryColor,
               ),
             ),
             const SizedBox(height: 12),
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: context.surfaceColor,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: TextField(
@@ -118,18 +118,18 @@ class _FeedbackPageState extends State<FeedbackPage> {
                   maxLines: null,
                   expands: true,
                   textAlignVertical: TextAlignVertical.top,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     hintText: '请在此输入反馈...',
                     hintStyle: TextStyle(
-                      color: AppColors.textTertiary,
+                      color: context.textTertiaryColor,
                       fontSize: 15,
                     ),
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.all(16),
+                    contentPadding: const EdgeInsets.all(16),
                   ),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
-                    color: AppColors.textPrimary,
+                    color: context.textPrimaryColor,
                     height: 1.5,
                   ),
                 ),
