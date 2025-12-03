@@ -139,20 +139,20 @@ class _EditProfilePageState extends State<EditProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.backgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.surfaceColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back, color: context.textPrimaryColor),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
+        title: Text(
           '修改资料',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+            color: context.textPrimaryColor,
           ),
         ),
         centerTitle: false,
@@ -164,7 +164,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
               '提交',
               style: TextStyle(
                 fontSize: 16,
-                color: _isSubmitting ? AppColors.textSecondary : AppColors.primary,
+                color: _isSubmitting ? context.textSecondaryColor : AppColors.primary,
               ),
             ),
           ),
@@ -180,7 +180,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 24),
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: context.surfaceColor,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
@@ -190,17 +190,17 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     onTap: _isSubmitting ? null : _pickAvatar,
                     child: CircleAvatar(
                       radius: 40,
-                      backgroundColor: AppColors.background,
+                      backgroundColor: context.backgroundColor,
                       backgroundImage: _avatarUrl.isNotEmpty ? NetworkImage(_avatarUrl) : null,
                       child: _avatarUrl.isEmpty
-                          ? const Icon(Icons.person, size: 40, color: AppColors.textSecondary)
+                          ? Icon(Icons.person, size: 40, color: context.textSecondaryColor)
                           : null,
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
+                  Text(
                     '点击修改头像',
-                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                    style: TextStyle(fontSize: 12, color: context.textSecondaryColor),
                   ),
                 ],
               ),
@@ -213,63 +213,63 @@ class _EditProfilePageState extends State<EditProfilePage> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: context.surfaceColor,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     '昵称',
                     style: TextStyle(
                       fontSize: 14,
-                      color: AppColors.textSecondary,
+                      color: context.textSecondaryColor,
                     ),
                   ),
                   const SizedBox(height: 6),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
-                      color: AppColors.background,
+                      color: context.backgroundColor,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: TextField(
                       controller: _nameController,
-                      style: const TextStyle(fontSize: 14, color: AppColors.textPrimary),
-                      decoration: const InputDecoration(
+                      style: TextStyle(fontSize: 14, color: context.textPrimaryColor),
+                      decoration: InputDecoration(
                         isDense: true,
                         border: InputBorder.none,
                         hintText: '请输入昵称',
-                        hintStyle: TextStyle(fontSize: 14, color: AppColors.textTertiary),
+                        hintStyle: TextStyle(fontSize: 14, color: context.textTertiaryColor),
                       ),
                     ),
                   ),
 
                   const SizedBox(height: 16),
 
-                  const Text(
+                  Text(
                     '个人简介',
                     style: TextStyle(
                       fontSize: 14,
-                      color: AppColors.textSecondary,
+                      color: context.textSecondaryColor,
                     ),
                   ),
                   const SizedBox(height: 6),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
-                      color: AppColors.background,
+                      color: context.backgroundColor,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: TextField(
                       controller: _introController,
                       maxLines: 3,
-                      style: const TextStyle(fontSize: 14, color: AppColors.textPrimary),
-                      decoration: const InputDecoration(
+                      style: TextStyle(fontSize: 14, color: context.textPrimaryColor),
+                      decoration: InputDecoration(
                         isDense: true,
                         border: InputBorder.none,
                         hintText: '简单介绍一下自己吧',
-                        hintStyle: TextStyle(fontSize: 14, color: AppColors.textTertiary),
+                        hintStyle: TextStyle(fontSize: 14, color: context.textTertiaryColor),
                       ),
                     ),
                   ),
