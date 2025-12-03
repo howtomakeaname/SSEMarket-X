@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/product_model.dart';
-
 import 'package:sse_market_x/core/services/storage_service.dart';
 import 'package:sse_market_x/shared/components/loading/loading_indicator.dart';
 import 'package:sse_market_x/core/services/media_cache_service.dart';
 import 'package:sse_market_x/shared/components/media/cached_image.dart';
+import 'package:sse_market_x/shared/components/media/image_viewer.dart';
+import 'package:sse_market_x/shared/components/overlays/custom_dialog.dart'
+    show showCustomDialog;
 import 'package:sse_market_x/shared/components/utils/snackbar_helper.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 import 'package:sse_market_x/views/chat/chat_detail_page.dart';
@@ -30,6 +32,7 @@ class ProductDetailPage extends StatefulWidget {
 class _ProductDetailPageState extends State<ProductDetailPage> {
   ProductModel _product = ProductModel.empty();
   bool _isLoading = true;
+  bool _isOperating = false;
   int _currentImageIndex = 0;
 
   @override
@@ -44,7 +47,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     });
 
     try {
-      final product = await widget.apiService.getProductDetail(widget.productId);
+      final product =
+          await widget.apiService.getProductDetail(widget.productId);
       if (mounted) {
         setState(() {
           _product = product;
@@ -59,6 +63,11 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         });
       }
     }
+  }
+
+  bool get _isOwner {
+    final currentUser = StorageService().user;
+    return currentUser?.userId == _product.sellerId;
   }
 
   @override
@@ -83,6 +92,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         ),
         centerTitle: false,
         titleSpacing: 0,
+        actions: _isOwner && !_isLoading ? _buildOwnerActions() : null,
       ),
       body: _isLoading
           ? const LoadingIndicator.center(message: '加载中...')
@@ -102,6 +112,100 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               ],
             ),
     );
+  }
+
+  List<Widget> _buildOwnerActions() {
+    return [
+      if (!_product.isSold)
+        TextButton(
+          onPressed: _isOperating ? null : _handleMarkSold,
+          child: Text(
+            '标记售出',
+            style: TextStyle(
+              fontSize: 14,
+              color: _isOperating
+                  ? context.textTertiaryColor
+                  : AppColors.primary,
+            ),
+          ),
+        ),
+      IconButton(
+        onPressed: _isOperating ? null : _handleDelete,
+        icon: Icon(
+          Icons.delete_outline,
+          color: _isOperating ? context.textTertiaryColor : Colors.red,
+        ),
+      ),
+    ];
+  }
+
+  Future<void> _handleMarkSold() async {
+    final confirmed = await showCustomDialog(
+      context: context,
+      title: '确认售出',
+      content: '确定要将此商品标记为已售出吗？',
+      confirmText: '确定',
+      cancelText: '取消',
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => _isOperating = true);
+
+    try {
+      final success = await widget.apiService.markProductSold(_product.id);
+      if (mounted) {
+        if (success) {
+          SnackBarHelper.show(context, '已标记为售出');
+          Navigator.of(context).pop(true); // 返回并通知刷新
+        } else {
+          SnackBarHelper.show(context, '操作失败，请重试');
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        SnackBarHelper.show(context, '操作失败: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isOperating = false);
+      }
+    }
+  }
+
+  Future<void> _handleDelete() async {
+    final confirmed = await showCustomDialog(
+      context: context,
+      title: '确认删除',
+      content: '确定要删除此商品吗？此操作不可恢复！',
+      confirmText: '删除',
+      cancelText: '取消',
+      confirmColor: Colors.red,
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => _isOperating = true);
+
+    try {
+      final success = await widget.apiService.deleteProduct(_product.id);
+      if (mounted) {
+        if (success) {
+          SnackBarHelper.show(context, '商品已删除');
+          Navigator.of(context).pop(true);
+        } else {
+          SnackBarHelper.show(context, '删除失败，请重试');
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        SnackBarHelper.show(context, '删除失败: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isOperating = false);
+      }
+    }
   }
 
   Widget _buildImageCarousel() {
@@ -133,20 +237,50 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               });
             },
             itemBuilder: (context, index) {
-              return CachedImage(
-                imageUrl: _product.photos[index],
-                fit: BoxFit.cover,
-                category: CacheCategory.product,
-                errorWidget: Center(
-                  child: Icon(
-                    Icons.image_not_supported_outlined,
-                    size: 48,
-                    color: context.textSecondaryColor,
+              return GestureDetector(
+                onTap: () => _openImageViewer(index),
+                child: CachedImage(
+                  imageUrl: _product.photos[index],
+                  fit: BoxFit.cover,
+                  category: CacheCategory.product,
+                  errorWidget: Center(
+                    child: Icon(
+                      Icons.image_not_supported_outlined,
+                      size: 48,
+                      color: context.textSecondaryColor,
+                    ),
                   ),
                 ),
               );
             },
           ),
+          // 已售出遮罩
+          if (_product.isSold)
+            Positioned.fill(
+              child: Container(
+                color: Colors.black.withOpacity(0.4),
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.6),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      '已售出',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           // 指示器
           if (_product.photos.length > 1)
             Positioned(
@@ -170,9 +304,37 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 }).toList(),
               ),
             ),
+          // 点击查看提示
+          Positioned(
+            bottom: 16,
+            right: 16,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.zoom_in, size: 14, color: Colors.white70),
+                  SizedBox(width: 4),
+                  Text(
+                    '点击查看',
+                    style: TextStyle(fontSize: 11, color: Colors.white70),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  void _openImageViewer(int index) {
+    if (_product.photos.isEmpty) return;
+    ImageViewer.show(context, _product.photos[index]);
   }
 
   Widget _buildProductInfo() {
@@ -182,13 +344,38 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            _product.name,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: context.textPrimaryColor,
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  _product.name,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: context.textPrimaryColor,
+                  ),
+                ),
+              ),
+              if (_product.isSold)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: context.textSecondaryColor.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    '已售出',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: context.textSecondaryColor,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: 12),
           Row(
@@ -211,28 +398,13 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             ],
           ),
           const SizedBox(height: 12),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text(
-                '${_product.price}',
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.red,
-                ),
-              ),
-              const SizedBox(width: 4),
-              const Text(
-                '积分',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.red,
-                ),
-              ),
-            ],
+          Text(
+            '¥${_product.price.toStringAsFixed(2)}',
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: AppColors.primary,
+            ),
           ),
           const SizedBox(height: 16),
           Text(
@@ -273,7 +445,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         }
         return;
       }
-      
+
       if (mounted) {
         Navigator.of(context).push(
           MaterialPageRoute(
@@ -293,6 +465,45 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   }
 
   Widget _buildActionButtons() {
+    // 如果是自己的商品，不显示私聊按钮
+    if (_isOwner) {
+      return const SizedBox.shrink();
+    }
+
+    // 如果商品已售出，显示提示
+    if (_product.isSold) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        decoration: BoxDecoration(
+          color: context.surfaceColor,
+          border: Border(
+            top: BorderSide(color: context.dividerColor, width: 0.5),
+          ),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.info_outline,
+                size: 18,
+                color: context.textSecondaryColor,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '此商品已售出，无法进行交易',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: context.textSecondaryColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(

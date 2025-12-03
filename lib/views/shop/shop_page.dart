@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/product_model.dart';
 import 'package:sse_market_x/views/shop/product_detail_page.dart';
+import 'package:sse_market_x/views/shop/create_product_page.dart';
 import 'package:sse_market_x/shared/components/loading/loading_indicator.dart';
 import 'package:sse_market_x/shared/components/cards/product_card.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
@@ -83,10 +84,43 @@ class _ShopPageState extends State<ShopPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.backgroundColor,
+      appBar: AppBar(
+        title: Text(
+          '闲置物品',
+          style: TextStyle(
+            color: context.textPrimaryColor,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 6),
+            child: IconButton(
+              icon: const Icon(Icons.add, color: AppColors.primary),
+              tooltip: '发布闲置物品',
+              onPressed: () async {
+                final result = await Navigator.of(context).push<bool>(
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        CreateProductPage(apiService: widget.apiService),
+                  ),
+                );
+                if (result == true) {
+                  _loadProducts();
+                }
+              },
+            ),
+          ),
+        ],
+        backgroundColor: context.surfaceColor,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: false,
+        automaticallyImplyLeading: false,
+      ),
       body: Column(
         children: [
-          // 顶部标题栏
-          _buildHeader(context),
           // Tab 切换
           _buildTabs(context),
           // 商品列表 - 支持左右滑动
@@ -111,27 +145,6 @@ class _ShopPageState extends State<ShopPage> {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
-    return Container(
-      height: 56,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      color: context.surfaceColor,
-      child: Row(
-        children: [
-          Text(
-            '闲置物品',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: context.textPrimaryColor,
-            ),
-          ),
-          const Spacer(),
-        ],
-      ),
-    );
-  }
-
   Widget _buildTabs(BuildContext context) {
     return Container(
       height: 48,
@@ -139,9 +152,9 @@ class _ShopPageState extends State<ShopPage> {
       color: context.surfaceColor,
       child: Row(
         children: [
-          _buildTabButton(context, '热门', 0),
+          _buildTabButton(context, '广场', 0),
           const SizedBox(width: 8),
-          _buildTabButton(context, '我的', 1),
+          _buildTabButton(context, '我的发布', 1),
         ],
       ),
     );
@@ -212,11 +225,11 @@ class _ShopPageState extends State<ShopPage> {
         itemBuilder: (context, itemIndex) {
           return ProductCard(
             product: products[itemIndex],
-            onTap: () {
+            onTap: () async {
               if (widget.onProductTap != null) {
                 widget.onProductTap!(products[itemIndex].id);
               } else {
-                Navigator.of(context).push(
+                final result = await Navigator.of(context).push<bool>(
                   MaterialPageRoute(
                     builder: (_) => ProductDetailPage(
                       productId: products[itemIndex].id,
@@ -224,6 +237,10 @@ class _ShopPageState extends State<ShopPage> {
                     ),
                   ),
                 );
+                // 如果商品被删除或标记售出，刷新列表
+                if (result == true) {
+                  _loadProducts();
+                }
               }
             },
           );

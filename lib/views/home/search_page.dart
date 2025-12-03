@@ -52,7 +52,7 @@ class _SearchPageState extends State<SearchPage> {
     '打听求助': '打听求助',
     '日常吐槽': '随想随记',
     '求职招募': '求职招募',
-    '主页': '杂项',
+    '主页': '主页',
     '其他': '其他',
   };
 

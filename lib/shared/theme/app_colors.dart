@@ -97,7 +97,7 @@ class AppColors {
   static Color getInputFill(BuildContext context) {
     return Theme.of(context).brightness == Brightness.dark
         ? const Color(0xFF2A2A2A)
-        : _lightBackground;
+        : _lightSurface; // 亮色模式使用白色，与灰色背景区分
   }
 
   // ===== 卡片阴影色 =====
