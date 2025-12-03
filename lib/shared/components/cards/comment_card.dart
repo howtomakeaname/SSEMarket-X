@@ -256,7 +256,7 @@ class _CommentCardState extends State<CommentCard> {
                           child: Icon(
                             index < widget.comment.postRating! ? Icons.star_rounded : Icons.star_border_rounded,
                             size: 14,
-                            color: index < widget.comment.postRating! ? AppColors.ratingStar : AppColors.textTertiary,
+                            color: index < widget.comment.postRating! ? AppColors.ratingStar : context.textTertiaryColor,
                           ),
                         );
                       }),
