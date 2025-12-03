@@ -6,6 +6,7 @@ import 'package:sse_market_x/core/models/user_model.dart';
 import 'package:sse_market_x/core/services/storage_service.dart';
 import 'package:sse_market_x/core/services/websocket_service.dart';
 import 'package:sse_market_x/core/utils/level_utils.dart';
+import 'package:sse_market_x/shared/components/media/cached_image.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 
 class SideMenu extends StatefulWidget {
@@ -132,10 +133,12 @@ class _SideMenuState extends State<SideMenu> {
                         ),
                         clipBehavior: Clip.antiAlias,
                         child: user?.avatar.isNotEmpty == true
-                            ? Image.network(
-                                user!.avatar,
+                            ? CachedImage(
+                                imageUrl: user!.avatar,
+                                width: 40,
+                                height: 40,
                                 fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Icon(Icons.person, color: context.textSecondaryColor),
+                                errorWidget: Icon(Icons.person, color: context.textSecondaryColor),
                               )
                             : Icon(Icons.person, color: context.textSecondaryColor),
                       ),
