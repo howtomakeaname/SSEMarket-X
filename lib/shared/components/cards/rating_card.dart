@@ -7,6 +7,7 @@ import 'package:sse_market_x/shared/theme/app_colors.dart';
 class RatingCard extends StatelessWidget {
   final PostModel post;
   final bool isDense;
+  final bool hidePartition;
   final VoidCallback? onTap;
   final Future<bool> Function()? onLikeTap;
 
@@ -14,6 +15,7 @@ class RatingCard extends StatelessWidget {
     super.key,
     required this.post,
     this.isDense = false,
+    this.hidePartition = false,
     this.onTap,
     this.onLikeTap,
   });
@@ -29,6 +31,7 @@ class RatingCard extends StatelessWidget {
         post: post,
         isDense: isDense,
         showRating: false,
+        hidePartition: hidePartition,
         topWidget: _buildEmbeddedRating(context),
         onTap: onTap,
         onLikeTap: onLikeTap,
@@ -41,6 +44,7 @@ class RatingCard extends StatelessWidget {
           post: post,
           isDense: isDense,
           showRating: false,
+          hidePartition: hidePartition,
           onTap: onTap,
           onLikeTap: onLikeTap,
         ),
@@ -98,7 +102,7 @@ class RatingCard extends StatelessWidget {
         const Spacer(), // Push partition to the right
         
         // Partition info
-        if (post.partition.isNotEmpty)
+        if (post.partition.isNotEmpty && !hidePartition)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(

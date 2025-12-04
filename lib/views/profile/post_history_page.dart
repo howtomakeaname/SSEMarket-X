@@ -120,7 +120,7 @@ class _PostHistoryPageState extends State<PostHistoryPage> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
-          '发帖历史',
+          '我的发帖',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,

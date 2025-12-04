@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/post_model.dart';
-import 'package:sse_market_x/views/post/score_post_detail_page.dart';
-import 'package:sse_market_x/views/post/create_post_page.dart';
-import 'package:sse_market_x/shared/components/loading/loading_indicator.dart';
+import 'package:sse_market_x/core/services/browse_history_service.dart';
+import 'package:sse_market_x/core/services/storage_service.dart';
 import 'package:sse_market_x/shared/components/cards/rating_card.dart';
+import 'package:sse_market_x/shared/components/layout/layout_config.dart';
+import 'package:sse_market_x/shared/components/loading/loading_indicator.dart';
 import 'package:sse_market_x/shared/components/utils/snackbar_helper.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
-import 'package:sse_market_x/core/services/storage_service.dart';
-
-import 'package:sse_market_x/shared/components/layout/layout_config.dart';
+import 'package:sse_market_x/views/post/create_post_page.dart';
+import 'package:sse_market_x/views/post/score_post_detail_page.dart';
 
 class ScorePage extends StatefulWidget {
   const ScorePage({
@@ -202,6 +202,32 @@ class _ScorePageState extends State<ScorePage> {
               post: post,
               isDense: true,
               onTap: () async {
+                // 添加到浏览历史（在点击时记录）
+                // 确保 partition 字段是"打分"
+                final postWithPartition = PostModel(
+                  id: post.id,
+                  title: post.title,
+                  content: post.content,
+                  partition: '打分', // 明确设置为"打分"
+                  authorName: post.authorName,
+                  authorAvatar: post.authorAvatar,
+                  authorPhone: post.authorPhone,
+                  createdAt: post.createdAt,
+                  likeCount: post.likeCount,
+                  commentCount: post.commentCount,
+                  saveCount: post.saveCount,
+                  viewCount: post.viewCount,
+                  userScore: post.userScore,
+                  userIdentity: post.userIdentity,
+                  isLiked: post.isLiked,
+                  isSaved: post.isSaved,
+                  rating: post.rating,
+                  stars: post.stars,
+                  userRating: post.userRating,
+                  heat: post.heat,
+                );
+                BrowseHistoryService().addPostHistory(postWithPartition);
+                
                 final layoutConfig = LayoutConfig.of(context);
                 final onPostTap = layoutConfig?.onPostTap;
                 

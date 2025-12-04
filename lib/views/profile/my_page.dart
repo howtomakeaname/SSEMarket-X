@@ -6,6 +6,7 @@ import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/user_model.dart';
 import 'package:sse_market_x/core/utils/level_utils.dart';
 import 'package:sse_market_x/core/services/media_cache_service.dart';
+import 'package:sse_market_x/views/profile/browse_history_page.dart';
 import 'package:sse_market_x/views/profile/favorites_page.dart';
 import 'package:sse_market_x/views/profile/post_history_page.dart';
 import 'package:sse_market_x/views/profile/settings_page.dart';
@@ -234,6 +235,18 @@ class _MyPageState extends State<MyPage> {
           isFirst: true,
         ),
         SettingsListItem(
+          title: '浏览历史',
+          leadingIcon: 'assets/icons/ic_history_view.svg',
+          type: SettingsListItemType.navigation,
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => BrowseHistoryPage(apiService: widget.apiService),
+              ),
+            );
+          },
+        ),
+        SettingsListItem(
           title: '我的收藏',
           leadingIcon: 'assets/icons/ic_favorite.svg',
           type: SettingsListItemType.navigation,
@@ -246,8 +259,8 @@ class _MyPageState extends State<MyPage> {
           },
         ),
         SettingsListItem(
-          title: '发帖历史',
-          leadingIcon: 'assets/icons/ic_history.svg',
+          title: '我的发帖',
+          leadingIcon: 'assets/icons/ic_article.svg',
           type: SettingsListItemType.navigation,
           onTap: () {
             Navigator.of(context).push(
