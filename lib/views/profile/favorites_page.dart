@@ -192,6 +192,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                   builder: (_) => PostDetailPage(
                     postId: post.id,
                     apiService: widget.apiService,
+                    initialPost: post, // 传递初始数据
                   ),
                 ),
               );

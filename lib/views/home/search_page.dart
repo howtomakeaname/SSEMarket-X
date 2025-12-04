@@ -378,6 +378,7 @@ class _SearchPageState extends State<SearchPage> {
                 builder: (_) => PostDetailPage(
                   postId: post.id,
                   apiService: widget.apiService,
+                  initialPost: post, // 传递初始数据
                 ),
               ),
             );

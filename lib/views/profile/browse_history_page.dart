@@ -838,6 +838,7 @@ class _BrowseHistoryPageState extends State<BrowseHistoryPage> {
       detailPage = PostDetailPage(
         postId: post.id,
         apiService: widget.apiService,
+        initialPost: post, // 传递初始数据
       );
     }
     

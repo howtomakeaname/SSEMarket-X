@@ -531,6 +531,7 @@ class _WatchLaterPageState extends State<WatchLaterPage> {
         builder: (_) => PostDetailPage(
           postId: post.id,
           apiService: widget.apiService,
+          initialPost: post, // 传递初始数据
         ),
       ),
     );

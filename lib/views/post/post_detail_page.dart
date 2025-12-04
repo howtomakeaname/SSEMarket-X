@@ -23,7 +23,8 @@ class PostDetailPage extends StatefulWidget {
   final int postId;
   final ApiService apiService;
   final bool isEmbedded;
-  final PostModel? previewPost;
+  final PostModel? previewPost; // 预览模式或初始数据
+  final PostModel? initialPost; // 从列表传递的初始数据（用于优化加载体验）
   final Widget? extraContent; // Displayed below content
   final Widget? topContent;   // Displayed above content (below title)
   final Future<bool> Function(String content)? onSendComment; // Custom comment send handler
@@ -35,6 +36,7 @@ class PostDetailPage extends StatefulWidget {
     required this.apiService,
     this.isEmbedded = false,
     this.previewPost,
+    this.initialPost,
     this.extraContent,
     this.topContent,
     this.onSendComment,
@@ -46,14 +48,14 @@ class PostDetailPage extends StatefulWidget {
 }
 
 class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProviderStateMixin {
-  PostModel _post = PostModel.empty();
+  late PostModel _post;
   UserModel _user = UserModel.empty();
   List<CommentModel> _comments = [];
-  bool _isLoading = true;
+  late bool _isLoading;
   bool _isCommentsLoading = false;
-  bool _isLiked = false;
-  int _likeCount = 0;
-  bool _isSaved = false;
+  late bool _isLiked;
+  late int _likeCount;
+  late bool _isSaved;
   bool _hasChanges = false; // 标记是否有变化需要刷新上一页
   bool _isInWatchLater = false; // 是否已添加到稍后再看
   bool _isWatchLaterEnabled = false; // 稍后再看功能是否启用
@@ -70,6 +72,24 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    
+    // 初始化状态 - 如果有初始数据，直接使用；否则显示 loading
+    if (widget.initialPost != null) {
+      debugPrint('PostDetailPage: 使用初始数据 - ${widget.initialPost!.title}');
+      _post = widget.initialPost!;
+      _isLiked = widget.initialPost!.isLiked;
+      _likeCount = widget.initialPost!.likeCount;
+      _isSaved = widget.initialPost!.isSaved;
+      _isLoading = false; // 有初始数据时不显示 loading
+    } else {
+      debugPrint('PostDetailPage: 没有初始数据，将显示骨架屏');
+      _post = PostModel.empty();
+      _isLiked = false;
+      _likeCount = 0;
+      _isSaved = false;
+      _isLoading = true; // 没有初始数据时显示 loading
+    }
+    
     _loadPostDetail();
   }
 
@@ -103,9 +123,12 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
   }
 
   Future<void> _loadPostDetail() async {
-    setState(() {
-      _isLoading = true;
-    });
+    // 如果没有初始数据，显示 loading
+    if (widget.initialPost == null) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
 
     try {
       if (widget.previewPost != null) {
@@ -129,6 +152,15 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
       
       // Normal mode - fetch from API
       final user = await widget.apiService.getUserInfo();
+      
+      // 如果有初始数据，先更新用户信息，不重新获取帖子详情
+      if (widget.initialPost != null && mounted) {
+        setState(() {
+          _user = user;
+          // 保持使用初始数据，不覆盖
+        });
+      }
+      
       final post = await widget.apiService.getPostDetail(widget.postId, user.phone);
 
       if (!mounted) return;
