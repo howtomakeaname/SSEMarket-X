@@ -8,6 +8,7 @@ import 'package:sse_market_x/core/models/user_model.dart';
 import 'package:sse_market_x/core/services/storage_service.dart';
 import 'package:sse_market_x/core/utils/level_utils.dart';
 import 'package:sse_market_x/views/profile/favorites_page.dart';
+import 'package:sse_market_x/views/profile/post_history_page.dart';
 import 'package:sse_market_x/views/auth/login_page.dart';
 import 'package:sse_market_x/views/profile/settings_page.dart';
 import 'package:sse_market_x/core/services/media_cache_service.dart';
@@ -244,6 +245,18 @@ class _MyPageState extends State<MyPage> {
             Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => FavoritesPage(apiService: widget.apiService),
+              ),
+            );
+          },
+        ),
+        SettingsListItem(
+          title: '发帖历史',
+          leadingIcon: 'assets/icons/ic_history.svg',
+          type: SettingsListItemType.navigation,
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => PostHistoryPage(apiService: widget.apiService),
               ),
             );
           },
