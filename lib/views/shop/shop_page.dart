@@ -6,6 +6,7 @@ import 'package:sse_market_x/views/shop/create_product_page.dart';
 import 'package:sse_market_x/shared/components/loading/loading_indicator.dart';
 import 'package:sse_market_x/shared/components/cards/product_card.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
+import 'package:sse_market_x/core/services/browse_history_service.dart';
 
 /// 闲置物品页面
 class ShopPage extends StatefulWidget {
@@ -226,6 +227,12 @@ class _ShopPageState extends State<ShopPage> {
           return ProductCard(
             product: products[itemIndex],
             onTap: () async {
+              // 添加到浏览历史（在点击时记录）
+              await BrowseHistoryService().addProductHistory(
+                products[itemIndex].id,
+                products[itemIndex],
+              );
+              
               if (widget.onProductTap != null) {
                 widget.onProductTap!(products[itemIndex].id);
               } else {
