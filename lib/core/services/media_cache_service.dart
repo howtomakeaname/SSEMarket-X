@@ -41,6 +41,14 @@ class MediaCacheService {
   /// 初始化缓存服务
   Future<void> init() async {
     if (_initialized) return;
+    
+    // Web 端不支持文件缓存
+    if (kIsWeb) {
+      _initialized = true;
+      debugPrint('MediaCacheService: Web platform, skip file cache');
+      return;
+    }
+    
     try {
       final appDir = await getApplicationDocumentsDirectory();
       _cacheDir = Directory('${appDir.path}/media_cache');

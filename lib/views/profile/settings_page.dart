@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
@@ -31,7 +32,10 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   void initState() {
     super.initState();
-    _loadCacheInfo();
+    // Web 端不需要加载缓存信息
+    if (!kIsWeb) {
+      _loadCacheInfo();
+    }
   }
 
   Future<void> _loadCacheInfo() async {
@@ -110,10 +114,13 @@ class _SettingsPageState extends State<SettingsPage> {
                 },
               ),
             ]),
-            _buildSectionTitle('存储设置'),
-            _buildSettingsGroup([
-              _buildCacheItem(),
-            ]),
+            // Web 端不显示存储设置
+            if (!kIsWeb) ...[
+              _buildSectionTitle('存储设置'),
+              _buildSettingsGroup([
+                _buildCacheItem(),
+              ]),
+            ],
             _buildSectionTitle('账户设置'),
             _buildSettingsGroup([
               _buildActionItem(
