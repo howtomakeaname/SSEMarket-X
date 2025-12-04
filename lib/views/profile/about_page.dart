@@ -1,10 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 import 'package:sse_market_x/views/auth/privacy_policy_page.dart';
 
-class AboutPage extends StatelessWidget {
+class AboutPage extends StatefulWidget {
   const AboutPage({super.key});
+
+  @override
+  State<AboutPage> createState() => _AboutPageState();
+}
+
+class _AboutPageState extends State<AboutPage> {
+  String _version = '加载中...';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      if (mounted) {
+        setState(() {
+          _version = packageInfo.version;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _version = '1.0.0';
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -102,7 +133,7 @@ class AboutPage extends StatelessWidget {
           _buildInfoItem(
             context,
             title: '版本号',
-            value: '1.0.0',
+            value: _version,
           ),
           Divider(height: 1, color: context.dividerColor, indent: 16, endIndent: 16),
           _buildInfoItem(

@@ -45,7 +45,6 @@ class MediaCacheService {
     // Web 端不支持文件缓存
     if (kIsWeb) {
       _initialized = true;
-      debugPrint('MediaCacheService: Web platform, skip file cache');
       return;
     }
     
@@ -148,13 +147,11 @@ class MediaCacheService {
 
     // 检查缓存
     if (await file.exists()) {
-      debugPrint('MediaCache: Hit cache for $url');
       return file;
     }
 
     // 下载并缓存
     try {
-      debugPrint('MediaCache: Downloading $url');
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
         await file.writeAsBytes(response.bodyBytes);
@@ -165,7 +162,6 @@ class MediaCacheService {
           cachedAt: DateTime.now(),
         );
         await _saveMetadata();
-        debugPrint('MediaCache: Cached $url as ${category.label}');
         return file;
       }
     } catch (e) {
@@ -214,7 +210,6 @@ class MediaCacheService {
         await _cacheDir!.delete(recursive: true);
         await _cacheDir!.create(recursive: true);
         _metadata.clear();
-        debugPrint('MediaCache: Cache cleared');
         return true;
       }
     } catch (e) {

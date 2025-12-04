@@ -12,6 +12,7 @@ class PostCard extends StatefulWidget {
   final bool isDense;
   final bool showRating;
   final bool showContentInDense;
+  final bool hidePartition;
   final Widget? topWidget;
   final VoidCallback? onTap;
   final Future<bool> Function()? onLikeTap;
@@ -22,6 +23,7 @@ class PostCard extends StatefulWidget {
     this.isDense = false,
     this.showRating = false,
     this.showContentInDense = false,
+    this.hidePartition = false,
     this.topWidget,
     this.onTap,
     this.onLikeTap,
@@ -316,7 +318,7 @@ class _PostCardState extends State<PostCard> {
           ),
         ],
         // 如果有 topWidget（通常包含了分区信息），则不在这里重复显示分区
-        if (widget.post.partition.isNotEmpty && widget.topWidget == null) ...[
+        if (widget.post.partition.isNotEmpty && widget.topWidget == null && !widget.hidePartition) ...[
           SizedBox(height: widget.isDense ? 4 : 8),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

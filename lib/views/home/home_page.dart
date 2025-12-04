@@ -3,6 +3,7 @@ import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/post_model.dart';
 import 'package:sse_market_x/core/models/user_model.dart';
 import 'package:sse_market_x/core/services/storage_service.dart';
+import 'package:sse_market_x/core/services/browse_history_service.dart';
 import 'package:sse_market_x/views/post/create_post_page.dart';
 import 'package:sse_market_x/views/post/post_detail_page.dart';
 import 'package:sse_market_x/views/home/search_page.dart';
@@ -277,6 +278,7 @@ class HomePageState extends State<HomePage> {
 
   Widget _buildPostList(_PartitionState state, String partition) {
     final isDense = partition == '课程';
+    final apiPartition = _displayToApiPartition[partition] ?? partition; // 获取 API 分区名
     final layoutConfig = LayoutConfig.of(context);
     final onPostTap = layoutConfig?.onPostTap ?? widget.onPostTap;
 
@@ -319,6 +321,31 @@ class HomePageState extends State<HomePage> {
                   post: post,
                   isDense: isDense,
                   onTap: () async {
+                      // 添加到浏览历史（在点击时记录）
+                      final postWithPartition = PostModel(
+                        id: post.id,
+                        title: post.title,
+                        content: post.content,
+                        partition: apiPartition, // 使用 API 分区名
+                        authorName: post.authorName,
+                        authorAvatar: post.authorAvatar,
+                        authorPhone: post.authorPhone,
+                        createdAt: post.createdAt,
+                        likeCount: post.likeCount,
+                        commentCount: post.commentCount,
+                        saveCount: post.saveCount,
+                        viewCount: post.viewCount,
+                        userScore: post.userScore,
+                        userIdentity: post.userIdentity,
+                        isLiked: post.isLiked,
+                        isSaved: post.isSaved,
+                        rating: post.rating,
+                        stars: post.stars,
+                        userRating: post.userRating,
+                        heat: post.heat,
+                      );
+                      BrowseHistoryService().addPostHistory(postWithPartition);
+                      
                       if (onPostTap != null) {
                         onPostTap(post.id);
                         return;
@@ -327,7 +354,7 @@ class HomePageState extends State<HomePage> {
                         MaterialPageRoute(
                           builder: (_) => PostDetailPage(
                             postId: post.id,
-                            apiService: widget.apiService,
+                            apiService: widget.apiService
                           ),
                         ),
                       );

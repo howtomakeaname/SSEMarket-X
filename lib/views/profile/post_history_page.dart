@@ -7,16 +7,16 @@ import 'package:sse_market_x/shared/components/loading/loading_indicator.dart';
 import 'package:sse_market_x/shared/components/cards/post_card.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 
-class FavoritesPage extends StatefulWidget {
+class PostHistoryPage extends StatefulWidget {
   final ApiService apiService;
 
-  const FavoritesPage({super.key, required this.apiService});
+  const PostHistoryPage({super.key, required this.apiService});
 
   @override
-  State<FavoritesPage> createState() => _FavoritesPageState();
+  State<PostHistoryPage> createState() => _PostHistoryPageState();
 }
 
-class _FavoritesPageState extends State<FavoritesPage> {
+class _PostHistoryPageState extends State<PostHistoryPage> {
   final ScrollController _scrollController = ScrollController();
   List<PostModel> _posts = [];
   UserModel _user = UserModel.empty();
@@ -29,7 +29,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
-    _loadUserAndFavorites();
+    _loadUserAndHistory();
   }
 
   @override
@@ -42,26 +42,26 @@ class _FavoritesPageState extends State<FavoritesPage> {
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200) {
       if (!_isLoading && _hasMore) {
-        _loadFavorites(refresh: false);
+        _loadHistory(refresh: false);
       }
     }
   }
 
-  Future<void> _loadUserAndFavorites() async {
+  Future<void> _loadUserAndHistory() async {
     try {
       final user = await widget.apiService.getUserInfo();
       if (mounted) {
         setState(() {
           _user = user;
         });
-        _loadFavorites(refresh: true);
+        _loadHistory(refresh: true);
       }
     } catch (e) {
       debugPrint('获取用户信息失败: $e');
     }
   }
 
-  Future<void> _loadFavorites({required bool refresh}) async {
+  Future<void> _loadHistory({required bool refresh}) async {
     if (_isLoading) return;
     if (_user.phone.isEmpty) return;
 
@@ -78,8 +78,8 @@ class _FavoritesPageState extends State<FavoritesPage> {
         GetPostsParams(
           limit: _pageSize,
           offset: _offset,
-          partition: '主页', // 收藏接口 partition 可以传主页
-          searchsort: 'save', // 使用 save 排序获取收藏
+          partition: '主页',
+          searchsort: 'history', // 使用 history 获取发帖历史
           searchinfo: '',
           userTelephone: _user.phone,
           tag: '',
@@ -99,7 +99,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
         _isLoading = false;
       });
     } catch (e) {
-      debugPrint('加载收藏失败: $e');
+      debugPrint('加载发帖历史失败: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -114,15 +114,13 @@ class _FavoritesPageState extends State<FavoritesPage> {
       backgroundColor: context.backgroundColor,
       appBar: AppBar(
         backgroundColor: context.surfaceColor,
-        surfaceTintColor: Colors.transparent,
         elevation: 0,
-        scrolledUnderElevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: context.textPrimaryColor),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
-          '我的收藏',
+          '我的发帖',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -147,13 +145,13 @@ class _FavoritesPageState extends State<FavoritesPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.favorite_border,
+              Icons.history,
               size: 64,
               color: context.textSecondaryColor,
             ),
             const SizedBox(height: 16),
             Text(
-              '暂无收藏',
+              '暂无发帖记录',
               style: TextStyle(
                 fontSize: 14,
                 color: context.textSecondaryColor,
@@ -161,7 +159,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
             ),
             const SizedBox(height: 8),
             Text(
-              '快去收藏一些有趣的帖子吧',
+              '快去发布你的第一篇帖子吧',
               style: TextStyle(
                 fontSize: 12,
                 color: context.textSecondaryColor,
@@ -173,7 +171,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
     }
 
     return RefreshIndicator(
-      onRefresh: () => _loadFavorites(refresh: true),
+      onRefresh: () => _loadHistory(refresh: true),
       child: ListView.builder(
         controller: _scrollController,
         padding: const EdgeInsets.only(top: 8),
@@ -194,16 +192,12 @@ class _FavoritesPageState extends State<FavoritesPage> {
                   ),
                 ),
               );
-              // 如果帖子被删除或取消收藏，刷新列表
-              if (result != null) {
-                if (result['deleted'] == true || result['isSaved'] == false) {
-                  _loadFavorites(refresh: true);
-                } else {
-                   // 简单起见，有变动就刷新，因为可能点赞数变了
-                   // 但为了性能，如果没有取消收藏，可以局部更新点赞数（TODO）
-                   // 目前为了保证一致性，直接刷新
-                   _loadFavorites(refresh: true);
-                }
+              // 如果帖子被删除，刷新列表
+              if (result != null && result['deleted'] == true) {
+                _loadHistory(refresh: true);
+              } else if (result != null) {
+                // 有其他变动也刷新
+                _loadHistory(refresh: true);
               }
             },
             onLikeTap: () async {

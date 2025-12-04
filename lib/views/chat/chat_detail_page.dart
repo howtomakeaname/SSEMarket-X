@@ -6,7 +6,9 @@ import 'package:sse_market_x/core/models/chat_message_model.dart';
 import 'package:sse_market_x/core/models/user_model.dart';
 import 'package:sse_market_x/core/services/storage_service.dart';
 import 'package:sse_market_x/core/services/websocket_service.dart';
+import 'package:sse_market_x/core/services/media_cache_service.dart';
 import 'package:sse_market_x/shared/components/inputs/emoji_picker.dart';
+import 'package:sse_market_x/shared/components/media/cached_image.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 
 class ChatDetailPage extends StatefulWidget {
@@ -32,12 +34,14 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   final List<ChatMessageModel> _messages = [];
   bool _isLoading = true;
   bool _isSending = false;
+  UserModel? _currentUser;
 
   StreamSubscription? _messageSubscription;
 
   @override
   void initState() {
     super.initState();
+    _loadCurrentUser();
     _ensureWebSocketConnected();
     _loadMessages();
     _subscribeToMessages();
@@ -45,6 +49,19 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     
     // 标记与该用户的对话为已读
     WebSocketService().markAsRead(widget.targetUser.userId);
+  }
+
+  Future<void> _loadCurrentUser() async {
+    try {
+      final user = await widget.apiService.getUserInfo();
+      if (mounted) {
+        setState(() {
+          _currentUser = user;
+        });
+      }
+    } catch (e) {
+      debugPrint('加载当前用户信息失败: $e');
+    }
   }
 
   void _onTextChanged() {
@@ -406,6 +423,12 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   }
 
   Widget _buildMessageBubble(ChatMessageModel message, bool isMe) {
+    // 计算消息气泡的最大宽度（参考微信）
+    // 双方消息都不应该超过对方的起始位置
+    // 对方起始位置 = 头像(32) + 间距(8) = 40
+    // 消息最大宽度 = 屏幕宽度 - 左侧头像和间距(40) - 右侧头像和间距(40) = 屏幕宽度 - 80
+    final double maxWidth = MediaQuery.of(context).size.width - 80;
+    
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
@@ -413,53 +436,65 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!isMe) ...[
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: context.backgroundColor,
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: widget.targetUser.avatar.isNotEmpty
-                  ? Image.network(
-                      widget.targetUser.avatar,
-                      width: 32,
-                      height: 32,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => SvgPicture.asset(
-                        'assets/icons/default_avatar.svg',
-                        fit: BoxFit.cover,
-                      ),
-                    )
-                  : SvgPicture.asset(
-                      'assets/icons/default_avatar.svg',
-                      fit: BoxFit.cover,
-                    ),
-            ),
+            _buildAvatar(widget.targetUser.avatar),
             const SizedBox(width: 8),
           ],
           Flexible(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: BoxDecoration(
-                color: isMe ? AppColors.primary : context.backgroundColor,
-                borderRadius: BorderRadius.circular(16).copyWith(
-                  topLeft: isMe ? const Radius.circular(16) : const Radius.circular(4),
-                  topRight: isMe ? const Radius.circular(4) : const Radius.circular(16),
-                ),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: maxWidth,
               ),
-              child: Text(
-                message.content,
-                style: TextStyle(
-                  color: isMe ? Colors.white : context.textPrimaryColor,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  color: isMe ? AppColors.primary : context.backgroundColor,
+                  borderRadius: BorderRadius.circular(16).copyWith(
+                    topLeft: isMe ? const Radius.circular(16) : const Radius.circular(4),
+                    topRight: isMe ? const Radius.circular(4) : const Radius.circular(16),
+                  ),
+                ),
+                child: Text(
+                  message.content,
+                  style: TextStyle(
+                    color: isMe ? Colors.white : context.textPrimaryColor,
+                  ),
                 ),
               ),
             ),
           ),
-          // iMessage 风格：不显示自己的头像
+          if (isMe) ...[
+            const SizedBox(width: 8),
+            _buildAvatar(_currentUser?.avatar ?? ''),
+          ],
         ],
       ),
+    );
+  }
+
+  Widget _buildAvatar(String avatarUrl) {
+    final defaultAvatar = SvgPicture.asset(
+      'assets/icons/default_avatar.svg',
+      fit: BoxFit.cover,
+    );
+
+    return Container(
+      width: 32,
+      height: 32,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: context.backgroundColor,
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: avatarUrl.isNotEmpty
+          ? CachedImage(
+              imageUrl: avatarUrl,
+              width: 32,
+              height: 32,
+              fit: BoxFit.cover,
+              category: CacheCategory.avatar,
+              errorWidget: defaultAvatar,
+            )
+          : defaultAvatar,
     );
   }
 }
