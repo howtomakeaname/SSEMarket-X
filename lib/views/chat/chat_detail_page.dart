@@ -6,7 +6,9 @@ import 'package:sse_market_x/core/models/chat_message_model.dart';
 import 'package:sse_market_x/core/models/user_model.dart';
 import 'package:sse_market_x/core/services/storage_service.dart';
 import 'package:sse_market_x/core/services/websocket_service.dart';
+import 'package:sse_market_x/core/services/media_cache_service.dart';
 import 'package:sse_market_x/shared/components/inputs/emoji_picker.dart';
+import 'package:sse_market_x/shared/components/media/cached_image.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 
 class ChatDetailPage extends StatefulWidget {
@@ -32,12 +34,14 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   final List<ChatMessageModel> _messages = [];
   bool _isLoading = true;
   bool _isSending = false;
+  UserModel? _currentUser;
 
   StreamSubscription? _messageSubscription;
 
   @override
   void initState() {
     super.initState();
+    _loadCurrentUser();
     _ensureWebSocketConnected();
     _loadMessages();
     _subscribeToMessages();
@@ -45,6 +49,19 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     
     // 标记与该用户的对话为已读
     WebSocketService().markAsRead(widget.targetUser.userId);
+  }
+
+  Future<void> _loadCurrentUser() async {
+    try {
+      final user = await widget.apiService.getUserInfo();
+      if (mounted) {
+        setState(() {
+          _currentUser = user;
+        });
+      }
+    } catch (e) {
+      debugPrint('加载当前用户信息失败: $e');
+    }
   }
 
   void _onTextChanged() {
@@ -413,30 +430,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!isMe) ...[
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: context.backgroundColor,
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: widget.targetUser.avatar.isNotEmpty
-                  ? Image.network(
-                      widget.targetUser.avatar,
-                      width: 32,
-                      height: 32,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => SvgPicture.asset(
-                        'assets/icons/default_avatar.svg',
-                        fit: BoxFit.cover,
-                      ),
-                    )
-                  : SvgPicture.asset(
-                      'assets/icons/default_avatar.svg',
-                      fit: BoxFit.cover,
-                    ),
-            ),
+            _buildAvatar(widget.targetUser.avatar),
             const SizedBox(width: 8),
           ],
           Flexible(
@@ -457,9 +451,39 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
               ),
             ),
           ),
-          // iMessage 风格：不显示自己的头像
+          if (isMe) ...[
+            const SizedBox(width: 8),
+            _buildAvatar(_currentUser?.avatar ?? ''),
+          ],
         ],
       ),
+    );
+  }
+
+  Widget _buildAvatar(String avatarUrl) {
+    final defaultAvatar = SvgPicture.asset(
+      'assets/icons/default_avatar.svg',
+      fit: BoxFit.cover,
+    );
+
+    return Container(
+      width: 32,
+      height: 32,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: context.backgroundColor,
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: avatarUrl.isNotEmpty
+          ? CachedImage(
+              imageUrl: avatarUrl,
+              width: 32,
+              height: 32,
+              fit: BoxFit.cover,
+              category: CacheCategory.avatar,
+              errorWidget: defaultAvatar,
+            )
+          : defaultAvatar,
     );
   }
 }
