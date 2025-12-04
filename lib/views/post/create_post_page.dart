@@ -611,6 +611,11 @@ class _CreatePostPageState extends State<CreatePostPage> {
           // Markdown 工具按钮
           if (!_showPreview) ...[
             ToolbarIconButton(
+              icon: Icons.title,
+              tooltip: '标题：## 二级标题',
+              onPressed: () => _insertMarkdown('\n## ', '\n', placeholder: '二级标题'),
+            ),
+            ToolbarIconButton(
               icon: Icons.format_bold,
               tooltip: '粗体：**粗体文字**',
               onPressed: () => _insertMarkdown('**', '**', placeholder: '粗体文字'),
@@ -619,11 +624,6 @@ class _CreatePostPageState extends State<CreatePostPage> {
               icon: Icons.format_italic,
               tooltip: '斜体：*斜体文字*',
               onPressed: () => _insertMarkdown('*', '*', placeholder: '斜体文字'),
-            ),
-            ToolbarIconButton(
-              icon: Icons.title,
-              tooltip: '标题：## 二级标题',
-              onPressed: () => _insertMarkdown('\n## ', '\n', placeholder: '二级标题'),
             ),
             ToolbarIconButton(
               icon: Icons.format_list_bulleted,

@@ -4,17 +4,18 @@ import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/comment_model.dart';
 import 'package:sse_market_x/core/models/post_model.dart';
 import 'package:sse_market_x/core/models/user_model.dart';
+import 'package:sse_market_x/core/services/media_cache_service.dart';
+import 'package:sse_market_x/core/services/watch_later_service.dart';
 import 'package:sse_market_x/core/utils/level_utils.dart';
 import 'package:sse_market_x/core/utils/time_utils.dart';
 import 'package:sse_market_x/shared/components/cards/comment_card.dart';
 import 'package:sse_market_x/shared/components/feedback/comment_input.dart';
-import 'package:sse_market_x/shared/components/markdown/latex_markdown.dart';
-import 'package:sse_market_x/core/services/media_cache_service.dart';
-import 'package:sse_market_x/shared/components/media/cached_image.dart';
 import 'package:sse_market_x/shared/components/loading/loading_indicator.dart';
-import 'package:sse_market_x/shared/components/utils/snackbar_helper.dart';
-import 'package:sse_market_x/shared/components/overlays/reply_modal.dart';
+import 'package:sse_market_x/shared/components/markdown/latex_markdown.dart';
+import 'package:sse_market_x/shared/components/media/cached_image.dart';
 import 'package:sse_market_x/shared/components/overlays/custom_dialog.dart';
+import 'package:sse_market_x/shared/components/overlays/reply_modal.dart';
+import 'package:sse_market_x/shared/components/utils/snackbar_helper.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 import 'package:sse_market_x/views/profile/user_profile_page.dart';
 
@@ -54,10 +55,13 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
   int _likeCount = 0;
   bool _isSaved = false;
   bool _hasChanges = false; // 标记是否有变化需要刷新上一页
+  bool _isInWatchLater = false; // 是否已添加到稍后再看
+  bool _isWatchLaterEnabled = false; // 稍后再看功能是否启用
 
   // 滚动监听相关
   final ScrollController _scrollController = ScrollController();
   bool _showPostTitle = false;
+  final WatchLaterService _watchLaterService = WatchLaterService();
 
   /// 是否是自己的帖子
   bool get _isOwnPost => _user.phone.isNotEmpty && _user.phone == _post.authorPhone;
@@ -129,12 +133,23 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
 
       if (!mounted) return;
 
+      // 检查稍后再看功能是否启用
+      final isWatchLaterEnabled = await _watchLaterService.isEnabled();
+      
+      // 如果启用了，检查是否已添加到稍后再看
+      bool isInWatchLater = false;
+      if (isWatchLaterEnabled) {
+        isInWatchLater = await _watchLaterService.hasPost(widget.postId);
+      }
+
       setState(() {
         _user = user;
         _post = post;
         _isLiked = post.isLiked;
         _likeCount = post.likeCount;
         _isSaved = post.isSaved;
+        _isWatchLaterEnabled = isWatchLaterEnabled;
+        _isInWatchLater = isInWatchLater;
         _isLoading = false;
       });
 
@@ -221,6 +236,31 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
       }
     } catch (e) {
       debugPrint('收藏失败: $e');
+    }
+  }
+
+  /// 添加到稍后再看
+  Future<void> _onAddToWatchLater() async {
+    try {
+      final added = await _watchLaterService.addPost(_post);
+      if (added && mounted) {
+        setState(() {
+          _isInWatchLater = true;
+        });
+        // 显示提示
+        if (mounted) {
+          SnackBarHelper.show(
+            context,
+            '已添加到稍后再看，可在"我的"页面查看',
+          );
+        }
+      } else if (!added && mounted) {
+        SnackBarHelper.show(context, '该帖子已在稍后再看列表中');
+      }
+    } catch (e) {
+      if (mounted) {
+        SnackBarHelper.show(context, '添加失败');
+      }
     }
   }
 
@@ -349,8 +389,8 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
                     icon: const Icon(Icons.delete_outline, color: AppColors.error),
                     onPressed: _onDeletePost,
                   ),
-                // 打分帖子不显示收藏按钮
-                if (widget.postType != 'rating')
+                // 打分帖子不显示收藏和稍后再看按钮
+                if (widget.postType != 'rating') ...[
                   IconButton(
                     icon: Icon(
                       _isSaved ? Icons.bookmark : Icons.bookmark_border,
@@ -358,6 +398,17 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
                     ),
                     onPressed: _onSavePost,
                   ),
+                  // 只在启用了稍后再看功能时显示按钮
+                  if (_isWatchLaterEnabled)
+                    IconButton(
+                      icon: Icon(
+                        _isInWatchLater ? Icons.watch_later : Icons.watch_later_outlined,
+                        color: _isInWatchLater ? AppColors.primary : context.textPrimaryColor,
+                      ),
+                      onPressed: _onAddToWatchLater,
+                      tooltip: '稍后再看',
+                    ),
+                ],
                 const SizedBox(width: 8), // Add right padding
               ]
             : null,

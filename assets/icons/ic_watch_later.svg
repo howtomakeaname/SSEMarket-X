@@ -1,0 +1,8 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 时钟圆形 -->
+  <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" fill="none"/>
+  <!-- 时钟指针 -->
+  <path d="M12 7V12L15 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- 小书签标记在右上角 -->
+  <path d="M18 3L18 8L20.5 6.5L23 8V3H18Z" fill="currentColor"/>
+</svg>

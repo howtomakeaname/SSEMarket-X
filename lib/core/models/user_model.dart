@@ -7,6 +7,7 @@ class UserModel {
   final int score;
   final String identity;
   final String intro;
+  final bool emailPush;
 
   const UserModel({
     required this.userId,
@@ -17,6 +18,7 @@ class UserModel {
     required this.score,
     required this.identity,
     required this.intro,
+    this.emailPush = false,
   });
 
   factory UserModel.empty() {
@@ -29,6 +31,7 @@ class UserModel {
       score: 0,
       identity: '',
       intro: '',
+      emailPush: false,
     );
   }
 
@@ -59,6 +62,16 @@ class UserModel {
       return '';
     }
 
+    bool _readBool(List<String> keys) {
+      for (final key in keys) {
+        final v = map[key];
+        if (v is bool) return v;
+        if (v is int) return v != 0;
+        if (v is String) return v.toLowerCase() == 'true' || v == '1';
+      }
+      return false;
+    }
+
     return UserModel(
       userId: _readInt(['userID', 'UserID', 'id']),
       name: _readString(['name', 'Name']),
@@ -68,6 +81,7 @@ class UserModel {
       score: _readInt(['score', 'Score']),
       identity: _readString(['identity', 'Identity']),
       intro: _readString(['intro', 'Intro']),
+      emailPush: _readBool(['emailpush', 'emailPush', 'EmailPush']),
     );
   }
 
@@ -80,6 +94,7 @@ class UserModel {
     int? score,
     String? identity,
     String? intro,
+    bool? emailPush,
   }) {
     return UserModel(
       userId: userId ?? this.userId,
@@ -90,6 +105,7 @@ class UserModel {
       score: score ?? this.score,
       identity: identity ?? this.identity,
       intro: intro ?? this.intro,
+      emailPush: emailPush ?? this.emailPush,
     );
   }
 
@@ -103,6 +119,7 @@ class UserModel {
       'Score': score,
       'Identity': identity,
       'Intro': intro,
+      'emailpush': emailPush,
     };
   }
 }
