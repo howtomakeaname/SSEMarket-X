@@ -207,19 +207,52 @@ class _WatchLaterPageState extends State<WatchLaterPage> {
       return const LoadingIndicator.center(message: '加载中...');
     }
 
-    if (_items.isEmpty) {
-      return _buildEmptyState();
-    }
-
-    return RefreshIndicator(
-      onRefresh: _loadData,
-      child: ListView.builder(
-        padding: const EdgeInsets.only(top: 8),
-        itemCount: _items.length + _getOlderSectionCount(),
-        itemBuilder: (context, index) {
-          return _buildItem(index);
-        },
-      ),
+    return Column(
+      children: [
+        // 提示信息
+        if (!_isSelectionMode)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            color: context.surfaceColor,
+            child: Row(
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  size: 16,
+                  color: context.textTertiaryColor,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '这是一个纯本地功能，记录只在本地保存',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: context.textTertiaryColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        if (!_isSelectionMode) Divider(height: 1, color: context.dividerColor),
+        
+        // 列表内容
+        Expanded(
+          child: _items.isEmpty
+              ? _buildEmptyState()
+              : RefreshIndicator(
+                  onRefresh: _loadData,
+                  child: ListView.builder(
+                    padding: const EdgeInsets.only(top: 8),
+                    itemCount: _items.length + _getOlderSectionCount(),
+                    itemBuilder: (context, index) {
+                      return _buildItem(index);
+                    },
+                  ),
+                ),
+        ),
+      ],
     );
   }
 
