@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:sse_market_x/views/profile/edit_profile_page.dart';
-import 'package:sse_market_x/views/profile/feedback_page.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/user_model.dart';
-import 'package:sse_market_x/core/utils/level_utils.dart';
 import 'package:sse_market_x/core/services/media_cache_service.dart';
-import 'package:sse_market_x/views/profile/browse_history_page.dart';
-import 'package:sse_market_x/views/profile/favorites_page.dart';
-import 'package:sse_market_x/views/profile/post_history_page.dart';
-import 'package:sse_market_x/views/profile/settings_page.dart';
+import 'package:sse_market_x/core/utils/level_utils.dart';
+import 'package:sse_market_x/shared/components/lists/settings_list_item.dart';
 import 'package:sse_market_x/shared/components/media/cached_image.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
-import 'package:sse_market_x/shared/components/lists/settings_list_item.dart';
+import 'package:sse_market_x/views/profile/browse_history_page.dart';
+import 'package:sse_market_x/views/profile/edit_profile_page.dart';
+import 'package:sse_market_x/views/profile/favorites_page.dart';
+import 'package:sse_market_x/views/profile/feedback_page.dart';
+import 'package:sse_market_x/views/profile/post_history_page.dart';
+import 'package:sse_market_x/views/profile/settings_page.dart';
+import 'package:sse_market_x/views/profile/watch_later_page.dart';
 
 class MyPage extends StatefulWidget {
   const MyPage({super.key, required this.apiService});
@@ -233,6 +234,18 @@ class _MyPageState extends State<MyPage> {
             });
           },
           isFirst: true,
+        ),
+        SettingsListItem(
+          title: '稍后再看',
+          leadingIcon: 'assets/icons/ic_history.svg',
+          type: SettingsListItemType.navigation,
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => WatchLaterPage(apiService: widget.apiService),
+              ),
+            );
+          },
         ),
         SettingsListItem(
           title: '浏览历史',
