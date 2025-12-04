@@ -423,6 +423,12 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   }
 
   Widget _buildMessageBubble(ChatMessageModel message, bool isMe) {
+    // 计算消息气泡的最大宽度（参考微信）
+    // 双方消息都不应该超过对方的起始位置
+    // 对方起始位置 = 头像(32) + 间距(8) = 40
+    // 消息最大宽度 = 屏幕宽度 - 左侧头像和间距(40) - 右侧头像和间距(40) = 屏幕宽度 - 80
+    final double maxWidth = MediaQuery.of(context).size.width - 80;
+    
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
@@ -434,19 +440,24 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
             const SizedBox(width: 8),
           ],
           Flexible(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: BoxDecoration(
-                color: isMe ? AppColors.primary : context.backgroundColor,
-                borderRadius: BorderRadius.circular(16).copyWith(
-                  topLeft: isMe ? const Radius.circular(16) : const Radius.circular(4),
-                  topRight: isMe ? const Radius.circular(4) : const Radius.circular(16),
-                ),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: maxWidth,
               ),
-              child: Text(
-                message.content,
-                style: TextStyle(
-                  color: isMe ? Colors.white : context.textPrimaryColor,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  color: isMe ? AppColors.primary : context.backgroundColor,
+                  borderRadius: BorderRadius.circular(16).copyWith(
+                    topLeft: isMe ? const Radius.circular(16) : const Radius.circular(4),
+                    topRight: isMe ? const Radius.circular(4) : const Radius.circular(16),
+                  ),
+                ),
+                child: Text(
+                  message.content,
+                  style: TextStyle(
+                    color: isMe ? Colors.white : context.textPrimaryColor,
+                  ),
                 ),
               ),
             ),
