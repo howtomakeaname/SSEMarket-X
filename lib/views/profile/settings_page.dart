@@ -3,14 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/services/media_cache_service.dart';
 import 'package:sse_market_x/core/services/storage_service.dart';
-import 'package:sse_market_x/views/auth/reset_password_page.dart';
-import 'package:sse_market_x/views/auth/login_page.dart';
-import 'package:sse_market_x/views/profile/cache_management_page.dart';
-import 'package:sse_market_x/views/profile/about_page.dart';
-import 'package:sse_market_x/shared/theme/app_colors.dart';
+import 'package:sse_market_x/core/services/watch_later_service.dart';
 import 'package:sse_market_x/shared/components/lists/settings_list_item.dart';
-import 'package:sse_market_x/shared/components/utils/snackbar_helper.dart';
 import 'package:sse_market_x/shared/components/overlays/custom_dialog.dart';
+import 'package:sse_market_x/shared/components/utils/snackbar_helper.dart';
+import 'package:sse_market_x/shared/theme/app_colors.dart';
+import 'package:sse_market_x/views/auth/login_page.dart';
+import 'package:sse_market_x/views/auth/reset_password_page.dart';
+import 'package:sse_market_x/views/profile/about_page.dart';
+import 'package:sse_market_x/views/profile/cache_management_page.dart';
 
 class SettingsPage extends StatefulWidget {
   final ApiService apiService;
@@ -30,8 +31,10 @@ class _SettingsPageState extends State<SettingsPage> {
   // bool _isNotificationEnabled = true; // TODO: 推送通知功能待实现
   bool _isEmailNotificationEnabled = false;
   // bool _isAutoPlay = true; // TODO: 自动播放功能待实现
+  bool _isWatchLaterEnabled = false;
   
   final MediaCacheService _cacheService = MediaCacheService();
+  final WatchLaterService _watchLaterService = WatchLaterService();
   String _cacheSize = '计算中...';
   bool _isLoadingCacheInfo = true;
 
@@ -43,6 +46,16 @@ class _SettingsPageState extends State<SettingsPage> {
       _loadCacheInfo();
     }
     _loadEmailPushStatus();
+    _loadWatchLaterStatus();
+  }
+
+  Future<void> _loadWatchLaterStatus() async {
+    final enabled = await _watchLaterService.isEnabled();
+    if (mounted) {
+      setState(() {
+        _isWatchLaterEnabled = enabled;
+      });
+    }
   }
 
   Future<void> _loadCacheInfo() async {
@@ -180,6 +193,64 @@ class _SettingsPageState extends State<SettingsPage> {
                         ),
                       ),
                     );
+                  },
+                  isFirst: true,
+                  isLast: true,
+                ),
+              ],
+            ),
+            _buildSectionTitle('实验性功能'),
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: context.surfaceColor.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: context.dividerColor,
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.science_outlined,
+                    size: 16,
+                    color: context.textTertiaryColor,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '这些功能仍在测试中，可能不稳定',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: context.textTertiaryColor,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            SettingsListGroup(
+              children: [
+                SettingsListItem(
+                  title: '稍后再看',
+                  subtitle: '在帖子详情页标记稍后查看的内容',
+                  leadingIcon: 'assets/icons/ic_watch_later.svg',
+                  type: SettingsListItemType.toggle,
+                  switchValue: _isWatchLaterEnabled,
+                  onSwitchChanged: (value) async {
+                    await _watchLaterService.setEnabled(value);
+                    setState(() {
+                      _isWatchLaterEnabled = value;
+                    });
+                    if (mounted) {
+                      SnackBarHelper.show(
+                        context,
+                        value ? '已启用稍后再看功能' : '已关闭稍后再看功能',
+                      );
+                    }
                   },
                   isFirst: true,
                   isLast: true,

@@ -56,6 +56,7 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
   bool _isSaved = false;
   bool _hasChanges = false; // 标记是否有变化需要刷新上一页
   bool _isInWatchLater = false; // 是否已添加到稍后再看
+  bool _isWatchLaterEnabled = false; // 稍后再看功能是否启用
 
   // 滚动监听相关
   final ScrollController _scrollController = ScrollController();
@@ -132,8 +133,14 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
 
       if (!mounted) return;
 
-      // 检查是否已添加到稍后再看
-      final isInWatchLater = await _watchLaterService.hasPost(widget.postId);
+      // 检查稍后再看功能是否启用
+      final isWatchLaterEnabled = await _watchLaterService.isEnabled();
+      
+      // 如果启用了，检查是否已添加到稍后再看
+      bool isInWatchLater = false;
+      if (isWatchLaterEnabled) {
+        isInWatchLater = await _watchLaterService.hasPost(widget.postId);
+      }
 
       setState(() {
         _user = user;
@@ -141,6 +148,7 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
         _isLiked = post.isLiked;
         _likeCount = post.likeCount;
         _isSaved = post.isSaved;
+        _isWatchLaterEnabled = isWatchLaterEnabled;
         _isInWatchLater = isInWatchLater;
         _isLoading = false;
       });
@@ -390,14 +398,16 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
                     ),
                     onPressed: _onSavePost,
                   ),
-                  IconButton(
-                    icon: Icon(
-                      _isInWatchLater ? Icons.watch_later : Icons.watch_later_outlined,
-                      color: _isInWatchLater ? AppColors.primary : context.textPrimaryColor,
+                  // 只在启用了稍后再看功能时显示按钮
+                  if (_isWatchLaterEnabled)
+                    IconButton(
+                      icon: Icon(
+                        _isInWatchLater ? Icons.watch_later : Icons.watch_later_outlined,
+                        color: _isInWatchLater ? AppColors.primary : context.textPrimaryColor,
+                      ),
+                      onPressed: _onAddToWatchLater,
+                      tooltip: '稍后再看',
                     ),
-                    onPressed: _onAddToWatchLater,
-                    tooltip: '稍后再看',
-                  ),
                 ],
                 const SizedBox(width: 8), // Add right padding
               ]
