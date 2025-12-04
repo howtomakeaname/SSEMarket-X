@@ -59,6 +59,7 @@ class WatchLaterService {
   WatchLaterService._internal();
 
   static const String _keyWatchLater = 'watch_later_v1';
+  static const String _keyWatchLaterEnabled = 'watch_later_enabled';
   static const int _maxItemCount = 100; // 最多保存100条
 
   late SharedPreferences _prefs;
@@ -68,6 +69,18 @@ class WatchLaterService {
     if (_isInitialized) return;
     _prefs = await SharedPreferences.getInstance();
     _isInitialized = true;
+  }
+
+  /// 获取稍后再看功能是否启用
+  Future<bool> isEnabled() async {
+    await init();
+    return _prefs.getBool(_keyWatchLaterEnabled) ?? false;
+  }
+
+  /// 设置稍后再看功能开关
+  Future<void> setEnabled(bool enabled) async {
+    await init();
+    await _prefs.setBool(_keyWatchLaterEnabled, enabled);
   }
 
   /// 添加到稍后再看

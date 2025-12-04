@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/user_model.dart';
 import 'package:sse_market_x/core/services/media_cache_service.dart';
+import 'package:sse_market_x/core/services/watch_later_service.dart';
 import 'package:sse_market_x/core/utils/level_utils.dart';
 import 'package:sse_market_x/shared/components/lists/settings_list_item.dart';
 import 'package:sse_market_x/shared/components/media/cached_image.dart';
@@ -26,11 +27,23 @@ class MyPage extends StatefulWidget {
 
 class _MyPageState extends State<MyPage> {
   UserModel _user = UserModel.empty();
+  bool _isWatchLaterEnabled = false;
+  final WatchLaterService _watchLaterService = WatchLaterService();
 
   @override
   void initState() {
     super.initState();
     _loadUser();
+    _loadWatchLaterStatus();
+  }
+
+  Future<void> _loadWatchLaterStatus() async {
+    final enabled = await _watchLaterService.isEnabled();
+    if (mounted) {
+      setState(() {
+        _isWatchLaterEnabled = enabled;
+      });
+    }
   }
 
   Future<void> _loadUser() async {
@@ -233,46 +246,51 @@ class _MyPageState extends State<MyPage> {
   }
 
   Widget _buildMainMenu(BuildContext context) {
-    return SettingsListGroup(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      children: [
-        SettingsListItem(
-          title: '浏览历史',
-          leadingIcon: 'assets/icons/ic_history_view.svg',
-          type: SettingsListItemType.navigation,
-          onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => BrowseHistoryPage(apiService: widget.apiService),
-              ),
-            );
-          },
-          isFirst: true,
-        ),
-        SettingsListItem(
-          title: '我的收藏',
-          leadingIcon: 'assets/icons/ic_favorite.svg',
-          type: SettingsListItemType.navigation,
-          onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => FavoritesPage(apiService: widget.apiService),
-              ),
-            );
-          },
-        ),
-        SettingsListItem(
-          title: '我的发帖',
-          leadingIcon: 'assets/icons/ic_article.svg',
-          type: SettingsListItemType.navigation,
-          onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => PostHistoryPage(apiService: widget.apiService),
-              ),
-            );
-          },
-        ),
+    // 构建菜单项列表
+    final menuItems = <Widget>[
+      SettingsListItem(
+        title: '浏览历史',
+        leadingIcon: 'assets/icons/ic_history_view.svg',
+        type: SettingsListItemType.navigation,
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => BrowseHistoryPage(apiService: widget.apiService),
+            ),
+          );
+        },
+        isFirst: true,
+      ),
+      SettingsListItem(
+        title: '我的收藏',
+        leadingIcon: 'assets/icons/ic_favorite.svg',
+        type: SettingsListItemType.navigation,
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => FavoritesPage(apiService: widget.apiService),
+            ),
+          );
+        },
+      ),
+      SettingsListItem(
+        title: '我的发帖',
+        leadingIcon: 'assets/icons/ic_article.svg',
+        type: SettingsListItemType.navigation,
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => PostHistoryPage(apiService: widget.apiService),
+            ),
+          );
+        },
+        isLast: !_isWatchLaterEnabled, // 如果稍后再看未启用，这是最后一项
+      ),
+    ];
+
+    // 如果启用了稍后再看，添加该菜单项
+    if (_isWatchLaterEnabled) {
+      menuItems.add(
         SettingsListItem(
           title: '稍后再看',
           leadingIcon: 'assets/icons/ic_watch_later.svg',
@@ -286,7 +304,12 @@ class _MyPageState extends State<MyPage> {
           },
           isLast: true,
         ),
-      ],
+      );
+    }
+
+    return SettingsListGroup(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      children: menuItems,
     );
   }
 
@@ -298,8 +321,8 @@ class _MyPageState extends State<MyPage> {
           title: '设置',
           leadingIcon: 'assets/icons/ic_settings.svg',
           type: SettingsListItemType.navigation,
-          onTap: () {
-            Navigator.of(context).push(
+          onTap: () async {
+            await Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => SettingsPage(
                   apiService: widget.apiService,
@@ -307,6 +330,8 @@ class _MyPageState extends State<MyPage> {
                 ),
               ),
             );
+            // 从设置页面返回后，重新加载稍后再看状态
+            _loadWatchLaterStatus();
           },
           isFirst: true,
         ),
