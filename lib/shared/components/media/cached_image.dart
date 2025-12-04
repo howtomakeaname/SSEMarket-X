@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:sse_market_x/core/services/media_cache_service.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
@@ -82,6 +83,16 @@ class _CachedImageState extends State<CachedImage>
       return;
     }
 
+    // Web 端直接使用网络图片，不缓存
+    if (kIsWeb) {
+      setState(() {
+        _isLoading = false;
+        _hasError = false;
+      });
+      _fadeController.forward();
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _hasError = false;
@@ -119,9 +130,23 @@ class _CachedImageState extends State<CachedImage>
 
     if (_isLoading) {
       child = widget.placeholder ?? _buildPlaceholder(context);
-    } else if (_hasError || _cachedFile == null) {
+    } else if (_hasError) {
       child = widget.errorWidget ?? _buildErrorWidget(context);
-    } else {
+    } else if (kIsWeb) {
+      // Web 端直接使用网络图片
+      child = FadeTransition(
+        opacity: _fadeAnimation,
+        child: Image.network(
+          widget.imageUrl,
+          width: widget.width,
+          height: widget.height,
+          fit: widget.fit,
+          errorBuilder: (context, error, stackTrace) {
+            return widget.errorWidget ?? _buildErrorWidget(context);
+          },
+        ),
+      );
+    } else if (_cachedFile != null) {
       child = FadeTransition(
         opacity: _fadeAnimation,
         child: Image.file(
@@ -134,6 +159,8 @@ class _CachedImageState extends State<CachedImage>
           },
         ),
       );
+    } else {
+      child = widget.errorWidget ?? _buildErrorWidget(context);
     }
 
     if (widget.borderRadius != null) {
