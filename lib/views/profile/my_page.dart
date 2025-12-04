@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sse_market_x/views/profile/about_page.dart';
 import 'package:sse_market_x/views/profile/edit_profile_page.dart';
@@ -15,6 +14,7 @@ import 'package:sse_market_x/core/services/media_cache_service.dart';
 import 'package:sse_market_x/shared/components/media/cached_image.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 import 'package:sse_market_x/shared/components/overlays/custom_dialog.dart';
+import 'package:sse_market_x/shared/components/lists/settings_list_item.dart';
 
 class MyPage extends StatefulWidget {
   const MyPage({super.key, required this.apiService});
@@ -213,196 +213,122 @@ class _MyPageState extends State<MyPage> {
   }
 
   Widget _buildMainMenu(BuildContext context) {
-    return Container(
+    return SettingsListGroup(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      decoration: BoxDecoration(
-        color: context.surfaceColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: [
-          _buildMenuItem(
-            context,
-            title: '修改资料',
-            iconSvg: 'assets/icons/ic_edit.svg',
-            isFirst: true,
-            onTap: () {
-              Navigator.of(context).push<bool>(
-                MaterialPageRoute(
-                  builder: (_) => EditProfilePage(
-                    apiService: widget.apiService,
-                    initialUser: _user,
-                  ),
+      children: [
+        SettingsListItem(
+          title: '修改资料',
+          leadingIcon: 'assets/icons/ic_edit.svg',
+          type: SettingsListItemType.navigation,
+          onTap: () {
+            Navigator.of(context).push<bool>(
+              MaterialPageRoute(
+                builder: (_) => EditProfilePage(
+                  apiService: widget.apiService,
+                  initialUser: _user,
                 ),
-              ).then((result) {
-                if (result == true) {
-                  _loadUser();
-                }
-              });
-            },
-          ),
-          Divider(height: 1, color: context.dividerColor, indent: 16, endIndent: 16),
-          _buildMenuItem(
-            context,
-            title: '我的收藏',
-            iconSvg: 'assets/icons/ic_favorite.svg',
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => FavoritesPage(apiService: widget.apiService),
+              ),
+            ).then((result) {
+              if (result == true) {
+                _loadUser();
+              }
+            });
+          },
+          isFirst: true,
+        ),
+        SettingsListItem(
+          title: '我的收藏',
+          leadingIcon: 'assets/icons/ic_favorite.svg',
+          type: SettingsListItemType.navigation,
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => FavoritesPage(apiService: widget.apiService),
+              ),
+            );
+          },
+        ),
+        SettingsListItem(
+          title: '设置',
+          leadingIcon: 'assets/icons/ic_settings.svg',
+          type: SettingsListItemType.navigation,
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => SettingsPage(
+                  apiService: widget.apiService,
+                  userEmail: _user.email,
                 ),
-              );
-            },
-          ),
-          Divider(height: 1, color: context.dividerColor, indent: 16, endIndent: 16),
-          _buildMenuItem(
-            context,
-            title: '设置',
-            iconSvg: 'assets/icons/ic_settings.svg',
-            isLast: true,
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => SettingsPage(
-                    apiService: widget.apiService,
-                    userEmail: _user.email,
-                  ),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
+              ),
+            );
+          },
+          isLast: true,
+        ),
+      ],
     );
   }
 
   Widget _buildOtherOptions(BuildContext context) {
-    return Container(
+    return SettingsListGroup(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      decoration: BoxDecoration(
-        color: context.surfaceColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: [
-          _buildMenuItem(
-            context,
-            title: '关于本应用',
-            iconSvg: 'assets/icons/ic_info.svg',
-            isFirst: true,
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const AboutPage(),
-                ),
-              );
-            },
-          ),
-          Divider(height: 1, color: context.dividerColor, indent: 16, endIndent: 16),
-          _buildMenuItem(
-            context,
-            title: '反馈',
-            iconSvg: 'assets/icons/ic_feedback.svg',
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => FeedbackPage(apiService: widget.apiService),
-                ),
-              );
-            },
-          ),
-          Divider(height: 1, color: context.dividerColor, indent: 16, endIndent: 16),
-          _buildMenuItem(
-            context,
-            title: '退出登录',
-            iconSvg: 'assets/icons/ic_logout.svg',
-            iconColor: AppColors.error,
-            textColor: AppColors.error,
-            isLast: true,
-            onTap: () {
-              () async {
-                final confirm = await showCustomDialog(
-                  context: context,
-                  title: '退出登录',
-                  content: '确定要退出登录吗？',
-                  cancelText: '取消',
-                  confirmText: '确定',
-                  confirmColor: AppColors.error,
-                );
-
-                if (confirm == true) {
-                  // 清除持久化登录数据
-                  await StorageService().logout();
-
-                  if (!context.mounted) return;
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (_) => const LoginPage()),
-                    (route) => false,
-                  );
-                }
-              }();
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMenuItem(
-    BuildContext context, {
-    required String title,
-    required String iconSvg,
-    Color? iconColor,
-    Color? textColor,
-    required VoidCallback onTap,
-    bool isFirst = false,
-    bool isLast = false,
-  }) {
-    final effectiveIconColor = iconColor ?? context.textSecondaryColor;
-    final effectiveTextColor = textColor ?? context.textPrimaryColor;
-    
-    // 根据位置设置圆角
-    BorderRadius? borderRadius;
-    if (isFirst && isLast) {
-      borderRadius = BorderRadius.circular(12);
-    } else if (isFirst) {
-      borderRadius = const BorderRadius.vertical(top: Radius.circular(12));
-    } else if (isLast) {
-      borderRadius = const BorderRadius.vertical(bottom: Radius.circular(12));
-    }
-    
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: borderRadius,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
-            children: [
-              SvgPicture.asset(
-                iconSvg,
-                width: 24,
-                height: 24,
-                colorFilter: ColorFilter.mode(effectiveIconColor, BlendMode.srcIn),
+      children: [
+        SettingsListItem(
+          title: '关于本应用',
+          leadingIcon: 'assets/icons/ic_info.svg',
+          type: SettingsListItemType.navigation,
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => const AboutPage(),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(fontSize: 16, color: effectiveTextColor),
-                ),
-              ),
-              SvgPicture.asset(
-                'assets/icons/ic_arrow_right.svg',
-                width: 18,
-                height: 18,
-                colorFilter: ColorFilter.mode(context.dividerColor, BlendMode.srcIn),
-              ),
-            ],
-          ),
+            );
+          },
+          isFirst: true,
         ),
-      ),
+        SettingsListItem(
+          title: '反馈',
+          leadingIcon: 'assets/icons/ic_feedback.svg',
+          type: SettingsListItemType.navigation,
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => FeedbackPage(apiService: widget.apiService),
+              ),
+            );
+          },
+        ),
+        SettingsListItem(
+          title: '退出登录',
+          leadingIcon: 'assets/icons/ic_logout.svg',
+          leadingIconColor: AppColors.error,
+          titleColor: AppColors.error,
+          type: SettingsListItemType.navigation,
+          onTap: () {
+            () async {
+              final confirm = await showCustomDialog(
+                context: context,
+                title: '退出登录',
+                content: '确定要退出登录吗？',
+                cancelText: '取消',
+                confirmText: '确定',
+                confirmColor: AppColors.error,
+              );
+
+              if (confirm == true) {
+                // 清除持久化登录数据
+                await StorageService().logout();
+
+                if (!context.mounted) return;
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const LoginPage()),
+                  (route) => false,
+                );
+              }
+            }();
+          },
+          isLast: true,
+        ),
+      ],
     );
   }
 }
