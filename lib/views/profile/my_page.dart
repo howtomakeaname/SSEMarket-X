@@ -1,20 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:sse_market_x/views/profile/about_page.dart';
 import 'package:sse_market_x/views/profile/edit_profile_page.dart';
 import 'package:sse_market_x/views/profile/feedback_page.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/user_model.dart';
-import 'package:sse_market_x/core/services/storage_service.dart';
 import 'package:sse_market_x/core/utils/level_utils.dart';
+import 'package:sse_market_x/core/services/media_cache_service.dart';
 import 'package:sse_market_x/views/profile/favorites_page.dart';
 import 'package:sse_market_x/views/profile/post_history_page.dart';
-import 'package:sse_market_x/views/auth/login_page.dart';
 import 'package:sse_market_x/views/profile/settings_page.dart';
-import 'package:sse_market_x/core/services/media_cache_service.dart';
 import 'package:sse_market_x/shared/components/media/cached_image.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
-import 'package:sse_market_x/shared/components/overlays/custom_dialog.dart';
 import 'package:sse_market_x/shared/components/lists/settings_list_item.dart';
 
 class MyPage extends StatefulWidget {
@@ -260,21 +256,6 @@ class _MyPageState extends State<MyPage> {
               ),
             );
           },
-        ),
-        SettingsListItem(
-          title: '设置',
-          leadingIcon: 'assets/icons/ic_settings.svg',
-          type: SettingsListItemType.navigation,
-          onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => SettingsPage(
-                  apiService: widget.apiService,
-                  userEmail: _user.email,
-                ),
-              ),
-            );
-          },
           isLast: true,
         ),
       ],
@@ -286,13 +267,16 @@ class _MyPageState extends State<MyPage> {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       children: [
         SettingsListItem(
-          title: '关于本应用',
-          leadingIcon: 'assets/icons/ic_info.svg',
+          title: '设置',
+          leadingIcon: 'assets/icons/ic_settings.svg',
           type: SettingsListItemType.navigation,
           onTap: () {
             Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (_) => const AboutPage(),
+                builder: (_) => SettingsPage(
+                  apiService: widget.apiService,
+                  userEmail: _user.email,
+                ),
               ),
             );
           },
@@ -308,36 +292,6 @@ class _MyPageState extends State<MyPage> {
                 builder: (_) => FeedbackPage(apiService: widget.apiService),
               ),
             );
-          },
-        ),
-        SettingsListItem(
-          title: '退出登录',
-          leadingIcon: 'assets/icons/ic_logout.svg',
-          leadingIconColor: AppColors.error,
-          titleColor: AppColors.error,
-          type: SettingsListItemType.navigation,
-          onTap: () {
-            () async {
-              final confirm = await showCustomDialog(
-                context: context,
-                title: '退出登录',
-                content: '确定要退出登录吗？',
-                cancelText: '取消',
-                confirmText: '确定',
-                confirmColor: AppColors.error,
-              );
-
-              if (confirm == true) {
-                // 清除持久化登录数据
-                await StorageService().logout();
-
-                if (!context.mounted) return;
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const LoginPage()),
-                  (route) => false,
-                );
-              }
-            }();
           },
           isLast: true,
         ),
