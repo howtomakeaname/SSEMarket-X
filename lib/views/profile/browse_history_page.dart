@@ -39,6 +39,8 @@ class _BrowseHistoryPageState extends State<BrowseHistoryPage> {
   final BrowseHistoryService _historyService = BrowseHistoryService();
   final ScrollController _tabScrollController = ScrollController();
   final Map<BrowseHistoryType, GlobalKey> _tabKeys = {};
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
   
   List<BrowseHistoryItem> _allHistory = [];
   UserModel _user = UserModel.empty();
@@ -48,6 +50,10 @@ class _BrowseHistoryPageState extends State<BrowseHistoryPage> {
   // 选择模式相关
   bool _isSelectionMode = false;
   final Set<String> _selectedItems = {}; // 使用 "id_type" 作为唯一标识
+  
+  // 搜索相关
+  bool _isSearchMode = false;
+  String _searchKeyword = '';
 
   @override
   void initState() {
@@ -62,6 +68,8 @@ class _BrowseHistoryPageState extends State<BrowseHistoryPage> {
   @override
   void dispose() {
     _tabScrollController.dispose();
+    _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -108,7 +116,24 @@ class _BrowseHistoryPageState extends State<BrowseHistoryPage> {
         break;
     }
     
-    return _allHistory.where((item) => item.type == itemType).toList();
+    var filtered = _allHistory.where((item) => item.type == itemType).toList();
+    
+    // 应用搜索过滤
+    if (_searchKeyword.isNotEmpty) {
+      filtered = filtered.where((item) {
+        if (item.type == BrowseHistoryItemType.product) {
+          final product = ProductModel.fromDynamic(item.data);
+          return product.name.toLowerCase().contains(_searchKeyword.toLowerCase()) ||
+                 product.description.toLowerCase().contains(_searchKeyword.toLowerCase());
+        } else {
+          final post = item.data as PostModel;
+          return post.title.toLowerCase().contains(_searchKeyword.toLowerCase()) ||
+                 post.content.toLowerCase().contains(_searchKeyword.toLowerCase());
+        }
+      }).toList();
+    }
+    
+    return filtered;
   }
 
   void _onTabChanged(BrowseHistoryType type) {
@@ -160,6 +185,9 @@ class _BrowseHistoryPageState extends State<BrowseHistoryPage> {
   }
 
   void _toggleSelection(BrowseHistoryItem item) {
+    // 搜索模式下不允许进入选择模式
+    if (_isSearchMode) return;
+    
     setState(() {
       final key = _getItemKey(item);
       if (_selectedItems.contains(key)) {
@@ -192,6 +220,25 @@ class _BrowseHistoryPageState extends State<BrowseHistoryPage> {
     setState(() {
       _selectedItems.clear();
       _isSelectionMode = false;
+    });
+  }
+
+  void _toggleSearchMode() {
+    setState(() {
+      _isSearchMode = !_isSearchMode;
+      if (_isSearchMode) {
+        _searchFocusNode.requestFocus();
+      } else {
+        _searchController.clear();
+        _searchKeyword = '';
+        _searchFocusNode.unfocus();
+      }
+    });
+  }
+
+  void _onSearchChanged(String value) {
+    setState(() {
+      _searchKeyword = value;
     });
   }
 
@@ -278,21 +325,45 @@ class _BrowseHistoryPageState extends State<BrowseHistoryPage> {
         scrolledUnderElevation: 0,
         leading: IconButton(
           icon: Icon(
-            _isSelectionMode ? Icons.close : Icons.arrow_back,
+            _isSelectionMode ? Icons.close : (_isSearchMode ? Icons.arrow_back : Icons.arrow_back),
             color: context.textPrimaryColor,
           ),
-          onPressed: _isSelectionMode ? _cancelSelection : () => Navigator.of(context).pop(),
+          onPressed: _isSelectionMode 
+              ? _cancelSelection 
+              : _isSearchMode 
+                  ? _toggleSearchMode 
+                  : () => Navigator.of(context).pop(),
         ),
-        title: Text(
-          _isSelectionMode ? '已选择 ${_selectedItems.length} 项' : '浏览历史',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: context.textPrimaryColor,
-          ),
-        ),
+        title: _isSearchMode 
+            ? TextField(
+                controller: _searchController,
+                focusNode: _searchFocusNode,
+                onChanged: _onSearchChanged,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: context.textPrimaryColor,
+                ),
+                decoration: InputDecoration(
+                  hintText: '搜索${_currentType.label}...',
+                  hintStyle: TextStyle(
+                    fontSize: 16,
+                    color: context.textTertiaryColor,
+                  ),
+                  border: InputBorder.none,
+                  isDense: true,
+                  contentPadding: EdgeInsets.zero,
+                ),
+              )
+            : Text(
+                _isSelectionMode ? '已选择 ${_selectedItems.length} 项' : '浏览历史',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: context.textPrimaryColor,
+                ),
+              ),
         centerTitle: false,
-        titleSpacing: 0,
+        titleSpacing: _isSearchMode ? 0 : 0,
         actions: [
           if (_isSelectionMode) ...[
             TextButton(
@@ -307,17 +378,32 @@ class _BrowseHistoryPageState extends State<BrowseHistoryPage> {
                 ),
               ),
             ),
-          ] else if (_displayHistory.isNotEmpty) ...[
-            TextButton(
-              onPressed: _clearHistory,
-              child: Text(
-                '清空',
-                style: TextStyle(
-                  color: context.textSecondaryColor,
-                  fontSize: 14,
+          ] else if (_isSearchMode) ...[
+            if (_searchKeyword.isNotEmpty)
+              IconButton(
+                icon: Icon(Icons.clear, color: context.textSecondaryColor),
+                onPressed: () {
+                  _searchController.clear();
+                  _onSearchChanged('');
+                },
+              ),
+          ] else ...[
+            if (_displayHistory.isNotEmpty)
+              IconButton(
+                icon: Icon(Icons.search, color: context.textPrimaryColor),
+                onPressed: _toggleSearchMode,
+              ),
+            if (_displayHistory.isNotEmpty)
+              TextButton(
+                onPressed: _clearHistory,
+                child: Text(
+                  '清空',
+                  style: TextStyle(
+                    color: context.textSecondaryColor,
+                    fontSize: 14,
+                  ),
                 ),
               ),
-            ),
           ],
           const SizedBox(width: 8),
         ],
@@ -334,12 +420,12 @@ class _BrowseHistoryPageState extends State<BrowseHistoryPage> {
 
     return Column(
       children: [
-        // Tab 选择器
-        if (!_isSelectionMode) _buildTabSelector(),
-        if (!_isSelectionMode) Divider(height: 1, color: context.dividerColor),
+        // Tab 选择器（搜索模式下隐藏）
+        if (!_isSelectionMode && !_isSearchMode) _buildTabSelector(),
+        if (!_isSelectionMode && !_isSearchMode) Divider(height: 1, color: context.dividerColor),
         
-        // 提示信息
-        if (!_isSelectionMode)
+        // 提示信息（搜索模式下隐藏）
+        if (!_isSelectionMode && !_isSearchMode)
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -364,7 +450,24 @@ class _BrowseHistoryPageState extends State<BrowseHistoryPage> {
               ],
             ),
           ),
-        if (!_isSelectionMode) Divider(height: 1, color: context.dividerColor),
+        if (!_isSelectionMode && !_isSearchMode) Divider(height: 1, color: context.dividerColor),
+        
+        // 搜索结果提示
+        if (_isSearchMode && _searchKeyword.isNotEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            color: context.surfaceColor,
+            child: Text(
+              '找到 ${_displayHistory.length} 条结果',
+              style: TextStyle(
+                fontSize: 14,
+                color: context.textSecondaryColor,
+              ),
+            ),
+          ),
+        if (_isSearchMode && _searchKeyword.isNotEmpty) 
+          Divider(height: 1, color: context.dividerColor),
         
         // 历史列表
         Expanded(
@@ -461,13 +564,15 @@ class _BrowseHistoryPageState extends State<BrowseHistoryPage> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.history,
+            _isSearchMode && _searchKeyword.isNotEmpty ? Icons.search_off : Icons.history,
             size: 64,
             color: context.textSecondaryColor,
           ),
           const SizedBox(height: 16),
           Text(
-            '暂无${_currentType.label}浏览记录',
+            _isSearchMode && _searchKeyword.isNotEmpty 
+                ? '未找到匹配的${_currentType.label}'
+                : '暂无${_currentType.label}浏览记录',
             style: TextStyle(
               fontSize: 14,
               color: context.textSecondaryColor,

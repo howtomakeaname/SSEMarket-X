@@ -354,8 +354,7 @@ class HomePageState extends State<HomePage> {
                         MaterialPageRoute(
                           builder: (_) => PostDetailPage(
                             postId: post.id,
-                            apiService: widget.apiService,
-                            sourcePartition: apiPartition, // 传递 API 分区名（如"课程交流"）
+                            apiService: widget.apiService
                           ),
                         ),
                       );
