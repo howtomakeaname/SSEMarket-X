@@ -351,11 +351,13 @@ class HomePageState extends State<HomePage> {
                         onPostTap(post.id);
                         return;
                       }
+                      debugPrint('HomePage: 跳转到详情页，传递初始数据 - ${post.title}');
                       final result = await Navigator.of(context).push<Map<String, dynamic>?>(
                         MaterialPageRoute(
                           builder: (_) => PostDetailPage(
                             postId: post.id,
-                            apiService: widget.apiService
+                            apiService: widget.apiService,
+                            initialPost: post, // 传递初始数据，优化加载体验
                           ),
                         ),
                       );

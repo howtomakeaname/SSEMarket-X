@@ -190,6 +190,7 @@ class _PostHistoryPageState extends State<PostHistoryPage> {
                   builder: (_) => PostDetailPage(
                     postId: post.id,
                     apiService: widget.apiService,
+                    initialPost: post, // 传递初始数据
                   ),
                 ),
               );
