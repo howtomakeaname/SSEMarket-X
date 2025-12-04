@@ -657,6 +657,35 @@ class ApiService {
     }
   }
 
+  /// 更新邮箱推送设置（切换开关）
+  /// 注意：此 API 返回空响应体，状态码 200 表示成功
+  Future<bool> updateEmailPush(int userId) async {
+    if (token.isEmpty || userId == 0) return false;
+
+    final uri = Uri.parse('$_baseUrl/auth/changeEmailPush');
+    final body = jsonEncode(<String, dynamic>{
+      'user_id': userId,
+    });
+
+    try {
+      final response = await http.post(
+        uri,
+        headers: <String, String>{
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: body,
+      );
+
+      // 此 API 返回空响应体，状态码 200 即表示成功
+      return response.statusCode == 200;
+    } catch (e) {
+      // ignore: avoid_print
+      print('更新邮箱推送设置失败: $e');
+      return false;
+    }
+  }
+
   /// 发布帖子
   Future<bool> createPost(
     String title,
