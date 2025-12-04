@@ -98,18 +98,39 @@ class _MyPageState extends State<MyPage> {
   Widget _buildUserInfoCard(BuildContext context) {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: context.surfaceColor,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          _buildAvatar(context),
-          const SizedBox(width: 16),
-          Expanded(child: _buildUserTextsAndExp(context)),
-        ],
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () async {
+            final result = await Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => EditProfilePage(
+                  apiService: widget.apiService,
+                  initialUser: _user,
+                ),
+              ),
+            );
+            if (result == true) {
+              _loadUser();
+            }
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                _buildAvatar(context),
+                const SizedBox(width: 16),
+                Expanded(child: _buildUserTextsAndExp(context)),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -216,38 +237,6 @@ class _MyPageState extends State<MyPage> {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       children: [
         SettingsListItem(
-          title: '修改资料',
-          leadingIcon: 'assets/icons/ic_edit.svg',
-          type: SettingsListItemType.navigation,
-          onTap: () {
-            Navigator.of(context).push<bool>(
-              MaterialPageRoute(
-                builder: (_) => EditProfilePage(
-                  apiService: widget.apiService,
-                  initialUser: _user,
-                ),
-              ),
-            ).then((result) {
-              if (result == true) {
-                _loadUser();
-              }
-            });
-          },
-          isFirst: true,
-        ),
-        SettingsListItem(
-          title: '稍后再看',
-          leadingIcon: 'assets/icons/ic_history.svg',
-          type: SettingsListItemType.navigation,
-          onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => WatchLaterPage(apiService: widget.apiService),
-              ),
-            );
-          },
-        ),
-        SettingsListItem(
           title: '浏览历史',
           leadingIcon: 'assets/icons/ic_history_view.svg',
           type: SettingsListItemType.navigation,
@@ -258,6 +247,7 @@ class _MyPageState extends State<MyPage> {
               ),
             );
           },
+          isFirst: true,
         ),
         SettingsListItem(
           title: '我的收藏',
@@ -279,6 +269,18 @@ class _MyPageState extends State<MyPage> {
             Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => PostHistoryPage(apiService: widget.apiService),
+              ),
+            );
+          },
+        ),
+        SettingsListItem(
+          title: '稍后再看',
+          leadingIcon: 'assets/icons/ic_watch_later.svg',
+          type: SettingsListItemType.navigation,
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => WatchLaterPage(apiService: widget.apiService),
               ),
             );
           },

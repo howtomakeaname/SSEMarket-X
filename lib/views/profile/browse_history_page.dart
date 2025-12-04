@@ -440,7 +440,7 @@ class _BrowseHistoryPageState extends State<BrowseHistoryPage> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    '这是一个纯本地功能，浏览历史只会被保存在本地',
+                    '这是一个纯本地功能，浏览历史只在本地保存',
                     style: TextStyle(
                       fontSize: 12,
                       color: context.textTertiaryColor,
