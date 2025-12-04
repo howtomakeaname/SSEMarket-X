@@ -6,6 +6,7 @@ import 'package:sse_market_x/views/auth/reset_password_page.dart';
 import 'package:sse_market_x/views/profile/cache_management_page.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 import 'package:sse_market_x/shared/components/lists/settings_list_item.dart';
+import 'package:sse_market_x/shared/components/utils/snackbar_helper.dart';
 
 class SettingsPage extends StatefulWidget {
   final ApiService apiService;
@@ -22,7 +23,8 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  bool _isNotificationEnabled = true;
+  // bool _isNotificationEnabled = true; // TODO: 推送通知功能待实现
+  bool _isEmailNotificationEnabled = false;
   bool _isAutoPlay = true;
   
   final MediaCacheService _cacheService = MediaCacheService();
@@ -36,6 +38,7 @@ class _SettingsPageState extends State<SettingsPage> {
     if (!kIsWeb) {
       _loadCacheInfo();
     }
+    _loadEmailPushStatus();
   }
 
   Future<void> _loadCacheInfo() async {
@@ -91,15 +94,26 @@ class _SettingsPageState extends State<SettingsPage> {
             _buildSectionTitle('通知设置'),
             SettingsListGroup(
               children: [
+                // TODO: 推送通知功能待实现
+                // SettingsListItem(
+                //   title: '推送通知',
+                //   subtitle: '接收新消息通知',
+                //   type: SettingsListItemType.toggle,
+                //   switchValue: _isNotificationEnabled,
+                //   onSwitchChanged: (val) {
+                //     setState(() {
+                //       _isNotificationEnabled = val;
+                //     });
+                //   },
+                //   isFirst: true,
+                // ),
                 SettingsListItem(
-                  title: '推送通知',
-                  subtitle: '接收新消息通知',
+                  title: '邮箱通知',
+                  subtitle: '接收回复、私信等的邮箱通知',
                   type: SettingsListItemType.toggle,
-                  switchValue: _isNotificationEnabled,
+                  switchValue: _isEmailNotificationEnabled,
                   onSwitchChanged: (val) {
-                    setState(() {
-                      _isNotificationEnabled = val;
-                    });
+                    _toggleEmailNotification(val);
                   },
                   isFirst: true,
                   isLast: true,
@@ -217,5 +231,62 @@ class _SettingsPageState extends State<SettingsPage> {
     );
     // 返回后刷新缓存信息
     _loadCacheInfo();
+  }
+
+  /// 加载邮箱推送状态
+  Future<void> _loadEmailPushStatus() async {
+    try {
+      final userInfo = await widget.apiService.getUserInfo();
+      final detailedInfo = await widget.apiService.getDetailedUserInfo(userInfo.phone);
+      
+      if (mounted) {
+        setState(() {
+          _isEmailNotificationEnabled = detailedInfo.emailPush;
+        });
+      }
+    } catch (e) {
+      // 加载失败，保持默认值
+    }
+  }
+
+  /// 切换邮箱通知
+  Future<void> _toggleEmailNotification(bool value) async {
+    try {
+      final userInfo = await widget.apiService.getUserInfo();
+      
+      if (userInfo.userId == 0) {
+        if (mounted) {
+          SnackBarHelper.show(context, '用户信息获取失败');
+        }
+        return;
+      }
+      
+      final success = await widget.apiService.updateEmailPush(userInfo.userId);
+      
+      if (mounted) {
+        if (success) {
+          setState(() {
+            _isEmailNotificationEnabled = value;
+          });
+          
+          SnackBarHelper.show(
+            context,
+            value ? '邮箱通知已开启' : '邮箱通知已关闭',
+          );
+        } else {
+          SnackBarHelper.show(
+            context,
+            '操作失败，请稍后重试',
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        SnackBarHelper.show(
+          context,
+          '操作失败，请稍后重试',
+        );
+      }
+    }
   }
 }
