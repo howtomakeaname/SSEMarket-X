@@ -114,7 +114,9 @@ class _FavoritesPageState extends State<FavoritesPage> {
       backgroundColor: context.backgroundColor,
       appBar: AppBar(
         backgroundColor: context.surfaceColor,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
+        scrolledUnderElevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: context.textPrimaryColor),
           onPressed: () => Navigator.of(context).pop(),

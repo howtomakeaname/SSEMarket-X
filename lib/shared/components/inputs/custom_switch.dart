@@ -63,8 +63,9 @@ class _CustomSwitchState extends State<CustomSwitch> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final activeColor = widget.activeColor ?? AppColors.primary;
-    final inactiveColor = widget.inactiveColor ?? Colors.grey.shade300;
+    final inactiveColor = widget.inactiveColor ?? (isDark ? const Color(0xFF3A3A3A) : Colors.grey.shade300);
     final thumbColor = widget.thumbColor ?? Colors.white;
     
     return GestureDetector(

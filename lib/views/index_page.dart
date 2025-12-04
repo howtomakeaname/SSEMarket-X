@@ -92,6 +92,8 @@ class _IndexPageState extends State<IndexPage> {
     super.initState();
     // 初始化 WebSocket 连接，以便获取未读消息数
     _initWebSocket();
+    // 刷新用户信息
+    _refreshUserInfo();
   }
 
   void _initWebSocket() {
@@ -100,6 +102,24 @@ class _IndexPageState extends State<IndexPage> {
       if (!ws.isConnected) {
         ws.connect();
       }
+    }
+  }
+
+  /// 刷新用户信息并更新到 StorageService
+  Future<void> _refreshUserInfo() async {
+    if (!StorageService().isLoggedIn) return;
+    
+    try {
+      final updatedUser = await widget.apiService.getUserInfo();
+      final storage = StorageService();
+      // 更新用户信息，保持当前 token 和 rememberMe 状态
+      await storage.setUser(
+        updatedUser,
+        storage.token,
+        rememberMe: storage.rememberMe,
+      );
+    } catch (e) {
+      debugPrint('刷新用户信息失败: $e');
     }
   }
 
