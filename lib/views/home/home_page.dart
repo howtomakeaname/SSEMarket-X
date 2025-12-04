@@ -10,6 +10,7 @@ import 'package:sse_market_x/views/home/search_page.dart';
 import 'package:sse_market_x/shared/components/layout/home_header.dart';
 import 'package:sse_market_x/shared/components/layout/layout_config.dart';
 import 'package:sse_market_x/shared/components/loading/loading_indicator.dart';
+import 'package:sse_market_x/shared/components/loading/skeleton_loader.dart';
 import 'package:sse_market_x/shared/components/cards/post_card.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 
@@ -282,9 +283,9 @@ class HomePageState extends State<HomePage> {
     final layoutConfig = LayoutConfig.of(context);
     final onPostTap = layoutConfig?.onPostTap ?? widget.onPostTap;
 
-    // 初始加载、切换分区或刷新时（列表为空）显示居中 Loading
+    // 初始加载、切换分区时（列表为空）显示骨架屏
     if ((_loadingUser || state.isLoading) && state.posts.isEmpty) {
-      return _buildLoadingIndicator();
+      return _buildSkeletonLoader(isDense);
     }
 
     return Container(
@@ -403,18 +404,15 @@ class HomePageState extends State<HomePage> {
     );
   }
 
-  /// 居中加载指示器（初始加载/切换分区）
-  Widget _buildLoadingIndicator() {
-    return const LoadingIndicator.center(message: '加载中...');
+  /// 骨架屏加载器（初始加载/切换分区）
+  Widget _buildSkeletonLoader(bool isDense) {
+    return PostListSkeleton(itemCount: 5, isDense: isDense);
   }
 
-  /// 下拉刷新时顶部指示器
+  /// 下拉刷新时顶部指示器（移除，使用系统自带的刷新指示器）
   Widget _buildRefreshingIndicator() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      color: context.backgroundColor,
-      child: const LoadingRow(message: '刷新中...'),
-    );
+    // 不再显示额外的刷新指示器，RefreshIndicator 已经提供了视觉反馈
+    return const SizedBox.shrink();
   }
 
   /// 加载更多指示器

@@ -4,7 +4,7 @@ import 'package:sse_market_x/core/models/post_model.dart';
 import 'package:sse_market_x/core/models/user_model.dart';
 import 'package:sse_market_x/core/services/watch_later_service.dart';
 import 'package:sse_market_x/shared/components/cards/post_card.dart';
-import 'package:sse_market_x/shared/components/loading/loading_indicator.dart';
+import 'package:sse_market_x/shared/components/loading/skeleton_loader.dart';
 import 'package:sse_market_x/shared/components/overlays/custom_dialog.dart';
 import 'package:sse_market_x/shared/components/utils/snackbar_helper.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
@@ -203,10 +203,12 @@ class _WatchLaterPageState extends State<WatchLaterPage> {
   }
 
   Widget _buildBody() {
+    // 加载时只显示骨架屏，不显示其他内容
     if (_isLoading) {
-      return const LoadingIndicator.center(message: '加载中...');
+      return const PostListSkeleton(itemCount: 5, isDense: false);
     }
 
+    // 加载完成后显示完整内容
     return Column(
       children: [
         // 提示信息

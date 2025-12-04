@@ -10,7 +10,7 @@ import 'package:sse_market_x/core/utils/level_utils.dart';
 import 'package:sse_market_x/core/utils/time_utils.dart';
 import 'package:sse_market_x/shared/components/cards/comment_card.dart';
 import 'package:sse_market_x/shared/components/feedback/comment_input.dart';
-import 'package:sse_market_x/shared/components/loading/loading_indicator.dart';
+import 'package:sse_market_x/shared/components/loading/skeleton_loader.dart';
 import 'package:sse_market_x/shared/components/markdown/latex_markdown.dart';
 import 'package:sse_market_x/shared/components/media/cached_image.dart';
 import 'package:sse_market_x/shared/components/overlays/custom_dialog.dart';
@@ -414,7 +414,7 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
             : null,
       ),
       body: _isLoading
-          ? const LoadingIndicator.center(message: '加载中...')
+          ? _buildDetailSkeleton()
           : RefreshIndicator(
               onRefresh: _loadPostDetail,
               color: AppColors.primary,
@@ -841,5 +841,106 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
         _loadComments();
       }
     });
+  }
+
+  /// 详情页骨架屏
+  Widget _buildDetailSkeleton() {
+    return SingleChildScrollView(
+      child: Container(
+        color: context.surfaceColor,
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 用户信息骨架
+            Row(
+              children: [
+                SkeletonLoader(
+                  width: 40,
+                  height: 40,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SkeletonLoader(
+                        width: 120,
+                        height: 16,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      const SizedBox(height: 4),
+                      SkeletonLoader(
+                        width: 80,
+                        height: 12,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            // 标题骨架 - 两行
+            SkeletonLoader(
+              width: double.infinity,
+              height: 20,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            const SizedBox(height: 8),
+            SkeletonLoader(
+              width: MediaQuery.of(context).size.width * 0.7,
+              height: 20,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            const SizedBox(height: 12),
+            // 内容骨架 - 多行
+            ...List.generate(4, (index) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: SkeletonLoader(
+                  width: index == 3 
+                      ? MediaQuery.of(context).size.width * 0.5 
+                      : double.infinity,
+                  height: 14,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              );
+            }),
+            const SizedBox(height: 16),
+            // 操作栏骨架
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              decoration: BoxDecoration(
+                color: context.backgroundColor,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: List.generate(3, (index) {
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SkeletonLoader(
+                        width: 20,
+                        height: 20,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                      const SizedBox(width: 6),
+                      SkeletonLoader(
+                        width: 30,
+                        height: 14,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ],
+                  );
+                }),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

@@ -3,6 +3,7 @@ import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/post_model.dart';
 import 'package:sse_market_x/core/models/user_model.dart';
 import 'package:sse_market_x/views/post/post_detail_page.dart';
+import 'package:sse_market_x/shared/components/loading/skeleton_loader.dart';
 import 'package:sse_market_x/shared/components/loading/loading_indicator.dart';
 import 'package:sse_market_x/shared/components/cards/post_card.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
@@ -138,7 +139,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
 
   Widget _buildBody() {
     if (_isLoading && _posts.isEmpty) {
-      return const LoadingIndicator.center(message: '加载中...');
+      return const PostListSkeleton(itemCount: 5, isDense: false);
     }
 
     if (_posts.isEmpty && !_isLoading) {
