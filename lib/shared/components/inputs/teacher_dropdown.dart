@@ -113,16 +113,16 @@ class _TeacherDropdownState extends State<TeacherDropdown> {
                         ),
                       ],
                     ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
+                    child: Material(
+                      color: Colors.transparent,
                       child: ListView.builder(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      shrinkWrap: true,
-                      itemCount: widget.options.length,
-                      itemBuilder: (context, index) {
-                        final option = widget.options[index];
-                        final isSelected = option.value == widget.value;
-                        return InkWell(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        shrinkWrap: true,
+                        itemCount: widget.options.length,
+                        itemBuilder: (context, index) {
+                          final option = widget.options[index];
+                          final isSelected = option.value == widget.value;
+                          return InkWell(
                           onTap: () {
                             widget.onChanged?.call(option.value);
                             _removeOverlay();
@@ -181,13 +181,13 @@ class _TeacherDropdownState extends State<TeacherDropdown> {
                             ),
                           ),
                         );
-                      },
+                        },
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
           ),
         ],
       ),
