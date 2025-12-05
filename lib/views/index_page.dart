@@ -110,11 +110,29 @@ class _IndexPageState extends State<IndexPage> {
     if (!StorageService().isLoggedIn) return;
     
     try {
-      final updatedUser = await widget.apiService.getUserInfo();
+      // 获取基本用户信息
+      final basicUser = await widget.apiService.getUserInfo();
+      UserModel detailedUser = basicUser;
+      
+      // 如果有手机号，获取详细信息（包含 score 和 intro）
+      if (basicUser.phone.isNotEmpty) {
+        try {
+          final detailed = await widget.apiService.getDetailedUserInfo(basicUser.phone);
+          // 合并详细信息到基本信息
+          detailedUser = basicUser.copyWith(
+            score: detailed.score,
+            intro: detailed.intro,
+          );
+        } catch (e) {
+          debugPrint('获取详细用户信息失败: $e');
+          // 如果获取详细信息失败，仍然使用基本信息
+        }
+      }
+      
       final storage = StorageService();
       // 更新用户信息，保持当前 token 和 rememberMe 状态
       await storage.setUser(
-        updatedUser,
+        detailedUser,
         storage.token,
         rememberMe: storage.rememberMe,
       );
