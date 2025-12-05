@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sse_market_x/core/models/comment_model.dart';
 import 'package:sse_market_x/core/utils/level_utils.dart';
@@ -283,20 +282,10 @@ class _CommentCardState extends State<CommentCard> {
   }
 
   Widget _buildContent() {
-    return MarkdownBody(
+    return LatexMarkdown(
       data: widget.comment.content,
-      styleSheet: getAdaptiveMarkdownStyleSheet(context).copyWith(
-        p: TextStyle(
-          fontSize: 14,
-          color: context.textPrimaryColor,
-          height: 1.5,
-        ),
-        code: TextStyle(
-          fontSize: 12,
-          color: AppColors.primary,
-          backgroundColor: context.backgroundColor,
-        ),
-      ),
+      fontSize: 14, // 评论区使用较小字体
+      shrinkWrap: true, // 紧凑模式，减少间距
     );
   }
 
@@ -534,13 +523,10 @@ class _CommentCardState extends State<CommentCard> {
             ],
           ),
           const SizedBox(height: 4),
-          Text(
-            subComment.content,
-            style: TextStyle(
-              fontSize: 13,
-              color: context.textPrimaryColor,
-              height: 1.4,
-            ),
+          LatexMarkdown(
+            data: subComment.content,
+            fontSize: 13, // 子评论使用更小字体
+            shrinkWrap: true, // 紧凑模式
           ),
           const SizedBox(height: 6),
           // 子评论操作栏
