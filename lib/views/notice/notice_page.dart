@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/notice_model.dart';
 import 'package:sse_market_x/core/utils/time_utils.dart';
@@ -280,11 +281,29 @@ class _NoticePageState extends State<NoticePage> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor: context.backgroundColor,
-                  backgroundImage: notice.senderAvatar.isNotEmpty ? NetworkImage(notice.senderAvatar) : null,
-                  child: notice.senderAvatar.isEmpty ? Icon(Icons.person, color: context.textSecondaryColor) : null,
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: context.backgroundColor,
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: notice.senderAvatar.isNotEmpty
+                      ? Image.network(
+                          notice.senderAvatar,
+                          width: 40,
+                          height: 40,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => SvgPicture.asset(
+                            'assets/icons/default_avatar.svg',
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                      : SvgPicture.asset(
+                          'assets/icons/default_avatar.svg',
+                          fit: BoxFit.cover,
+                        ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/user_model.dart';
 import 'package:sse_market_x/core/services/storage_service.dart';
@@ -202,26 +203,32 @@ class _ChatListPageState extends State<ChatListPage> {
                 Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: context.backgroundColor,
-                        border: Border.all(color: context.dividerColor, width: 0.5),
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: contact.avatarUrl.isNotEmpty 
-                          ? CachedImage(
-                              imageUrl: contact.avatarUrl,
-                              width: 48,
-                              height: 48,
-                              fit: BoxFit.cover,
-                              category: CacheCategory.avatar,
-                              errorWidget: Icon(Icons.person, size: 24, color: context.textSecondaryColor),
-                            )
-                          : Icon(Icons.person, size: 24, color: context.textSecondaryColor),
-                    ),
+                    Builder(builder: (context) {
+                      final defaultAvatar = SvgPicture.asset(
+                        'assets/icons/default_avatar.svg',
+                        fit: BoxFit.cover,
+                      );
+                      return Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: context.backgroundColor,
+                          border: Border.all(color: context.dividerColor, width: 0.5),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: contact.avatarUrl.isNotEmpty
+                            ? CachedImage(
+                                imageUrl: contact.avatarUrl,
+                                width: 48,
+                                height: 48,
+                                fit: BoxFit.cover,
+                                category: CacheCategory.avatar,
+                                errorWidget: defaultAvatar,
+                              )
+                            : defaultAvatar,
+                      );
+                    }),
                     // 未读红点
                     if (hasUnread)
                       Positioned(
