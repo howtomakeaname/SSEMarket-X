@@ -57,11 +57,12 @@ class _ScorePageState extends State<ScorePage> {
     // 尝试从缓存加载
     await _loadCachedPosts();
     
-    // 后台静默刷新
+    // 后台静默刷新或首次加载
     if (_hasLoadedOnce) {
       _fetchPosts(refresh: true, silent: true);
     } else {
-      _fetchPosts(refresh: true);
+      // 首次加载，强制执行
+      _fetchPosts(refresh: true, forceLoad: true);
     }
   }
   
@@ -115,8 +116,9 @@ class _ScorePageState extends State<ScorePage> {
     }
   }
 
-  Future<void> _fetchPosts({required bool refresh, bool silent = false}) async {
-    if (_isLoading && !silent) return;
+  Future<void> _fetchPosts({required bool refresh, bool silent = false, bool forceLoad = false}) async {
+    // 如果正在加载且不是静默模式且不是强制加载，则跳过
+    if (_isLoading && !silent && !forceLoad) return;
 
     if (!silent) {
       setState(() {
