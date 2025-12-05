@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sse_market_x/core/models/comment_model.dart';
 import 'package:sse_market_x/core/utils/level_utils.dart';
@@ -283,20 +282,11 @@ class _CommentCardState extends State<CommentCard> {
   }
 
   Widget _buildContent() {
-    return MarkdownBody(
+    return LatexMarkdown(
       data: widget.comment.content,
-      styleSheet: getAdaptiveMarkdownStyleSheet(context).copyWith(
-        p: TextStyle(
-          fontSize: 14,
-          color: context.textPrimaryColor,
-          height: 1.5,
-        ),
-        code: TextStyle(
-          fontSize: 12,
-          color: AppColors.primary,
-          backgroundColor: context.backgroundColor,
-        ),
-      ),
+      fontSize: 14, // 评论区使用较小字体
+      shrinkWrap: true, // 紧凑模式，减少间距
+      selectable: true, // 支持长按选择文字
     );
   }
 
@@ -424,30 +414,54 @@ class _CommentCardState extends State<CommentCard> {
                     widget.onUserTap!(subComment.authorId, subComment.authorName, subComment.authorAvatar);
                   }
                 },
-                child: Container(
+                child: SizedBox(
                   width: 28,
                   height: 28,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: context.surfaceColor,
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: subComment.authorAvatar.isNotEmpty
-                      ? CachedImage(
-                          imageUrl: subComment.authorAvatar,
-                          width: 28,
-                          height: 28,
-                          fit: BoxFit.cover,
-                          category: CacheCategory.avatar,
-                          errorWidget: SvgPicture.asset(
-                            'assets/icons/default_avatar.svg',
-                            fit: BoxFit.cover,
-                          ),
-                        )
-                      : SvgPicture.asset(
-                          'assets/icons/default_avatar.svg',
-                          fit: BoxFit.cover,
+                  child: Stack(
+                    children: [
+                      Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: context.surfaceColor,
                         ),
+                        clipBehavior: Clip.antiAlias,
+                        child: subComment.authorAvatar.isNotEmpty
+                            ? CachedImage(
+                                imageUrl: subComment.authorAvatar,
+                                width: 28,
+                                height: 28,
+                                fit: BoxFit.cover,
+                                category: CacheCategory.avatar,
+                                errorWidget: SvgPicture.asset(
+                                  'assets/icons/default_avatar.svg',
+                                  fit: BoxFit.cover,
+                                ),
+                              )
+                            : SvgPicture.asset(
+                                'assets/icons/default_avatar.svg',
+                                fit: BoxFit.cover,
+                              ),
+                      ),
+                      if (subComment.authorIdentity == 'teacher' ||
+                          subComment.authorIdentity == 'organization')
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: Container(
+                            width: 10,
+                            height: 10,
+                            decoration: BoxDecoration(
+                              color: LevelUtils.getIdentityBackgroundColor(
+                                  subComment.authorIdentity),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 1),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(width: 6),
@@ -510,13 +524,11 @@ class _CommentCardState extends State<CommentCard> {
             ],
           ),
           const SizedBox(height: 4),
-          Text(
-            subComment.content,
-            style: TextStyle(
-              fontSize: 13,
-              color: context.textPrimaryColor,
-              height: 1.4,
-            ),
+          LatexMarkdown(
+            data: subComment.content,
+            fontSize: 13, // 子评论使用更小字体
+            shrinkWrap: true, // 紧凑模式
+            selectable: true, // 支持长按选择文字
           ),
           const SizedBox(height: 6),
           // 子评论操作栏

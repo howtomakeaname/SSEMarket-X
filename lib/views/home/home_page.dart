@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/post_model.dart';
 import 'package:sse_market_x/core/models/user_model.dart';
@@ -40,6 +42,8 @@ class _PartitionState {
   bool hasMore;
   bool isLoading;
   bool isRefreshing;
+  bool hasLoadedOnce; // 标记是否至少加载过一次
+  int newPostsCount; // 后台刷新发现的新帖子数量
 
   _PartitionState({
     List<PostModel>? posts,
@@ -47,6 +51,8 @@ class _PartitionState {
     this.hasMore = true,
     this.isLoading = false,
     this.isRefreshing = false,
+    this.hasLoadedOnce = false,
+    this.newPostsCount = 0,
   }) : posts = posts ?? <PostModel>[];
 }
 
@@ -125,41 +131,92 @@ class HomePageState extends State<HomePage> {
     await _fetchPosts(refresh: true);
   }
 
+  /// 从本地缓存加载帖子列表
+  Future<void> _loadCachedPosts() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cacheKey = 'posts_cache_${_currentApiPartition}';
+      final cachedJson = prefs.getString(cacheKey);
+      
+      if (cachedJson != null && cachedJson.isNotEmpty) {
+        final List<dynamic> jsonList = jsonDecode(cachedJson);
+        final cachedPosts = jsonList.map((json) => PostModel.fromDynamic(json)).toList();
+        
+        if (cachedPosts.isNotEmpty && mounted) {
+          setState(() {
+            _partitionStates[_currentApiPartition] = _PartitionState(
+              posts: cachedPosts,
+              offset: cachedPosts.length,
+              hasMore: true,
+              isLoading: false,
+              isRefreshing: false,
+              hasLoadedOnce: true,
+              newPostsCount: 0,
+            );
+          });
+          return; // 成功加载缓存，直接返回
+        }
+      }
+      
+      // 没有缓存或加载失败，标记需要显示骨架屏
+      if (mounted) {
+        setState(() {
+          _loadingUser = true;
+        });
+      }
+    } catch (e) {
+      debugPrint('加载缓存帖子失败: $e');
+      // 加载失败，标记需要显示骨架屏
+      if (mounted) {
+        setState(() {
+          _loadingUser = true;
+        });
+      }
+    }
+  }
+  
+  /// 保存帖子列表到本地缓存
+  Future<void> _saveCachedPosts(List<PostModel> posts) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cacheKey = 'posts_cache_${_currentApiPartition}';
+      final jsonList = posts.map((post) => post.toJson()).toList();
+      await prefs.setString(cacheKey, jsonEncode(jsonList));
+    } catch (e) {
+      debugPrint('保存缓存帖子失败: $e');
+    }
+  }
+
   Future<void> _loadUserAndInitialPosts() async {
-    setState(() {
-      _loadingUser = true;
-    });
-    
-    // First, try to use cached user info from StorageService
+    // 1. 先从 StorageService 获取缓存的用户数据（即时显示）
     final storageService = StorageService();
     if (storageService.isLoggedIn && storageService.user != null) {
       if (!mounted) return;
       setState(() {
         _user = storageService.user!;
+        _loadingUser = false; // 有用户缓存，先不显示加载状态
       });
-    }
-    
-    try {
-      // Then fetch fresh user info in background
-      final user = await widget.apiService.getUserInfo();
-      if (!mounted) return;
+      
+      // 2. 尝试从本地缓存加载帖子列表（同步判断，异步加载）
+      await _loadCachedPosts();
+      
+      // 3. 后台静默刷新最新帖子（如果有缓存数据）
+      if (_currentState.hasLoadedOnce) {
+        _fetchPosts(refresh: true, silent: true);
+      } else {
+        // 没有缓存，正常加载
+        _fetchPosts(refresh: true);
+      }
+    } else {
+      // 没有用户缓存，显示加载状态
       setState(() {
-        _user = user;
+        _loadingUser = true;
       });
-      await _fetchPosts(refresh: true);
-    } catch (e) {
-      // If API fails but we have cached user, still try to load posts
-      if (storageService.isLoggedIn && storageService.user != null) {
-        await _fetchPosts(refresh: true);
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _loadingUser = false;
-        });
-      }
+      _fetchPosts(refresh: true);
     }
   }
+  
+
 
   String get _currentApiPartition =>
       _displayToApiPartition[_currentDisplayPartition] ?? _currentDisplayPartition;
@@ -167,20 +224,26 @@ class HomePageState extends State<HomePage> {
   _PartitionState get _currentState =>
       _partitionStates[_currentApiPartition] ?? _PartitionState();
 
-  Future<void> _fetchPosts({required bool refresh}) async {
+  Future<void> _fetchPosts({required bool refresh, bool silent = false}) async {
     final state = _currentState;
     if (state.isLoading) return;
 
+    // 静默刷新：不清空列表，不显示加载状态
     final newState = _PartitionState(
-      posts: refresh ? <PostModel>[] : state.posts,
+      posts: (refresh && !silent) ? <PostModel>[] : state.posts,
       offset: refresh ? 0 : state.offset,
       hasMore: state.hasMore,
-      isLoading: true,
-      isRefreshing: refresh,
+      isLoading: !silent, // 静默刷新时不显示加载状态
+      isRefreshing: refresh && !silent,
+      hasLoadedOnce: state.hasLoadedOnce,
+      newPostsCount: state.newPostsCount,
     );
-    setState(() {
-      _partitionStates[_currentApiPartition] = newState;
-    });
+    
+    if (!silent) {
+      setState(() {
+        _partitionStates[_currentApiPartition] = newState;
+      });
+    }
 
     try {
       final params = GetPostsParams(
@@ -194,22 +257,43 @@ class HomePageState extends State<HomePage> {
       );
 
       final list = await widget.apiService.getPosts(params);
-      final posts = refresh ? list : <PostModel>[...newState.posts, ...list];
+      
+      // 静默刷新：比较新旧数据，计算新帖子数量
+      int newCount = 0;
+      List<PostModel> finalPosts;
+      
+      if (silent && refresh && state.posts.isNotEmpty) {
+        // 静默刷新模式：不立即更新列表，只记录新帖子数量
+        final existingIds = state.posts.map((p) => p.id).toSet();
+        newCount = list.where((p) => !existingIds.contains(p.id)).length;
+        finalPosts = state.posts; // 保持原列表
+      } else {
+        // 正常刷新或加载更多
+        finalPosts = refresh ? list : <PostModel>[...newState.posts, ...list];
+        newCount = 0;
+      }
 
       final updated = _PartitionState(
-        posts: posts,
-        offset: newState.offset + list.length,
+        posts: finalPosts,
+        offset: refresh ? list.length : newState.offset + list.length,
         hasMore: list.length == _pageSize,
         isLoading: false,
         isRefreshing: false,
+        hasLoadedOnce: true,
+        newPostsCount: newCount,
       );
 
       if (!mounted) return;
       setState(() {
         _partitionStates[_currentApiPartition] = updated;
       });
+      
+      // 保存到缓存（仅在正常刷新时）
+      if (!silent && refresh) {
+        _saveCachedPosts(finalPosts);
+      }
     } finally {
-      if (mounted) {
+      if (mounted && !silent) {
         final st = _partitionStates[_currentApiPartition] ?? _PartitionState();
         _partitionStates[_currentApiPartition] = _PartitionState(
           posts: st.posts,
@@ -217,6 +301,8 @@ class HomePageState extends State<HomePage> {
           hasMore: st.hasMore,
           isLoading: false,
           isRefreshing: false,
+          hasLoadedOnce: st.hasLoadedOnce,
+          newPostsCount: st.newPostsCount,
         );
       }
     }
@@ -283,8 +369,9 @@ class HomePageState extends State<HomePage> {
     final layoutConfig = LayoutConfig.of(context);
     final onPostTap = layoutConfig?.onPostTap ?? widget.onPostTap;
 
-    // 初始加载、切换分区时（列表为空）显示骨架屏
-    if ((_loadingUser || state.isLoading) && state.posts.isEmpty) {
+    // 只在首次加载且列表为空时显示骨架屏
+    // 如果已经加载过（hasLoadedOnce），即使列表为空也不显示骨架屏（可能是真的没有数据）
+    if (!state.hasLoadedOnce && (_loadingUser || state.isLoading) && state.posts.isEmpty) {
       return _buildSkeletonLoader(isDense);
     }
 
@@ -399,6 +486,14 @@ class HomePageState extends State<HomePage> {
               right: 0,
               child: _buildRefreshingIndicator(),
             ),
+          // 新帖子提示条
+          if (state.newPostsCount > 0)
+            Positioned(
+              top: 8,
+              left: 0,
+              right: 0,
+              child: _buildNewPostsIndicator(state.newPostsCount),
+            ),
         ],
       ),
         ),
@@ -431,6 +526,69 @@ class HomePageState extends State<HomePage> {
         child: Text(
           '已经到底啦',
           style: TextStyle(fontSize: 12, color: context.textSecondaryColor),
+        ),
+      ),
+    );
+  }
+  
+  /// 新帖子提示条
+  Widget _buildNewPostsIndicator(int count) {
+    return Center(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            // 点击后刷新列表
+            _fetchPosts(refresh: true);
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.primary,
+                  AppColors.primary.withOpacity(0.9),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.fiber_new_rounded,
+                  color: Colors.white,
+                  size: 18,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '$count 条新内容',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                const Icon(
+                  Icons.touch_app_rounded,
+                  color: Colors.white,
+                  size: 14,
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

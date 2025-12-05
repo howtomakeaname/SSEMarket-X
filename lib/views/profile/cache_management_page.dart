@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sse_market_x/core/services/media_cache_service.dart';
+import 'package:sse_market_x/shared/components/media/image_viewer.dart';
 import 'package:sse_market_x/shared/components/overlays/custom_dialog.dart';
 import 'package:sse_market_x/shared/components/utils/snackbar_helper.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
@@ -26,6 +27,7 @@ class _CacheManagementPageState extends State<CacheManagementPage> {
   
   // Tab 滚动控制
   final ScrollController _tabScrollController = ScrollController();
+  final PageController _pageController = PageController();
   final Map<CacheCategory?, GlobalKey> _tabKeys = {};
 
   @override
@@ -41,10 +43,21 @@ class _CacheManagementPageState extends State<CacheManagementPage> {
   @override
   void dispose() {
     _tabScrollController.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
   void _onTabChanged(CacheCategory? category) {
+    final index = _tabs.indexOf(category);
+    _pageController.jumpToPage(index);
+    setState(() {
+      _currentCategory = category;
+    });
+    _scrollToTab(category);
+  }
+
+  void _onPageChanged(int index) {
+    final category = _tabs[index];
     setState(() {
       _currentCategory = category;
     });
@@ -327,73 +340,112 @@ class _CacheManagementPageState extends State<CacheManagementPage> {
   }
 
   Widget _buildCacheContent() {
-    final files = _displayFiles;
-
     return Column(
       children: [
         // 分类选择器
         if (!_isSelectionMode) _buildCategorySelector(),
         if (!_isSelectionMode) Divider(height: 1, color: context.dividerColor),
-        // 当前分类统计
+        // 当前分类统计 + 提示信息
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           color: context.surfaceColor,
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                '${files.length} 个文件',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: context.textSecondaryColor,
-                ),
-              ),
-              const Spacer(),
-              Text(
-                _cacheService.formatCacheSize(_getCategorySize(_currentCategory)),
-                style: TextStyle(
-                  fontSize: 14,
-                  color: context.textSecondaryColor,
-                ),
-              ),
-            ],
-          ),
-        ),
-        Divider(height: 1, color: context.dividerColor),
-        // 文件网格
-        Expanded(
-          child: files.isEmpty
-              ? Center(
-                  child: Text(
-                    '该分类暂无缓存',
+              Row(
+                children: [
+                  Text(
+                    '${_displayFiles.length} 个文件',
                     style: TextStyle(
                       fontSize: 14,
                       color: context.textSecondaryColor,
                     ),
                   ),
-                )
-              : GridView.builder(
-                  padding: const EdgeInsets.all(8),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 8,
-                    childAspectRatio: 1,
+                  const Spacer(),
+                  Text(
+                    _cacheService.formatCacheSize(_getCategorySize(_currentCategory)),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: context.textSecondaryColor,
+                    ),
                   ),
-                  itemCount: files.length,
-                  itemBuilder: (context, index) {
-                    final fileInfo = files[index];
-                    final isSelected = _selectedFiles.contains(fileInfo.fileName);
-                    return _buildCacheItem(fileInfo, isSelected);
-                  },
+                ],
+              ),
+              if (!_isSelectionMode) ...[
+                const SizedBox(height: 4),
+                Text(
+                  '长按可选择删除 · 点击可预览图片',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: context.textTertiaryColor,
+                  ),
                 ),
+              ],
+            ],
+          ),
+        ),
+        Divider(height: 1, color: context.dividerColor),
+        // 文件网格 - 使用 PageView 支持横向滑动切换
+        Expanded(
+          child: PageView.builder(
+            controller: _pageController,
+            onPageChanged: _onPageChanged,
+            itemCount: _tabs.length,
+            itemBuilder: (context, index) {
+              final category = _tabs[index];
+              return _buildCacheGridForCategory(category);
+            },
+          ),
         ),
       ],
     );
   }
 
+  /// 构建指定分类的缓存网格
+  Widget _buildCacheGridForCategory(CacheCategory? category) {
+    final files = category == null 
+        ? _cacheFiles 
+        : (_categorizedFiles[category] ?? []);
+    
+    if (files.isEmpty) {
+      return Center(
+        child: Text(
+          category == null ? '暂无缓存' : '该分类暂无缓存',
+          style: TextStyle(
+            fontSize: 14,
+            color: context.textSecondaryColor,
+          ),
+        ),
+      );
+    }
+    
+    return GridView.builder(
+      padding: const EdgeInsets.all(8),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+        childAspectRatio: 1,
+      ),
+      itemCount: files.length,
+      itemBuilder: (context, index) {
+        final fileInfo = files[index];
+        final isSelected = _selectedFiles.contains(fileInfo.fileName);
+        return _buildCacheItem(fileInfo, isSelected);
+      },
+    );
+  }
+
+  void _viewImage(CacheFileInfo fileInfo) {
+    if (!fileInfo.isImage) return;
+    ImageViewer.show(context, fileInfo.file.path, cachedFile: fileInfo.file);
+  }
+
   Widget _buildCacheItem(CacheFileInfo fileInfo, bool isSelected) {
     return GestureDetector(
-      onTap: () => _toggleSelection(fileInfo.fileName),
+      onTap: _isSelectionMode
+          ? () => _toggleSelection(fileInfo.fileName)
+          : () => _viewImage(fileInfo),
       onLongPress: () {
         if (!_isSelectionMode) {
           _toggleSelection(fileInfo.fileName);

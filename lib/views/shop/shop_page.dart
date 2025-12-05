@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/product_model.dart';
 import 'package:sse_market_x/views/shop/product_detail_page.dart';
@@ -26,15 +28,85 @@ class ShopPage extends StatefulWidget {
 class _ShopPageState extends State<ShopPage> {
   List<ProductModel> _homeProducts = [];
   List<ProductModel> _historyProducts = [];
-  bool _isLoading = true;
+  bool _isLoading = true; // 初始化时设置为 true，避免显示空状态
   bool _isRefreshing = false;
+  bool _hasLoadedOnce = false;
   int _currentIndex = 0;
   final PageController _pageController = PageController();
 
   @override
   void initState() {
     super.initState();
-    _loadProducts();
+    _loadInitialProducts();
+  }
+  
+  Future<void> _loadInitialProducts() async {
+    // 尝试从缓存加载
+    await _loadCachedProducts();
+    
+    // 后台静默刷新
+    if (_hasLoadedOnce) {
+      _loadProducts(silent: true);
+    } else {
+      _loadProducts();
+    }
+  }
+  
+  /// 从本地缓存加载商品列表
+  Future<void> _loadCachedProducts() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final homeJson = prefs.getString('shop_home_products_cache');
+      final historyJson = prefs.getString('shop_history_products_cache');
+      
+      if (homeJson != null && homeJson.isNotEmpty) {
+        final List<dynamic> jsonList = jsonDecode(homeJson);
+        final cachedProducts = jsonList.map((json) => ProductModel.fromDynamic(json)).toList();
+        
+        if (mounted) {
+          setState(() {
+            _homeProducts = cachedProducts;
+            _hasLoadedOnce = true;
+            _isLoading = false;
+          });
+        }
+      }
+      
+      if (historyJson != null && historyJson.isNotEmpty) {
+        final List<dynamic> jsonList = jsonDecode(historyJson);
+        final cachedProducts = jsonList.map((json) => ProductModel.fromDynamic(json)).toList();
+        
+        if (mounted) {
+          setState(() {
+            _historyProducts = cachedProducts;
+          });
+        }
+      }
+      
+      // 如果没有任何缓存，不设置 _isLoading，让后续的 _loadProducts 正常执行
+    } catch (e) {
+      debugPrint('加载缓存商品失败: $e');
+      // 加载失败，不设置 _isLoading，让后续的 _loadProducts 正常执行
+    }
+  }
+  
+  /// 保存商品列表到本地缓存
+  Future<void> _saveCachedProducts() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      
+      if (_homeProducts.isNotEmpty) {
+        final jsonList = _homeProducts.map((p) => p.toJson()).toList();
+        await prefs.setString('shop_home_products_cache', jsonEncode(jsonList));
+      }
+      
+      if (_historyProducts.isNotEmpty) {
+        final jsonList = _historyProducts.map((p) => p.toJson()).toList();
+        await prefs.setString('shop_history_products_cache', jsonEncode(jsonList));
+      }
+    } catch (e) {
+      debugPrint('保存缓存商品失败: $e');
+    }
   }
 
   @override
@@ -43,10 +115,12 @@ class _ShopPageState extends State<ShopPage> {
     super.dispose();
   }
 
-  Future<void> _loadProducts() async {
-    setState(() {
-      _isLoading = true;
-    });
+  Future<void> _loadProducts({bool silent = false}) async {
+    if (!silent) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
 
     try {
       final homeProducts = await widget.apiService.getProducts('home');
@@ -58,7 +132,13 @@ class _ShopPageState extends State<ShopPage> {
           _historyProducts = historyProducts;
           _isLoading = false;
           _isRefreshing = false;
+          _hasLoadedOnce = true;
         });
+        
+        // 保存到缓存（仅在正常加载时）
+        if (!silent) {
+          _saveCachedProducts();
+        }
       }
     } catch (e) {
       debugPrint('加载商品失败: $e');
@@ -126,7 +206,7 @@ class _ShopPageState extends State<ShopPage> {
           _buildTabs(context),
           // 商品列表 - 支持左右滑动
           Expanded(
-            child: _isLoading && !_isRefreshing
+            child: !_hasLoadedOnce && _isLoading && !_isRefreshing
                 ? const ProductGridSkeleton(itemCount: 6)
                 : PageView(
                     controller: _pageController,

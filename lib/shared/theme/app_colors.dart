@@ -127,6 +127,12 @@ class AppTheme {
     ),
     dividerColor: AppColors._lightDivider,
     cardColor: AppColors._lightSurface,
+    // 文字选择样式
+    textSelectionTheme: TextSelectionThemeData(
+      cursorColor: AppColors.primary,
+      selectionColor: AppColors.primary.withOpacity(0.3),
+      selectionHandleColor: AppColors.primary,
+    ),
   );
 
   static ThemeData darkTheme = ThemeData(
@@ -146,5 +152,11 @@ class AppTheme {
     ),
     dividerColor: AppColors._darkDivider,
     cardColor: AppColors._darkSurface,
+    // 文字选择样式
+    textSelectionTheme: TextSelectionThemeData(
+      cursorColor: AppColors.primary,
+      selectionColor: AppColors.primary.withOpacity(0.4),
+      selectionHandleColor: AppColors.primary,
+    ),
   );
 }
