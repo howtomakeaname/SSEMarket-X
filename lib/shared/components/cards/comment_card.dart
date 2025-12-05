@@ -286,6 +286,7 @@ class _CommentCardState extends State<CommentCard> {
       data: widget.comment.content,
       fontSize: 14, // 评论区使用较小字体
       shrinkWrap: true, // 紧凑模式，减少间距
+      selectable: true, // 支持长按选择文字
     );
   }
 
@@ -527,6 +528,7 @@ class _CommentCardState extends State<CommentCard> {
             data: subComment.content,
             fontSize: 13, // 子评论使用更小字体
             shrinkWrap: true, // 紧凑模式
+            selectable: true, // 支持长按选择文字
           ),
           const SizedBox(height: 6),
           // 子评论操作栏
