@@ -636,6 +636,7 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
 
     return LatexMarkdown(
       data: _post.content,
+      selectable: true, // 支持长按选择文字
     );
   }
 
