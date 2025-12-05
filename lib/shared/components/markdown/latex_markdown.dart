@@ -676,7 +676,7 @@ String _convertHtmlMediaToMarkdown(String content) {
   content = content.replaceAllMapped(audioSourcePattern, (match) {
     final src = match.group(1) ?? '';
     if (src.isEmpty) return match.group(0) ?? '';
-    return '🎵 [音频播放]($src)';
+    return '[🎵 音频播放]($src)';
   });
 
   // 处理带 source 子标签的 video
@@ -688,7 +688,7 @@ String _convertHtmlMediaToMarkdown(String content) {
   content = content.replaceAllMapped(videoSourcePattern, (match) {
     final src = match.group(1) ?? '';
     if (src.isEmpty) return match.group(0) ?? '';
-    return '🎬 [视频播放]($src)';
+    return '[🎬 视频播放]($src)';
   });
 
   // 处理直接带 src 属性的 audio
@@ -700,7 +700,7 @@ String _convertHtmlMediaToMarkdown(String content) {
   content = content.replaceAllMapped(audioDirectPattern, (match) {
     final src = match.group(1) ?? '';
     if (src.isEmpty) return match.group(0) ?? '';
-    return '🎵 [音频播放]($src)';
+    return '[🎵 音频播放]($src)';
   });
 
   // 处理直接带 src 属性的 video
@@ -712,7 +712,7 @@ String _convertHtmlMediaToMarkdown(String content) {
   content = content.replaceAllMapped(videoDirectPattern, (match) {
     final src = match.group(1) ?? '';
     if (src.isEmpty) return match.group(0) ?? '';
-    return '🎬 [视频播放]($src)';
+    return '[🎬 视频播放]($src)';
   });
 
   return content;
