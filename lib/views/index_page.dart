@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
@@ -69,6 +70,11 @@ class _IndexPageState extends State<IndexPage> {
   // Preview state
   final ValueNotifier<PostModel?> _previewPostNotifier = ValueNotifier(null);
   bool _isShowingPreview = false;
+  
+  // 未读消息数（用于移动端底部 tab 小红点）
+  int _unreadCount = 0;
+  int _noticeUnreadCount = 0;
+  StreamSubscription<int>? _unreadSubscription;
 
   // Keys for nested navigators to maintain state per tab
   final Map<int, GlobalKey<NavigatorState>> _navigatorKeys = {
@@ -92,8 +98,16 @@ class _IndexPageState extends State<IndexPage> {
     super.initState();
     // 初始化 WebSocket 连接，以便获取未读消息数
     _initWebSocket();
+    // 初始化未读消息监听
+    _initUnreadListener();
     // 刷新用户信息
     _refreshUserInfo();
+  }
+
+  @override
+  void dispose() {
+    _unreadSubscription?.cancel();
+    super.dispose();
   }
 
   void _initWebSocket() {
@@ -102,6 +116,40 @@ class _IndexPageState extends State<IndexPage> {
       if (!ws.isConnected) {
         ws.connect();
       }
+    }
+  }
+
+  /// 初始化未读消息监听（私信）
+  void _initUnreadListener() {
+    try {
+      final ws = WebSocketService();
+      // 私信未读数
+      _unreadCount = ws.totalUnreadCount;
+      _unreadSubscription = ws.unreadCount.listen((count) {
+        if (mounted) {
+          setState(() {
+            _unreadCount = count;
+          });
+        }
+      });
+    } catch (e) {
+      debugPrint('IndexPage unread listener error: $e');
+    }
+    // 获取通知未读数
+    _fetchNoticeUnreadCount();
+  }
+
+  /// 获取通知未读数
+  Future<void> _fetchNoticeUnreadCount() async {
+    try {
+      final noticeNum = await widget.apiService.getNoticeNum();
+      if (mounted) {
+        setState(() {
+          _noticeUnreadCount = noticeNum.unreadTotalNum;
+        });
+      }
+    } catch (e) {
+      debugPrint('IndexPage fetch notice count error: $e');
     }
   }
 
@@ -254,19 +302,11 @@ class _IndexPageState extends State<IndexPage> {
             BottomNavigationBarItem(
               icon: Padding(
                 padding: const EdgeInsets.only(bottom: 4),
-                child: SvgPicture.asset(
-                  'assets/icons/notice_normal.svg',
-                  width: 24,
-                  height: 24,
-                ),
+                child: _buildMessageIcon(isSelected: false),
               ),
               activeIcon: Padding(
                 padding: const EdgeInsets.only(bottom: 4),
-                child: SvgPicture.asset(
-                  'assets/icons/notice_selected.svg',
-                  width: 24,
-                  height: 24,
-                ),
+                child: _buildMessageIcon(isSelected: true),
               ),
               label: '消息',
             ),
@@ -730,6 +770,45 @@ class _IndexPageState extends State<IndexPage> {
           ),
         ),
       ),
+    );
+  }
+
+  /// 构建消息图标（带未读小红点）
+  Widget _buildMessageIcon({required bool isSelected}) {
+    final totalUnread = _unreadCount + _noticeUnreadCount;
+    
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        SvgPicture.asset(
+          isSelected ? 'assets/icons/notice_selected.svg' : 'assets/icons/notice_normal.svg',
+          width: 24,
+          height: 24,
+        ),
+        if (totalUnread > 0)
+          Positioned(
+            right: -6,
+            top: -4,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+              decoration: BoxDecoration(
+                color: AppColors.error,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              constraints: const BoxConstraints(minWidth: 16, minHeight: 14),
+              child: Center(
+                child: Text(
+                  totalUnread > 99 ? '99+' : '$totalUnread',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
