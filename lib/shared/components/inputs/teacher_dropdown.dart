@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 
@@ -92,22 +93,29 @@ class _TeacherDropdownState extends State<TeacherDropdown> {
               link: _layerLink,
               showWhenUnlinked: false,
               offset: Offset(-20, size.height + 4),
-              child: Material(
-                elevation: 2,
+              child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                color: context.surfaceColor,
-                shadowColor: Colors.black.withOpacity(0.08),
-                child: Container(
-                  constraints: const BoxConstraints(maxHeight: 200),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: context.dividerColor.withOpacity(0.5),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(
+                    constraints: const BoxConstraints(maxHeight: 200),
+                    decoration: BoxDecoration(
+                      color: context.surfaceColor.withOpacity(0.85),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: context.dividerColor.withOpacity(0.3),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.08),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: ListView.builder(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: ListView.builder(
                       padding: const EdgeInsets.symmetric(vertical: 4),
                       shrinkWrap: true,
                       itemCount: widget.options.length,
@@ -179,6 +187,7 @@ class _TeacherDropdownState extends State<TeacherDropdown> {
                 ),
               ),
             ),
+          ),
           ),
         ],
       ),
