@@ -1421,4 +1421,34 @@ class ApiService {
       return false;
     }
   }
+
+  /// 获取教师标签列表（课程专区）
+  Future<List<Map<String, dynamic>>> getTeachers() async {
+    if (token.isEmpty) return [];
+
+    final uri = Uri.parse('$_baseUrl/auth/getTags?type=course');
+
+    try {
+      final response = await http.get(
+        uri,
+        headers: <String, String>{
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        if (json['data'] != null && json['data']['tags'] is List) {
+          return (json['data']['tags'] as List)
+              .map((e) => e as Map<String, dynamic>)
+              .toList();
+        }
+      }
+      return [];
+    } catch (e) {
+      print('获取教师列表失败: $e');
+      return [];
+    }
+  }
 }
