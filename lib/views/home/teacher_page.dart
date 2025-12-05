@@ -239,12 +239,16 @@ class _TeacherPageState extends State<TeacherPage> {
   }
 
   Widget _buildPostList() {
-    // 首次加载且无缓存时显示骨架屏
-    if (!_hasLoadedOnce && _isLoading && _posts.isEmpty) {
+    // 显示骨架屏的条件：
+    // 1. 正在加载中且列表为空
+    // 2. 还没加载过且列表为空（首次进入）
+    // 3. 正在加载教师列表（说明刚进入页面）
+    if (_posts.isEmpty && (_isLoading || !_hasLoadedOnce || _isLoadingTeachers)) {
       return const PostListSkeleton(itemCount: 5, isDense: false);
     }
 
-    if (_posts.isEmpty && !_isLoading) {
+    // 只有在加载完成后且列表为空时才显示空状态
+    if (_posts.isEmpty && !_isLoading && _hasLoadedOnce) {
       return _buildEmptyState();
     }
 
