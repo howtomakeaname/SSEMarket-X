@@ -790,11 +790,14 @@ class LatexMarkdown extends StatelessWidget {
     // 预处理 Markdown 文本，对图片 URL 进行编码
     final processedData = _preprocessMarkdownImageUrls(data);
 
+    // shrinkWrap 模式下使用更紧凑的行高
+    final textHeight = shrinkWrap ? 1.3 : 1.5;
+
     final markdownConfig = config.copy(configs: [
       PConfig(textStyle: TextStyle(
         fontSize: fontSize,
         color: textPrimaryColor,
-        height: 1.5,
+        height: textHeight,
       )),
       H1Config(style: TextStyle(
         fontSize: fontSize + 8,
@@ -842,16 +845,27 @@ class LatexMarkdown extends StatelessWidget {
     // 提取所有图片 URL，用于多图浏览
     final imageUrls = _extractImageUrls(data);
 
+    // 去除末尾空行，避免渲染时产生额外间距
+    final trimmedData = processedData.trimRight();
+
     // 紧凑模式：使用 markdown_widget 的 MarkdownWidget 的 shrinkWrap 模式
     if (shrinkWrap) {
+      // 使用 UnconstrainedBox + ClipRect 裁剪掉底部可能的额外空间
       return MarkdownImageContext(
         imageUrls: imageUrls,
-        child: mw.MarkdownWidget(
-          data: processedData,
-          selectable: selectable,
-          shrinkWrap: true,
-          config: markdownConfig,
-          markdownGenerator: generator,
+        child: ClipRect(
+          child: Align(
+            alignment: Alignment.topLeft,
+            heightFactor: 1.0,
+            child: mw.MarkdownWidget(
+              data: trimmedData,
+              selectable: selectable,
+              shrinkWrap: true,
+              config: markdownConfig,
+              markdownGenerator: generator,
+              padding: EdgeInsets.zero,
+            ),
+          ),
         ),
       );
     }
@@ -859,7 +873,7 @@ class LatexMarkdown extends StatelessWidget {
     return MarkdownImageContext(
       imageUrls: imageUrls,
       child: MarkdownBlock(
-        data: processedData,
+        data: trimmedData,
         selectable: selectable,
         config: markdownConfig,
         generator: generator,
