@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/user_model.dart';
 import 'package:sse_market_x/core/services/media_cache_service.dart';
+import 'package:sse_market_x/core/services/storage_service.dart';
 import 'package:sse_market_x/core/services/watch_later_service.dart';
 import 'package:sse_market_x/core/utils/level_utils.dart';
 import 'package:sse_market_x/shared/components/lists/settings_list_item.dart';
@@ -27,15 +28,40 @@ class MyPage extends StatefulWidget {
 
 class _MyPageState extends State<MyPage> {
   UserModel? _user;
-  bool _isLoading = true;
+  bool _isLoading = false;
   bool _isWatchLaterEnabled = false;
   final WatchLaterService _watchLaterService = WatchLaterService();
 
   @override
   void initState() {
     super.initState();
-    _loadUser();
+    _initUserData();
     _loadWatchLaterStatus();
+  }
+
+  /// 初始化用户数据：先从缓存加载，再后台刷新
+  void _initUserData() {
+    // 1. 先从 StorageService 获取缓存的用户数据
+    final cachedUser = StorageService().user;
+    
+    // 2. 判断缓存数据是否完整（包含 score 等详细信息）
+    // 如果 score 为 0 且 intro 为空，可能是不完整的数据，显示骨架屏
+    // 但如果用户确实是新用户（score 真的是 0），也应该显示
+    // 所以我们采用更保守的策略：只要有缓存就先显示
+    if (cachedUser != null) {
+      setState(() {
+        _user = cachedUser;
+        _isLoading = false;
+      });
+      // 后台静默刷新最新数据
+      _refreshUser();
+    } else {
+      // 如果没有缓存，显示骨架屏并加载
+      setState(() {
+        _isLoading = true;
+      });
+      _refreshUser();
+    }
   }
 
   Future<void> _loadWatchLaterStatus() async {
@@ -47,7 +73,8 @@ class _MyPageState extends State<MyPage> {
     }
   }
 
-  Future<void> _loadUser() async {
+  /// 刷新用户数据（后台静默更新）
+  Future<void> _refreshUser() async {
     try {
       final basic = await widget.apiService.getUserInfo();
       UserModel detailed = basic;
@@ -67,6 +94,14 @@ class _MyPageState extends State<MyPage> {
         });
       }
     }
+  }
+
+  /// 强制重新加载用户数据（用于编辑后刷新）
+  Future<void> _loadUser() async {
+    setState(() {
+      _isLoading = true;
+    });
+    await _refreshUser();
   }
 
   @override
