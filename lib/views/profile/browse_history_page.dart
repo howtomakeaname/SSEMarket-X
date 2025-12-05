@@ -826,15 +826,15 @@ class _BrowseHistoryPageState extends State<BrowseHistoryPage> {
   Future<void> _navigateToPostDetail(BrowseHistoryItem item, PostModel post) async {
     Widget detailPage;
     
-    // 评分和课程都使用 ScorePostDetailPage
-    if (item.type == BrowseHistoryItemType.rating || 
-        item.type == BrowseHistoryItemType.course) {
+    // 只有打分类型使用 ScorePostDetailPage
+    if (item.type == BrowseHistoryItemType.rating) {
       detailPage = ScorePostDetailPage(
         postId: post.id,
         apiService: widget.apiService,
         initialPost: post,
       );
     } else {
+      // 课程和普通帖子都使用 PostDetailPage
       detailPage = PostDetailPage(
         postId: post.id,
         apiService: widget.apiService,
