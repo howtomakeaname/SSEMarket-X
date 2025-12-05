@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:markdown/markdown.dart' as m;
-import 'package:markdown_widget/markdown_widget.dart' hide ImageViewer;
+import 'package:markdown_widget/markdown_widget.dart' hide ImageViewer, MarkdownWidget;
+import 'package:markdown_widget/markdown_widget.dart' as mw show MarkdownWidget;
 import 'package:sse_market_x/core/services/media_cache_service.dart';
 import 'package:sse_market_x/shared/components/media/image_viewer.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
@@ -398,6 +399,8 @@ class LatexMarkdown extends StatelessWidget {
   final bool selectable;
   final MarkdownStyleSheet? styleSheet;
   final bool enableImageCache;
+  final double fontSize; // 基础字体大小
+  final bool shrinkWrap; // 紧凑模式，用于评论等场景
 
   const LatexMarkdown({
     super.key,
@@ -405,6 +408,8 @@ class LatexMarkdown extends StatelessWidget {
     this.selectable = false,
     this.styleSheet,
     this.enableImageCache = true,
+    this.fontSize = 16, // 默认 16px
+    this.shrinkWrap = false, // 默认非紧凑模式
   });
 
   @override
@@ -427,54 +432,71 @@ class LatexMarkdown extends StatelessWidget {
     // 预处理 Markdown 文本，对图片 URL 进行编码
     final processedData = _preprocessMarkdownImageUrls(data);
 
+    final markdownConfig = config.copy(configs: [
+      PConfig(textStyle: TextStyle(
+        fontSize: fontSize,
+        color: textPrimaryColor,
+        height: 1.5,
+      )),
+      H1Config(style: TextStyle(
+        fontSize: fontSize + 8,
+        fontWeight: FontWeight.bold,
+        color: textPrimaryColor,
+      )),
+      H2Config(style: TextStyle(
+        fontSize: fontSize + 4,
+        fontWeight: FontWeight.bold,
+        color: textPrimaryColor,
+      )),
+      H3Config(style: TextStyle(
+        fontSize: fontSize + 2,
+        fontWeight: FontWeight.bold,
+        color: textPrimaryColor,
+      )),
+      CodeConfig(style: TextStyle(
+        fontSize: fontSize - 2,
+        color: AppColors.primary,
+        backgroundColor: backgroundColor,
+      )),
+      PreConfig(
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+      BlockquoteConfig(
+        sideColor: AppColors.primary,
+        textColor: textSecondaryColor,
+      ),
+      const LinkConfig(style: TextStyle(
+        color: AppColors.primary,
+        decoration: TextDecoration.none,
+      )),
+    ]);
+
+    final generator = MarkdownGenerator(
+      generators: generators,
+      inlineSyntaxList: [LatexSyntax()],
+      richTextBuilder: shrinkWrap ? (span) => Text.rich(span) : null,
+      linesMargin: shrinkWrap ? EdgeInsets.zero : const EdgeInsets.symmetric(vertical: 8),
+    );
+
+    // 紧凑模式：使用 markdown_widget 的 MarkdownWidget 的 shrinkWrap 模式
+    if (shrinkWrap) {
+      return mw.MarkdownWidget(
+        data: processedData,
+        selectable: selectable,
+        shrinkWrap: true,
+        config: markdownConfig,
+        markdownGenerator: generator,
+      );
+    }
+
     return MarkdownBlock(
       data: processedData,
       selectable: selectable,
-      config: config.copy(configs: [
-        PConfig(textStyle: TextStyle(
-          fontSize: 16,
-          color: textPrimaryColor,
-          height: 1.5,
-        )),
-        H1Config(style: TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-          color: textPrimaryColor,
-        )),
-        H2Config(style: TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-          color: textPrimaryColor,
-        )),
-        H3Config(style: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          color: textPrimaryColor,
-        )),
-        CodeConfig(style: TextStyle(
-          fontSize: 14,
-          color: AppColors.primary,
-          backgroundColor: backgroundColor,
-        )),
-        PreConfig(
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ),
-        BlockquoteConfig(
-          sideColor: AppColors.primary,
-          textColor: textSecondaryColor,
-        ),
-        const LinkConfig(style: TextStyle(
-          color: AppColors.primary,
-          decoration: TextDecoration.none,
-        )),
-      ]),
-      generator: MarkdownGenerator(
-        generators: generators,
-        inlineSyntaxList: [LatexSyntax()],
-      ),
+      config: markdownConfig,
+      generator: generator,
     );
   }
 }
