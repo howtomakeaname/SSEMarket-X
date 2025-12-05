@@ -38,6 +38,7 @@ class BrowseHistoryPage extends StatefulWidget {
 class _BrowseHistoryPageState extends State<BrowseHistoryPage> {
   final BrowseHistoryService _historyService = BrowseHistoryService();
   final ScrollController _tabScrollController = ScrollController();
+  final PageController _pageController = PageController();
   final Map<BrowseHistoryType, GlobalKey> _tabKeys = {};
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
@@ -68,6 +69,7 @@ class _BrowseHistoryPageState extends State<BrowseHistoryPage> {
   @override
   void dispose() {
     _tabScrollController.dispose();
+    _pageController.dispose();
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
@@ -137,6 +139,16 @@ class _BrowseHistoryPageState extends State<BrowseHistoryPage> {
   }
 
   void _onTabChanged(BrowseHistoryType type) {
+    final index = BrowseHistoryType.values.indexOf(type);
+    _pageController.jumpToPage(index);
+    setState(() {
+      _currentType = type;
+    });
+    _scrollToTab(type);
+  }
+
+  void _onPageChanged(int index) {
+    final type = BrowseHistoryType.values[index];
     setState(() {
       _currentType = type;
     });
@@ -476,13 +488,102 @@ class _BrowseHistoryPageState extends State<BrowseHistoryPage> {
         if (_isSearchMode && _searchKeyword.isNotEmpty) 
           Divider(height: 1, color: context.dividerColor),
         
-        // 历史列表
+        // 历史列表 - 使用 PageView 支持横向滑动切换
         Expanded(
-          child: _displayHistory.isEmpty
-              ? _buildEmptyState()
-              : _buildHistoryList(),
+          child: _isSearchMode
+              // 搜索模式下不使用 PageView
+              ? (_displayHistory.isEmpty ? _buildEmptyState() : _buildHistoryList())
+              : PageView.builder(
+                  controller: _pageController,
+                  onPageChanged: _onPageChanged,
+                  itemCount: BrowseHistoryType.values.length,
+                  itemBuilder: (context, index) {
+                    final type = BrowseHistoryType.values[index];
+                    return _buildHistoryListForType(type);
+                  },
+                ),
         ),
       ],
+    );
+  }
+
+  /// 构建指定类型的历史列表
+  Widget _buildHistoryListForType(BrowseHistoryType type) {
+    BrowseHistoryItemType itemType;
+    switch (type) {
+      case BrowseHistoryType.post:
+        itemType = BrowseHistoryItemType.post;
+        break;
+      case BrowseHistoryType.course:
+        itemType = BrowseHistoryItemType.course;
+        break;
+      case BrowseHistoryType.rating:
+        itemType = BrowseHistoryItemType.rating;
+        break;
+      case BrowseHistoryType.product:
+        itemType = BrowseHistoryItemType.product;
+        break;
+    }
+    
+    final history = _allHistory.where((item) => item.type == itemType).toList();
+    
+    if (history.isEmpty) {
+      return _buildEmptyStateForType(type);
+    }
+    
+    // 商品使用网格布局
+    if (type == BrowseHistoryType.product) {
+      return RefreshIndicator(
+        onRefresh: _loadUserAndHistory,
+        child: GridView.builder(
+          padding: const EdgeInsets.all(16),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 0.75,
+          ),
+          itemCount: history.length,
+          itemBuilder: (context, index) {
+            return _buildProductHistoryItem(history[index]);
+          },
+        ),
+      );
+    }
+    
+    // 其他类型使用列表布局
+    return RefreshIndicator(
+      onRefresh: _loadUserAndHistory,
+      child: ListView.builder(
+        padding: const EdgeInsets.only(top: 8),
+        itemCount: history.length,
+        itemBuilder: (context, index) {
+          return _buildHistoryItem(history[index]);
+        },
+      ),
+    );
+  }
+
+  Widget _buildEmptyStateForType(BrowseHistoryType type) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.history,
+            size: 64,
+            color: context.textSecondaryColor,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            '暂无${type.label}浏览记录',
+            style: TextStyle(
+              fontSize: 14,
+              color: context.textSecondaryColor,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

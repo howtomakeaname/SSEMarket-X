@@ -26,6 +26,7 @@ class _CacheManagementPageState extends State<CacheManagementPage> {
   
   // Tab 滚动控制
   final ScrollController _tabScrollController = ScrollController();
+  final PageController _pageController = PageController();
   final Map<CacheCategory?, GlobalKey> _tabKeys = {};
 
   @override
@@ -41,10 +42,21 @@ class _CacheManagementPageState extends State<CacheManagementPage> {
   @override
   void dispose() {
     _tabScrollController.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
   void _onTabChanged(CacheCategory? category) {
+    final index = _tabs.indexOf(category);
+    _pageController.jumpToPage(index);
+    setState(() {
+      _currentCategory = category;
+    });
+    _scrollToTab(category);
+  }
+
+  void _onPageChanged(int index) {
+    final category = _tabs[index];
     setState(() {
       _currentCategory = category;
     });
@@ -327,8 +339,6 @@ class _CacheManagementPageState extends State<CacheManagementPage> {
   }
 
   Widget _buildCacheContent() {
-    final files = _displayFiles;
-
     return Column(
       children: [
         // 分类选择器
@@ -341,7 +351,7 @@ class _CacheManagementPageState extends State<CacheManagementPage> {
           child: Row(
             children: [
               Text(
-                '${files.length} 个文件',
+                '${_displayFiles.length} 个文件',
                 style: TextStyle(
                   fontSize: 14,
                   color: context.textSecondaryColor,
@@ -359,35 +369,54 @@ class _CacheManagementPageState extends State<CacheManagementPage> {
           ),
         ),
         Divider(height: 1, color: context.dividerColor),
-        // 文件网格
+        // 文件网格 - 使用 PageView 支持横向滑动切换
         Expanded(
-          child: files.isEmpty
-              ? Center(
-                  child: Text(
-                    '该分类暂无缓存',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: context.textSecondaryColor,
-                    ),
-                  ),
-                )
-              : GridView.builder(
-                  padding: const EdgeInsets.all(8),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 8,
-                    childAspectRatio: 1,
-                  ),
-                  itemCount: files.length,
-                  itemBuilder: (context, index) {
-                    final fileInfo = files[index];
-                    final isSelected = _selectedFiles.contains(fileInfo.fileName);
-                    return _buildCacheItem(fileInfo, isSelected);
-                  },
-                ),
+          child: PageView.builder(
+            controller: _pageController,
+            onPageChanged: _onPageChanged,
+            itemCount: _tabs.length,
+            itemBuilder: (context, index) {
+              final category = _tabs[index];
+              return _buildCacheGridForCategory(category);
+            },
+          ),
         ),
       ],
+    );
+  }
+
+  /// 构建指定分类的缓存网格
+  Widget _buildCacheGridForCategory(CacheCategory? category) {
+    final files = category == null 
+        ? _cacheFiles 
+        : (_categorizedFiles[category] ?? []);
+    
+    if (files.isEmpty) {
+      return Center(
+        child: Text(
+          category == null ? '暂无缓存' : '该分类暂无缓存',
+          style: TextStyle(
+            fontSize: 14,
+            color: context.textSecondaryColor,
+          ),
+        ),
+      );
+    }
+    
+    return GridView.builder(
+      padding: const EdgeInsets.all(8),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+        childAspectRatio: 1,
+      ),
+      itemCount: files.length,
+      itemBuilder: (context, index) {
+        final fileInfo = files[index];
+        final isSelected = _selectedFiles.contains(fileInfo.fileName);
+        return _buildCacheItem(fileInfo, isSelected);
+      },
     );
   }
 
