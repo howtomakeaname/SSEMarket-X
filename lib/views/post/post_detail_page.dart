@@ -770,10 +770,14 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
                 ),
               )
             else
-              Padding(
+              // 使用 ListView.builder 实现懒加载，优化性能
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  children: _comments.map((comment) {
+                itemCount: _comments.length,
+                itemBuilder: (context, index) {
+                  final comment = _comments[index];
                   return CommentCard(
                     comment: comment,
                     postId: widget.postId,
@@ -838,9 +842,8 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
                       _onUserTap(userId, userName, userAvatar);
                     },
                   );
-                }).toList(),
+                },
               ),
-            ),
           ],
           const SizedBox(height: 48), // 底部安全区
         ],
