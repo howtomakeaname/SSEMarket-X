@@ -1107,16 +1107,18 @@ class LatexMarkdownWithPostPreview extends StatelessWidget {
         ));
       }
 
-      // 添加帖子链接组件
+      // 添加帖子链接组件（水平居中）
       final postIdStr = match.group(1);
       if (postIdStr != null) {
         final postId = int.tryParse(postIdStr);
         if (postId != null) {
-          widgets.add(Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: _PostLinkInline(
-              postId: postId,
-              apiService: apiService,
+          widgets.add(Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: _PostLinkInline(
+                postId: postId,
+                apiService: apiService,
+              ),
             ),
           ));
         }
