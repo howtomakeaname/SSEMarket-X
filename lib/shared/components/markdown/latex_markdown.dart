@@ -8,6 +8,7 @@ import 'package:markdown_widget/markdown_widget.dart' hide ImageViewer, Markdown
 import 'package:markdown_widget/markdown_widget.dart' as mw show MarkdownWidget;
 import 'package:sse_market_x/core/services/media_cache_service.dart';
 import 'package:sse_market_x/shared/components/media/image_viewer.dart';
+import 'package:sse_market_x/shared/components/utils/snackbar_helper.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 
 /// 获取适配深色模式的 MarkdownStyleSheet
@@ -317,6 +318,95 @@ class _CachedMarkdownImageState extends State<_CachedMarkdownImage>
 
   /// 显示图片操作菜单
   void _showImageMenu(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isWideScreen = screenWidth > 600;
+
+    if (isWideScreen) {
+      // 宽屏设备使用弹窗
+      _showImageDialog(context);
+    } else {
+      // 窄屏设备使用底部菜单
+      _showImageBottomSheet(context);
+    }
+  }
+
+  /// 宽屏设备的图片操作弹窗
+  void _showImageDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 320),
+          child: Container(
+            decoration: BoxDecoration(
+              color: context.surfaceColor,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withAlpha(25),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 标题
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+                  child: Text(
+                    '图片操作',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: context.textPrimaryColor,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                Container(height: 0.5, color: context.dividerColor),
+                // 查看原图
+                _buildDialogButton(
+                  context: context,
+                  text: '查看原图',
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _openImageViewer(context);
+                  },
+                ),
+                Container(height: 0.5, color: context.dividerColor),
+                // 复制图片链接
+                _buildDialogButton(
+                  context: context,
+                  text: '复制图片链接',
+                  onTap: () {
+                    Clipboard.setData(ClipboardData(text: _originalUrl));
+                    Navigator.pop(ctx);
+                    SnackBarHelper.show(context, '已复制图片链接');
+                  },
+                ),
+                Container(height: 0.5, color: context.dividerColor),
+                // 取消按钮
+                _buildDialogButton(
+                  context: context,
+                  text: '取消',
+                  isCancel: true,
+                  isLast: true,
+                  onTap: () => Navigator.pop(ctx),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 窄屏设备的底部菜单
+  void _showImageBottomSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
       backgroundColor: context.surfaceColor,
@@ -338,33 +428,87 @@ class _CachedMarkdownImageState extends State<_CachedMarkdownImage>
               ),
             ),
             // 查看原图
-            ListTile(
-              leading: Icon(Icons.zoom_in, color: context.textPrimaryColor),
-              title: Text('查看原图', style: TextStyle(color: context.textPrimaryColor)),
+            _buildSheetTile(
+              context: context,
+              icon: Icons.zoom_in,
+              title: '查看原图',
               onTap: () {
                 Navigator.pop(ctx);
                 _openImageViewer(context);
               },
             ),
             // 复制图片链接
-            ListTile(
-              leading: Icon(Icons.link, color: context.textPrimaryColor),
-              title: Text('复制图片链接', style: TextStyle(color: context.textPrimaryColor)),
+            _buildSheetTile(
+              context: context,
+              icon: Icons.link,
+              title: '复制图片链接',
               onTap: () {
                 Clipboard.setData(ClipboardData(text: _originalUrl));
                 Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Text('已复制图片链接'),
-                    backgroundColor: AppColors.primary,
-                    behavior: SnackBarBehavior.floating,
-                    duration: const Duration(seconds: 2),
-                  ),
-                );
+                SnackBarHelper.show(context, '已复制图片链接');
               },
             ),
             const SizedBox(height: 8),
           ],
+        ),
+      ),
+    );
+  }
+
+  /// 构建弹窗按钮（参考 CustomDialog 样式）
+  Widget _buildDialogButton({
+    required BuildContext context,
+    required String text,
+    required VoidCallback onTap,
+    bool isCancel = false,
+    bool isLast = false,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: isLast
+            ? const BorderRadius.vertical(bottom: Radius.circular(16))
+            : null,
+        child: Container(
+          height: 52,
+          alignment: Alignment.center,
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: isCancel ? context.textSecondaryColor : AppColors.primary,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 构建底部菜单项
+  Widget _buildSheetTile({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          child: Row(
+            children: [
+              Icon(icon, size: 22, color: context.textPrimaryColor),
+              const SizedBox(width: 16),
+              Text(
+                title,
+                style: TextStyle(fontSize: 16, color: context.textPrimaryColor),
+              ),
+            ],
+          ),
         ),
       ),
     );
