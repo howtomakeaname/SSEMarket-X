@@ -264,12 +264,9 @@ class _CacheManagementPageState extends State<CacheManagementPage> {
           const SizedBox(width: 8),
         ],
       ),
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppColors.primary))
-          : _cacheFiles.isEmpty
-              ? _buildEmptyState()
-              : _buildCacheContent(),
+      body: _cacheFiles.isEmpty
+          ? _buildEmptyState()
+          : _buildCacheContent(),
       bottomNavigationBar: _isSelectionMode ? _buildBottomBar() : null,
     );
   }

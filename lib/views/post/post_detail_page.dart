@@ -10,7 +10,7 @@ import 'package:sse_market_x/core/utils/level_utils.dart';
 import 'package:sse_market_x/core/utils/time_utils.dart';
 import 'package:sse_market_x/shared/components/cards/comment_card.dart';
 import 'package:sse_market_x/shared/components/feedback/comment_input.dart';
-import 'package:sse_market_x/shared/components/loading/loading_indicator.dart';
+import 'package:sse_market_x/shared/components/loading/skeleton_loader.dart';
 import 'package:sse_market_x/shared/components/markdown/latex_markdown.dart';
 import 'package:sse_market_x/shared/components/media/cached_image.dart';
 import 'package:sse_market_x/shared/components/overlays/custom_dialog.dart';
@@ -23,7 +23,8 @@ class PostDetailPage extends StatefulWidget {
   final int postId;
   final ApiService apiService;
   final bool isEmbedded;
-  final PostModel? previewPost;
+  final PostModel? previewPost; // 预览模式或初始数据
+  final PostModel? initialPost; // 从列表传递的初始数据（用于优化加载体验）
   final Widget? extraContent; // Displayed below content
   final Widget? topContent;   // Displayed above content (below title)
   final Future<bool> Function(String content)? onSendComment; // Custom comment send handler
@@ -35,6 +36,7 @@ class PostDetailPage extends StatefulWidget {
     required this.apiService,
     this.isEmbedded = false,
     this.previewPost,
+    this.initialPost,
     this.extraContent,
     this.topContent,
     this.onSendComment,
@@ -46,14 +48,14 @@ class PostDetailPage extends StatefulWidget {
 }
 
 class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProviderStateMixin {
-  PostModel _post = PostModel.empty();
+  late PostModel _post;
   UserModel _user = UserModel.empty();
   List<CommentModel> _comments = [];
-  bool _isLoading = true;
+  late bool _isLoading;
   bool _isCommentsLoading = false;
-  bool _isLiked = false;
-  int _likeCount = 0;
-  bool _isSaved = false;
+  late bool _isLiked;
+  late int _likeCount;
+  late bool _isSaved;
   bool _hasChanges = false; // 标记是否有变化需要刷新上一页
   bool _isInWatchLater = false; // 是否已添加到稍后再看
   bool _isWatchLaterEnabled = false; // 稍后再看功能是否启用
@@ -70,6 +72,24 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    
+    // 初始化状态 - 如果有初始数据，直接使用；否则显示 loading
+    if (widget.initialPost != null) {
+      _post = widget.initialPost!;
+      _isLiked = widget.initialPost!.isLiked;
+      _likeCount = widget.initialPost!.likeCount;
+      _isSaved = widget.initialPost!.isSaved;
+      _isLoading = false; // 有初始数据时不显示 loading
+      _isCommentsLoading = true; // 评论正在加载，显示骨架屏
+    } else {
+      _post = PostModel.empty();
+      _isLiked = false;
+      _likeCount = 0;
+      _isSaved = false;
+      _isLoading = true; // 没有初始数据时显示 loading
+      _isCommentsLoading = false; // 整个页面都在 loading，不需要单独显示评论 loading
+    }
+    
     _loadPostDetail();
   }
 
@@ -103,9 +123,12 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
   }
 
   Future<void> _loadPostDetail() async {
-    setState(() {
-      _isLoading = true;
-    });
+    // 如果没有初始数据，显示 loading
+    if (widget.initialPost == null) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
 
     try {
       if (widget.previewPost != null) {
@@ -129,6 +152,15 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
       
       // Normal mode - fetch from API
       final user = await widget.apiService.getUserInfo();
+      
+      // 如果有初始数据，先更新用户信息，不重新获取帖子详情
+      if (widget.initialPost != null && mounted) {
+        setState(() {
+          _user = user;
+          // 保持使用初始数据，不覆盖
+        });
+      }
+      
       final post = await widget.apiService.getPostDetail(widget.postId, user.phone);
 
       if (!mounted) return;
@@ -414,7 +446,7 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
             : null,
       ),
       body: _isLoading
-          ? const LoadingIndicator.center(message: '加载中...')
+          ? _buildDetailSkeleton()
           : RefreshIndicator(
               onRefresh: _loadPostDetail,
               color: AppColors.primary,
@@ -722,15 +754,8 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
           if (widget.previewPost == null) ...[
             if (_comments.isNotEmpty) const SizedBox(height: 12),
             if (_isCommentsLoading)
-              const Padding(
-                padding: EdgeInsets.all(32),
-                child: Center(
-                  child: CircularProgressIndicator(
-                    color: AppColors.primary,
-                    strokeWidth: 2,
-                  ),
-                ),
-              )
+              // 使用骨架屏代替 loading 指示器
+              const CommentListSkeleton(itemCount: 3)
             else if (_comments.isEmpty)
               Padding(
                 padding: const EdgeInsets.all(32),
@@ -841,5 +866,106 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
         _loadComments();
       }
     });
+  }
+
+  /// 详情页骨架屏
+  Widget _buildDetailSkeleton() {
+    return SingleChildScrollView(
+      child: Container(
+        color: context.surfaceColor,
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 用户信息骨架
+            Row(
+              children: [
+                SkeletonLoader(
+                  width: 40,
+                  height: 40,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SkeletonLoader(
+                        width: 120,
+                        height: 16,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      const SizedBox(height: 4),
+                      SkeletonLoader(
+                        width: 80,
+                        height: 12,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            // 标题骨架 - 两行
+            SkeletonLoader(
+              width: double.infinity,
+              height: 20,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            const SizedBox(height: 8),
+            SkeletonLoader(
+              width: MediaQuery.of(context).size.width * 0.7,
+              height: 20,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            const SizedBox(height: 12),
+            // 内容骨架 - 多行
+            ...List.generate(4, (index) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: SkeletonLoader(
+                  width: index == 3 
+                      ? MediaQuery.of(context).size.width * 0.5 
+                      : double.infinity,
+                  height: 14,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              );
+            }),
+            const SizedBox(height: 16),
+            // 操作栏骨架
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              decoration: BoxDecoration(
+                color: context.backgroundColor,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: List.generate(3, (index) {
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SkeletonLoader(
+                        width: 20,
+                        height: 20,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                      const SizedBox(width: 6),
+                      SkeletonLoader(
+                        width: 30,
+                        height: 14,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ],
+                  );
+                }),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

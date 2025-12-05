@@ -4,6 +4,7 @@ import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/post_model.dart';
 import 'package:sse_market_x/core/models/user_model.dart';
 import 'package:sse_market_x/views/post/post_detail_page.dart';
+import 'package:sse_market_x/shared/components/loading/skeleton_loader.dart';
 import 'package:sse_market_x/shared/components/loading/loading_indicator.dart';
 import 'package:sse_market_x/shared/components/cards/post_card.dart';
 import 'package:sse_market_x/shared/components/overlays/custom_dialog.dart';
@@ -67,7 +68,12 @@ class _SearchPageState extends State<SearchPage> {
     _loadHotPosts();
     _loadSearchHistory();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _focusNode.requestFocus();
+      // 添加小延迟避免键盘事件冲突
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted) {
+          _focusNode.requestFocus();
+        }
+      });
     });
   }
 
@@ -335,7 +341,7 @@ class _SearchPageState extends State<SearchPage> {
     }
 
     if (_isLoading && _posts.isEmpty) {
-      return const LoadingIndicator.center(message: '搜索中...');
+      return const PostListSkeleton(itemCount: 5, isDense: false);
     }
 
     if (_posts.isEmpty && !_isLoading) {
@@ -372,6 +378,7 @@ class _SearchPageState extends State<SearchPage> {
                 builder: (_) => PostDetailPage(
                   postId: post.id,
                   apiService: widget.apiService,
+                  initialPost: post, // 传递初始数据
                 ),
               ),
             );
@@ -509,12 +516,7 @@ class _SearchPageState extends State<SearchPage> {
   /// 热榜区域
   Widget _buildHotPosts() {
     if (_isLoadingHotPosts) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(32),
-          child: CircularProgressIndicator(strokeWidth: 2),
-        ),
-      );
+      return const PostListSkeleton(itemCount: 3, isDense: false);
     }
 
     if (_hotPosts.isEmpty) {

@@ -244,16 +244,14 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
         children: [
           // Messages List
           Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _messages.isEmpty
-                    ? Center(
-                        child: Text(
-                          '开始聊天吧',
-                          style: TextStyle(color: context.textSecondaryColor),
-                        ),
-                      )
-                    : ListView.builder(
+            child: _messages.isEmpty
+                ? Center(
+                    child: Text(
+                      _isLoading ? '加载中...' : '开始聊天吧',
+                      style: TextStyle(color: context.textSecondaryColor),
+                    ),
+                  )
+                : ListView.builder(
                         controller: _scrollController,
                         reverse: true,
                         padding: const EdgeInsets.all(16),

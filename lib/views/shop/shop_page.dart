@@ -3,7 +3,7 @@ import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/product_model.dart';
 import 'package:sse_market_x/views/shop/product_detail_page.dart';
 import 'package:sse_market_x/views/shop/create_product_page.dart';
-import 'package:sse_market_x/shared/components/loading/loading_indicator.dart';
+import 'package:sse_market_x/shared/components/loading/skeleton_loader.dart';
 import 'package:sse_market_x/shared/components/cards/product_card.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 import 'package:sse_market_x/core/services/browse_history_service.dart';
@@ -127,7 +127,7 @@ class _ShopPageState extends State<ShopPage> {
           // 商品列表 - 支持左右滑动
           Expanded(
             child: _isLoading && !_isRefreshing
-                ? const LoadingIndicator.center(message: '加载中...')
+                ? const ProductGridSkeleton(itemCount: 6)
                 : PageView(
                     controller: _pageController,
                     onPageChanged: (index) {

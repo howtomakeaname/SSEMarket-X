@@ -6,6 +6,7 @@ import 'package:sse_market_x/core/services/storage_service.dart';
 import 'package:sse_market_x/core/utils/level_utils.dart';
 import 'package:sse_market_x/core/services/media_cache_service.dart';
 import 'package:sse_market_x/shared/components/media/cached_image.dart';
+import 'package:sse_market_x/shared/components/loading/skeleton_loader.dart';
 import 'package:sse_market_x/shared/components/utils/snackbar_helper.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 import 'package:sse_market_x/views/chat/chat_detail_page.dart';
@@ -112,7 +113,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
         titleSpacing: 0,
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? _buildProfileSkeleton()
           : _user == null || _user!.userId == 0
               ? const Center(child: Text('获取用户信息失败'))
               : SingleChildScrollView(
@@ -257,6 +258,96 @@ class _UserProfilePageState extends State<UserProfilePage> {
           style: TextStyle(fontSize: 12, color: context.textSecondaryColor),
         ),
       ],
+    );
+  }
+
+  /// 用户资料骨架屏
+  Widget _buildProfileSkeleton() {
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          Container(
+            margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: context.surfaceColor,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SkeletonLoader(
+                  width: 64,
+                  height: 64,
+                  borderRadius: BorderRadius.circular(32),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 用户名和等级
+                      Row(
+                        children: [
+                          SkeletonLoader(
+                            width: 100,
+                            height: 18,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          const SizedBox(width: 6),
+                          SkeletonLoader(
+                            width: 40,
+                            height: 14,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      // 简介 - 两行
+                      SkeletonLoader(
+                        width: double.infinity,
+                        height: 13,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      const SizedBox(height: 4),
+                      SkeletonLoader(
+                        width: MediaQuery.of(context).size.width * 0.5,
+                        height: 13,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      const SizedBox(height: 12),
+                      // 经验条
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(3),
+                        child: SkeletonLoader(
+                          width: double.infinity,
+                          height: 6,
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      SkeletonLoader(
+                        width: 80,
+                        height: 12,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: SkeletonLoader(
+              width: double.infinity,
+              height: 48,
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
