@@ -42,7 +42,9 @@ class _TeacherDropdownState extends State<TeacherDropdown> {
 
   @override
   void dispose() {
-    _removeOverlay();
+    // 直接移除 overlay，不调用 setState
+    _overlayEntry?.remove();
+    _overlayEntry = null;
     super.dispose();
   }
 

@@ -231,7 +231,6 @@ class _TeacherPageState extends State<TeacherPage> {
               options: options,
               value: _selectedTeacher,
               hint: '全部教师',
-              showCount: true,
               onChanged: _onTeacherChanged,
             ),
         ],
