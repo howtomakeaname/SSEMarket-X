@@ -663,54 +663,60 @@ String _convertHtmlImagesToMarkdown(String content) {
 
 /// 将 HTML audio/video 标签转换为 Markdown 链接格式
 /// 点击后使用系统播放器打开
+/// 支持格式：
+/// - <audio src="url"></audio>
+/// - <audio controls><source src="url" type="audio/mpeg"></audio>
+/// - <video src="url"></video>
+/// - <video controls><source src="url"></video>
 String _convertHtmlMediaToMarkdown(String content) {
-  // 匹配 audio 标签
-  final audioPattern = RegExp(
-    r'<audio\s+[^>]*src=["'']([^"''>]+)["''][^>]*>.*?</audio>|<audio\s+[^>]*src=["'']([^"''>]+)["''][^>]*/?>',
+  // 先处理带 source 子标签的 audio（优先级更高）
+  // 格式: <audio controls><source src="url" type="..."></audio>
+  final audioSourcePattern = RegExp(
+    r'''<audio[^>]*>[\s\S]*?<source\s+[^>]*src=["']([^"']+)["'][^>]*/?>[\s\S]*?</audio>''',
     caseSensitive: false,
   );
-  
-  content = content.replaceAllMapped(audioPattern, (match) {
-    final src = match.group(1) ?? match.group(2) ?? '';
-    if (src.isEmpty) return match.group(0) ?? '';
-    return '🎵 [音频播放]($src)';
-  });
-  
-  // 匹配 video 标签
-  final videoPattern = RegExp(
-    r'<video\s+[^>]*src=["'']([^"''>]+)["''][^>]*>.*?</video>|<video\s+[^>]*src=["'']([^"''>]+)["''][^>]*/?>',
-    caseSensitive: false,
-  );
-  
-  content = content.replaceAllMapped(videoPattern, (match) {
-    final src = match.group(1) ?? match.group(2) ?? '';
-    if (src.isEmpty) return match.group(0) ?? '';
-    return '🎬 [视频播放]($src)';
-  });
-  
-  // 匹配 source 标签（嵌套在 audio/video 中的情况）
-  final sourceAudioPattern = RegExp(
-    r'<audio[^>]*>\s*<source\s+[^>]*src=["'']([^"''>]+)["''][^>]*/?>\s*</audio>',
-    caseSensitive: false,
-  );
-  
-  content = content.replaceAllMapped(sourceAudioPattern, (match) {
+  content = content.replaceAllMapped(audioSourcePattern, (match) {
     final src = match.group(1) ?? '';
     if (src.isEmpty) return match.group(0) ?? '';
     return '🎵 [音频播放]($src)';
   });
-  
-  final sourceVideoPattern = RegExp(
-    r'<video[^>]*>\s*<source\s+[^>]*src=["'']([^"''>]+)["''][^>]*/?>\s*</video>',
+
+  // 处理带 source 子标签的 video
+  // 格式: <video controls><source src="url"></video>
+  final videoSourcePattern = RegExp(
+    r'''<video[^>]*>[\s\S]*?<source\s+[^>]*src=["']([^"']+)["'][^>]*/?>[\s\S]*?</video>''',
     caseSensitive: false,
   );
-  
-  content = content.replaceAllMapped(sourceVideoPattern, (match) {
+  content = content.replaceAllMapped(videoSourcePattern, (match) {
     final src = match.group(1) ?? '';
     if (src.isEmpty) return match.group(0) ?? '';
     return '🎬 [视频播放]($src)';
   });
-  
+
+  // 处理直接带 src 属性的 audio
+  // 格式: <audio src="url"></audio> 或 <audio src="url" />
+  final audioDirectPattern = RegExp(
+    r'''<audio\s+[^>]*src=["']([^"']+)["'][^>]*(?:>[\s\S]*?</audio>|/>)''',
+    caseSensitive: false,
+  );
+  content = content.replaceAllMapped(audioDirectPattern, (match) {
+    final src = match.group(1) ?? '';
+    if (src.isEmpty) return match.group(0) ?? '';
+    return '🎵 [音频播放]($src)';
+  });
+
+  // 处理直接带 src 属性的 video
+  // 格式: <video src="url"></video> 或 <video src="url" />
+  final videoDirectPattern = RegExp(
+    r'''<video\s+[^>]*src=["']([^"']+)["'][^>]*(?:>[\s\S]*?</video>|/>)''',
+    caseSensitive: false,
+  );
+  content = content.replaceAllMapped(videoDirectPattern, (match) {
+    final src = match.group(1) ?? '';
+    if (src.isEmpty) return match.group(0) ?? '';
+    return '🎬 [视频播放]($src)';
+  });
+
   return content;
 }
 
