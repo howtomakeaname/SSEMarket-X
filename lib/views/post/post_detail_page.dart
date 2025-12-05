@@ -75,19 +75,19 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
     
     // 初始化状态 - 如果有初始数据，直接使用；否则显示 loading
     if (widget.initialPost != null) {
-      debugPrint('PostDetailPage: 使用初始数据 - ${widget.initialPost!.title}');
       _post = widget.initialPost!;
       _isLiked = widget.initialPost!.isLiked;
       _likeCount = widget.initialPost!.likeCount;
       _isSaved = widget.initialPost!.isSaved;
       _isLoading = false; // 有初始数据时不显示 loading
+      _isCommentsLoading = true; // 评论正在加载，显示骨架屏
     } else {
-      debugPrint('PostDetailPage: 没有初始数据，将显示骨架屏');
       _post = PostModel.empty();
       _isLiked = false;
       _likeCount = 0;
       _isSaved = false;
       _isLoading = true; // 没有初始数据时显示 loading
+      _isCommentsLoading = false; // 整个页面都在 loading，不需要单独显示评论 loading
     }
     
     _loadPostDetail();
@@ -754,15 +754,8 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
           if (widget.previewPost == null) ...[
             if (_comments.isNotEmpty) const SizedBox(height: 12),
             if (_isCommentsLoading)
-              const Padding(
-                padding: EdgeInsets.all(32),
-                child: Center(
-                  child: CircularProgressIndicator(
-                    color: AppColors.primary,
-                    strokeWidth: 2,
-                  ),
-                ),
-              )
+              // 使用骨架屏代替 loading 指示器
+              const CommentListSkeleton(itemCount: 3)
             else if (_comments.isEmpty)
               Padding(
                 padding: const EdgeInsets.all(32),

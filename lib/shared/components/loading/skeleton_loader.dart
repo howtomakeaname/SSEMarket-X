@@ -318,3 +318,94 @@ class ProductGridSkeleton extends StatelessWidget {
     );
   }
 }
+
+/// 评论骨架屏
+class CommentSkeleton extends StatelessWidget {
+  const CommentSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 头像
+          SkeletonLoader(
+            width: 32,
+            height: 32,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          const SizedBox(width: 12),
+          // 内容
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 用户名
+                SkeletonLoader(
+                  width: 80,
+                  height: 14,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                const SizedBox(height: 8),
+                // 评论内容
+                SkeletonLoader(
+                  width: double.infinity,
+                  height: 14,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                const SizedBox(height: 6),
+                SkeletonLoader(
+                  width: MediaQuery.of(context).size.width * 0.6,
+                  height: 14,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                const SizedBox(height: 8),
+                // 操作按钮
+                Row(
+                  children: [
+                    SkeletonLoader(
+                      width: 50,
+                      height: 12,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    const SizedBox(width: 16),
+                    SkeletonLoader(
+                      width: 50,
+                      height: 12,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 评论列表骨架屏
+class CommentListSkeleton extends StatelessWidget {
+  final int itemCount;
+
+  const CommentListSkeleton({
+    super.key,
+    this.itemCount = 3,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        children: List.generate(
+          itemCount,
+          (index) => const CommentSkeleton(),
+        ),
+      ),
+    );
+  }
+}
