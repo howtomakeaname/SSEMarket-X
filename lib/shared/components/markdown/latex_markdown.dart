@@ -162,11 +162,17 @@ class MarkdownImageContext extends InheritedWidget {
 }
 
 /// 从 Markdown 文本中提取所有图片 URL
+/// 同时支持 Markdown 格式和 HTML img 标签
 List<String> _extractImageUrls(String markdown) {
-  final imagePattern = RegExp(r'!\[([^\]]*)\]\(([^)]+)\)');
   final urls = <String>[];
   
-  for (final match in imagePattern.allMatches(markdown)) {
+  // 先将 HTML img 标签转换为 Markdown 格式
+  final processedMarkdown = _convertHtmlImagesToMarkdown(markdown);
+  
+  // 匹配 Markdown 图片语法
+  final imagePattern = RegExp(r'!\[([^\]]*)\]\(([^)]+)\)');
+  
+  for (final match in imagePattern.allMatches(processedMarkdown)) {
     var urlPart = match.group(2) ?? '';
     // 处理带 title 的情况
     final titleMatch = RegExp(r'^(.+?)\s+"([^"]*)"$').firstMatch(urlPart);
@@ -625,15 +631,41 @@ SpanNodeGeneratorWithTag cachedImageGenerator = SpanNodeGeneratorWithTag(
   },
 );
 
-/// 预处理 Markdown 文本，对图片 URL 进行编码
-/// 匹配 ![alt](url) 格式，对 url 部分进行编码
+/// 将 HTML img 标签转换为 Markdown 格式
+/// 支持多种属性顺序：src/alt、alt/src、仅 src
+String _convertHtmlImagesToMarkdown(String content) {
+  // 使用单一正则匹配所有 img 标签，然后解析属性
+  final imgTagPattern = RegExp(
+    r'<img\s+([^>]*)/?>', 
+    caseSensitive: false,
+  );
+  
+  return content.replaceAllMapped(imgTagPattern, (match) {
+    final attributes = match.group(1) ?? '';
+    
+    // 提取 src 属性
+    final srcMatch = RegExp(r'''src=["']([^"'>]+)["']''').firstMatch(attributes);
+    final src = srcMatch?.group(1) ?? '';
+    
+    if (src.isEmpty) return match.group(0) ?? '';
+    
+    // 提取 alt 属性
+    final altMatch = RegExp(r'''alt=["']([^"'>]*)["']''').firstMatch(attributes);
+    final alt = altMatch?.group(1) ?? '';
+    
+    return '![$alt]($src)';
+  });
+}
+
+/// 预处理 Markdown 文本，转换 HTML img 标签并对图片 URL 进行编码
 String _preprocessMarkdownImageUrls(String markdown) {
-  // 匹配 Markdown 图片语法: ![alt](url)
-  // 使用更宽松的匹配，允许 URL 中包含空格和中文
-  // 匹配从 ![ 开始，到 ]( 之间是 alt，然后到最后一个 ) 之前是 URL
+  // 第一步：将 HTML img 标签转换为 Markdown 格式
+  String processedMarkdown = _convertHtmlImagesToMarkdown(markdown);
+  
+  // 第二步：匹配 Markdown 图片语法: ![alt](url)
   final imagePattern = RegExp(r'!\[([^\]]*)\]\(([^)]+)\)');
 
-  return markdown.replaceAllMapped(imagePattern, (match) {
+  return processedMarkdown.replaceAllMapped(imagePattern, (match) {
     final alt = match.group(1) ?? '';
     var urlPart = match.group(2) ?? '';
 
