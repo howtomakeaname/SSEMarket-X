@@ -189,19 +189,19 @@ jobs:
       - name: Setup Flutter
         uses: ./.github/actions/setup-flutter
 
-      - name: Build macOS
+      - name: Build macOS (Universal)
         run: flutter build macos --release
 
       - name: Archive macOS Release
         run: |
           cd build/macos/Build/Products/Release
-          zip -r "sse-market-macos-${VERSION_NAME}.zip" "SSE Market.app"
+          zip -r "sse-market-macos-universal-${VERSION_NAME}.zip" "SSE Market.app"
 
       - name: Upload macOS Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: sse-market-macos-${{ env.VERSION_NAME }}.zip
-          path: build/macos/Build/Products/Release/sse-market-macos-${{ env.VERSION_NAME }}.zip
+          name: sse-market-macos-universal-${{ env.VERSION_NAME }}.zip
+          path: build/macos/Build/Products/Release/sse-market-macos-universal-${{ env.VERSION_NAME }}.zip
 
   build-ios:
     runs-on: macos-latest
@@ -287,6 +287,8 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 获取完整的 git 历史，用于生成更新日志
       
       - name: Read version
         uses: ./.github/actions/read-version
@@ -295,6 +297,79 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts
+
+      - name: Generate Changelog
+        id: changelog
+        run: |
+          # 获取上一个 tag
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          
+          if [ -z "$PREVIOUS_TAG" ]; then
+            echo "这是第一个 release，获取所有 commit"
+            COMMITS=$(git log --pretty=format:"%s" --no-merges)
+          else
+            echo "从 $PREVIOUS_TAG 到当前版本的 commits"
+            COMMITS=$(git log ${PREVIOUS_TAG}..HEAD --pretty=format:"%s" --no-merges)
+          fi
+          
+          # 生成更新日志
+          echo "## 📝 更新内容" > changelog.md
+          echo "" >> changelog.md
+          
+          # 新功能
+          FEATURES=$(echo "$COMMITS" | grep -i "^feat" || true)
+          if [ ! -z "$FEATURES" ]; then
+            echo "### ✨ 新功能" >> changelog.md
+            echo "$FEATURES" | sed 's/^feat[:(]\([^)]*\)[):]*\s*/- /' | sed 's/^feat:\s*/- /' >> changelog.md
+            echo "" >> changelog.md
+          fi
+          
+          # Bug 修复
+          FIXES=$(echo "$COMMITS" | grep -i "^fix" || true)
+          if [ ! -z "$FIXES" ]; then
+            echo "### 🐛 Bug 修复" >> changelog.md
+            echo "$FIXES" | sed 's/^fix[:(]\([^)]*\)[):]*\s*/- /' | sed 's/^fix:\s*/- /' >> changelog.md
+            echo "" >> changelog.md
+          fi
+          
+          # 性能优化
+          PERF=$(echo "$COMMITS" | grep -i "^perf" || true)
+          if [ ! -z "$PERF" ]; then
+            echo "### ⚡ 性能优化" >> changelog.md
+            echo "$PERF" | sed 's/^perf[:(]\([^)]*\)[):]*\s*/- /' | sed 's/^perf:\s*/- /' >> changelog.md
+            echo "" >> changelog.md
+          fi
+          
+          # 重构
+          REFACTOR=$(echo "$COMMITS" | grep -i "^refactor" || true)
+          if [ ! -z "$REFACTOR" ]; then
+            echo "### ♻️ 代码重构" >> changelog.md
+            echo "$REFACTOR" | sed 's/^refactor[:(]\([^)]*\)[):]*\s*/- /' | sed 's/^refactor:\s*/- /' >> changelog.md
+            echo "" >> changelog.md
+          fi
+          
+          # 样式更新
+          STYLE=$(echo "$COMMITS" | grep -i "^style" || true)
+          if [ ! -z "$STYLE" ]; then
+            echo "### 💄 样式更新" >> changelog.md
+            echo "$STYLE" | sed 's/^style[:(]\([^)]*\)[):]*\s*/- /' | sed 's/^style:\s*/- /' >> changelog.md
+            echo "" >> changelog.md
+          fi
+          
+          # 文档更新
+          DOCS=$(echo "$COMMITS" | grep -i "^docs" || true)
+          if [ ! -z "$DOCS" ]; then
+            echo "### 📚 文档更新" >> changelog.md
+            echo "$DOCS" | sed 's/^docs[:(]\([^)]*\)[):]*\s*/- /' | sed 's/^docs:\s*/- /' >> changelog.md
+            echo "" >> changelog.md
+          fi
+          
+          echo "---" >> changelog.md
+          echo "" >> changelog.md
+
+      - name: Combine Release Notes
+        run: |
+          cat changelog.md RELEASE_GUIDE.md > release_notes.md
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
@@ -306,8 +381,8 @@ jobs:
             artifacts/sse-market-windows-x64-${{ env.VERSION_NAME }}.zip/sse-market-windows-x64-${{ env.VERSION_NAME }}.zip
             artifacts/sse-market-windows-arm64-${{ env.VERSION_NAME }}.zip/sse-market-windows-arm64-${{ env.VERSION_NAME }}.zip
             artifacts/sse-market-linux-x64-${{ env.VERSION_NAME }}.tar.gz/sse-market-linux-x64-${{ env.VERSION_NAME }}.tar.gz
-            artifacts/sse-market-macos-${{ env.VERSION_NAME }}.zip/sse-market-macos-${{ env.VERSION_NAME }}.zip
+            artifacts/sse-market-macos-universal-${{ env.VERSION_NAME }}.zip/sse-market-macos-universal-${{ env.VERSION_NAME }}.zip
             artifacts/sse-market-ios-nosign-${{ env.VERSION_NAME }}.zip/sse-market-ios-nosign-${{ env.VERSION_NAME }}.zip
             artifacts/sse-market-ohos-nosign-${{ env.VERSION_NAME }}.zip/sse-market-ohos-nosign-${{ env.VERSION_NAME }}.zip
           token: ${{ secrets.GITHUB_TOKEN }}
-          body_path: RELEASE_GUIDE.md
+          body_path: release_notes.md
