@@ -77,9 +77,8 @@ class _ImageViewerState extends State<ImageViewer> with TickerProviderStateMixin
   @override
   void dispose() {
     _pageController.dispose();
-    for (final state in _pageStates.values) {
-      state.dispose();
-    }
+    // 不需要 dispose _pageStates，因为它们由 _ImagePage 子组件自己管理
+    _pageStates.clear();
     super.dispose();
   }
 
