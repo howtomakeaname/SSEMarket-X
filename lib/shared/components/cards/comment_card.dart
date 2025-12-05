@@ -424,30 +424,54 @@ class _CommentCardState extends State<CommentCard> {
                     widget.onUserTap!(subComment.authorId, subComment.authorName, subComment.authorAvatar);
                   }
                 },
-                child: Container(
+                child: SizedBox(
                   width: 28,
                   height: 28,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: context.surfaceColor,
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: subComment.authorAvatar.isNotEmpty
-                      ? CachedImage(
-                          imageUrl: subComment.authorAvatar,
-                          width: 28,
-                          height: 28,
-                          fit: BoxFit.cover,
-                          category: CacheCategory.avatar,
-                          errorWidget: SvgPicture.asset(
-                            'assets/icons/default_avatar.svg',
-                            fit: BoxFit.cover,
-                          ),
-                        )
-                      : SvgPicture.asset(
-                          'assets/icons/default_avatar.svg',
-                          fit: BoxFit.cover,
+                  child: Stack(
+                    children: [
+                      Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: context.surfaceColor,
                         ),
+                        clipBehavior: Clip.antiAlias,
+                        child: subComment.authorAvatar.isNotEmpty
+                            ? CachedImage(
+                                imageUrl: subComment.authorAvatar,
+                                width: 28,
+                                height: 28,
+                                fit: BoxFit.cover,
+                                category: CacheCategory.avatar,
+                                errorWidget: SvgPicture.asset(
+                                  'assets/icons/default_avatar.svg',
+                                  fit: BoxFit.cover,
+                                ),
+                              )
+                            : SvgPicture.asset(
+                                'assets/icons/default_avatar.svg',
+                                fit: BoxFit.cover,
+                              ),
+                      ),
+                      if (subComment.authorIdentity == 'teacher' ||
+                          subComment.authorIdentity == 'organization')
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: Container(
+                            width: 10,
+                            height: 10,
+                            decoration: BoxDecoration(
+                              color: LevelUtils.getIdentityBackgroundColor(
+                                  subComment.authorIdentity),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 1),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(width: 6),
