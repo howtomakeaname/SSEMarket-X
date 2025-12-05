@@ -9,6 +9,7 @@ import 'package:sse_market_x/core/services/browse_history_service.dart';
 import 'package:sse_market_x/views/post/create_post_page.dart';
 import 'package:sse_market_x/views/post/post_detail_page.dart';
 import 'package:sse_market_x/views/home/search_page.dart';
+import 'package:sse_market_x/views/home/teacher_page.dart';
 import 'package:sse_market_x/shared/components/layout/home_header.dart';
 import 'package:sse_market_x/shared/components/layout/layout_config.dart';
 import 'package:sse_market_x/shared/components/loading/loading_indicator.dart';
@@ -61,6 +62,7 @@ class HomePageState extends State<HomePage> {
 
   /// 显示名称分区列表
   /// 院务 -> 院务
+  /// 教师 -> 课程专区（特殊处理，使用独立页面）
   /// 课程 -> 课程交流
   /// 学习解惑 -> 学习交流
   /// 打听求助 -> 打听求助
@@ -71,6 +73,7 @@ class HomePageState extends State<HomePage> {
   final List<String> _displayPartitions = <String>[
     '主页',
     '院务',
+    '教师',
     '课程',
     '学习解惑',
     '打听求助',
@@ -83,6 +86,7 @@ class HomePageState extends State<HomePage> {
   final Map<String, String> _displayToApiPartition = <String, String>{
     '主页': '主页',
     '院务': '院务',
+    '教师': '课程专区',
     '课程': '课程交流',
     '学习解惑': '学习交流',
     '打听求助': '打听求助',
@@ -353,6 +357,17 @@ class HomePageState extends State<HomePage> {
             itemCount: _displayPartitions.length,
             itemBuilder: (context, index) {
               final partition = _displayPartitions[index];
+              
+              // 教师分区使用独立页面
+              if (partition == '教师') {
+                final layoutConfig = LayoutConfig.of(context);
+                final onPostTap = layoutConfig?.onPostTap ?? widget.onPostTap;
+                return TeacherPage(
+                  apiService: widget.apiService,
+                  onPostTap: onPostTap,
+                );
+              }
+              
               final apiPartition = _displayToApiPartition[partition] ?? partition;
               final state = _partitionStates[apiPartition] ?? _PartitionState();
               return _buildPostList(state, partition);
