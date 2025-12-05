@@ -26,7 +26,8 @@ class MyPage extends StatefulWidget {
 }
 
 class _MyPageState extends State<MyPage> {
-  UserModel _user = UserModel.empty();
+  UserModel? _user;
+  bool _isLoading = true;
   bool _isWatchLaterEnabled = false;
   final WatchLaterService _watchLaterService = WatchLaterService();
 
@@ -57,10 +58,13 @@ class _MyPageState extends State<MyPage> {
       if (!mounted) return;
       setState(() {
         _user = detailed;
+        _isLoading = false;
       });
-    } finally {
+    } catch (e) {
       if (mounted) {
-        setState(() {});
+        setState(() {
+          _isLoading = false;
+        });
       }
     }
   }
@@ -109,6 +113,30 @@ class _MyPageState extends State<MyPage> {
   }
 
   Widget _buildUserInfoCard(BuildContext context) {
+    if (_isLoading) {
+      return _buildUserInfoSkeleton(context);
+    }
+
+    if (_user == null) {
+      return Container(
+        margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: context.surfaceColor,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Center(
+          child: Text(
+            '加载用户信息失败',
+            style: TextStyle(
+              fontSize: 14,
+              color: context.textSecondaryColor,
+            ),
+          ),
+        ),
+      );
+    }
+
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       decoration: BoxDecoration(
@@ -123,7 +151,7 @@ class _MyPageState extends State<MyPage> {
               MaterialPageRoute(
                 builder: (_) => EditProfilePage(
                   apiService: widget.apiService,
-                  initialUser: _user,
+                  initialUser: _user!,
                 ),
               ),
             );
@@ -149,7 +177,7 @@ class _MyPageState extends State<MyPage> {
   }
 
   Widget _buildAvatar(BuildContext context) {
-    final hasAvatar = _user.avatar.isNotEmpty;
+    final hasAvatar = _user?.avatar.isNotEmpty ?? false;
     final defaultAvatar = SvgPicture.asset(
       'assets/icons/default_avatar.svg',
       fit: BoxFit.cover,
@@ -164,7 +192,7 @@ class _MyPageState extends State<MyPage> {
       clipBehavior: Clip.antiAlias,
       child: hasAvatar
           ? CachedImage(
-              imageUrl: _user.avatar,
+              imageUrl: _user!.avatar,
               width: 60,
               height: 60,
               fit: BoxFit.cover,
@@ -176,12 +204,12 @@ class _MyPageState extends State<MyPage> {
   }
 
   Widget _buildUserTextsAndExp(BuildContext context) {
-    final name = _user.name.isNotEmpty ? _user.name : '匿名用户';
-    final score = _user.score;
+    final name = _user?.name.isNotEmpty ?? false ? _user!.name : '匿名用户';
+    final score = _user?.score ?? 0;
     final levelName = LevelUtils.getLevelName(score);
     final nextExp = LevelUtils.getNextLevelExp(score);
     final progress = LevelUtils.getExpProgressPercent(score);
-    final intro = _user.intro;
+    final intro = _user?.intro ?? '';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -326,7 +354,7 @@ class _MyPageState extends State<MyPage> {
               MaterialPageRoute(
                 builder: (_) => SettingsPage(
                   apiService: widget.apiService,
-                  userEmail: _user.email,
+                  userEmail: _user?.email ?? '',
                 ),
               ),
             );
@@ -349,6 +377,91 @@ class _MyPageState extends State<MyPage> {
           isLast: true,
         ),
       ],
+    );
+  }
+
+  Widget _buildUserInfoSkeleton(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: context.surfaceColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // 头像骨架
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: context.backgroundColor,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 用户名和等级骨架
+                Row(
+                  children: [
+                    Container(
+                      width: 100,
+                      height: 18,
+                      decoration: BoxDecoration(
+                        color: context.backgroundColor,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      width: 40,
+                      height: 14,
+                      decoration: BoxDecoration(
+                        color: context.backgroundColor,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                // 经验文本骨架
+                Container(
+                  width: 120,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: context.backgroundColor,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                // 经验条骨架
+                Container(
+                  width: double.infinity,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: context.backgroundColor,
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                // 下一级文本骨架
+                Container(
+                  width: 80,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: context.backgroundColor,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
