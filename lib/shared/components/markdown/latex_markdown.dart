@@ -7,9 +7,7 @@ import 'package:markdown/markdown.dart' as m;
 import 'package:markdown_widget/markdown_widget.dart' hide ImageViewer, MarkdownWidget;
 import 'package:markdown_widget/markdown_widget.dart' as mw show MarkdownWidget;
 import 'package:sse_market_x/core/api/api_service.dart';
-import 'package:sse_market_x/core/models/post_model.dart';
 import 'package:sse_market_x/core/services/media_cache_service.dart';
-import 'package:sse_market_x/shared/components/cards/post_card.dart';
 import 'package:sse_market_x/shared/components/media/image_viewer.dart';
 import 'package:sse_market_x/shared/components/utils/snackbar_helper.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
@@ -892,41 +890,40 @@ List<int> extractPostIds(String content) {
   return ids;
 }
 
-/// 帖子链接预览卡片组件
-/// 自动加载帖子信息并显示卡片预览
-class PostLinkPreview extends StatefulWidget {
+/// 帖子链接内联组件
+/// 显示为可点击的帖子标题，点击后跳转到帖子详情
+class _PostLinkInline extends StatefulWidget {
   final int postId;
   final ApiService apiService;
 
-  const PostLinkPreview({
-    super.key,
+  const _PostLinkInline({
     required this.postId,
     required this.apiService,
   });
 
   @override
-  State<PostLinkPreview> createState() => _PostLinkPreviewState();
+  State<_PostLinkInline> createState() => _PostLinkInlineState();
 }
 
-class _PostLinkPreviewState extends State<PostLinkPreview> {
-  PostModel? _post;
+class _PostLinkInlineState extends State<_PostLinkInline> {
+  String? _title;
   bool _isLoading = true;
   bool _hasError = false;
 
   @override
   void initState() {
     super.initState();
-    _loadPost();
+    _loadPostTitle();
   }
 
-  Future<void> _loadPost() async {
+  Future<void> _loadPostTitle() async {
     try {
       final user = await widget.apiService.getUserInfo();
       final post = await widget.apiService.getPostDetail(widget.postId, user.phone);
-      
+
       if (mounted) {
         setState(() {
-          _post = post;
+          _title = post.id != 0 ? post.title : null;
           _isLoading = false;
           _hasError = post.id == 0;
         });
@@ -942,14 +939,11 @@ class _PostLinkPreviewState extends State<PostLinkPreview> {
   }
 
   void _navigateToPost() {
-    if (_post == null) return;
-    
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => PostDetailPage(
           postId: widget.postId,
           apiService: widget.apiService,
-          initialPost: _post,
         ),
       ),
     );
@@ -958,86 +952,102 @@ class _PostLinkPreviewState extends State<PostLinkPreview> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return _buildLoadingCard(context);
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: context.backgroundColor,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 12,
+              height: 12,
+              child: CircularProgressIndicator(
+                strokeWidth: 1.5,
+                color: context.textSecondaryColor,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              '加载中...',
+              style: TextStyle(
+                fontSize: 14,
+                color: context.textSecondaryColor,
+              ),
+            ),
+          ],
+        ),
+      );
     }
 
-    if (_hasError || _post == null) {
-      return _buildErrorCard(context);
-    }
-
-    return PostCard(
-      post: _post!,
-      isDense: true,
-      hidePartition: true,
-      onTap: _navigateToPost,
-    );
-  }
-
-  Widget _buildLoadingCard(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: context.surfaceColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 20,
-            height: 20,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              color: context.textSecondaryColor,
+    if (_hasError || _title == null) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: context.backgroundColor,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.link_off,
+              size: 14,
+              color: context.textTertiaryColor,
             ),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            '加载帖子中...',
-            style: TextStyle(
-              fontSize: 14,
-              color: context.textSecondaryColor,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildErrorCard(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: context.surfaceColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.dividerColor),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.link_off,
-            size: 20,
-            color: context.textTertiaryColor,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              '帖子不存在或已删除',
+            const SizedBox(width: 4),
+            Text(
+              '帖子不存在',
               style: TextStyle(
                 fontSize: 14,
                 color: context.textTertiaryColor,
               ),
             ),
-          ),
-        ],
+          ],
+        ),
+      );
+    }
+
+    return GestureDetector(
+      onTap: _navigateToPost,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: AppColors.primary.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.article_outlined,
+              size: 14,
+              color: AppColors.primary,
+            ),
+            const SizedBox(width: 4),
+            Flexible(
+              child: Text(
+                _title!,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w500,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
 /// 带帖子链接预览的 Markdown 组件
-/// 在普通 LatexMarkdown 基础上，自动解析并显示帖子链接预览卡片
+/// 在普通 LatexMarkdown 基础上，自动解析帖子链接并替换为可点击的标题
 class LatexMarkdownWithPostPreview extends StatelessWidget {
   final String data;
   final ApiService apiService;
@@ -1062,7 +1072,7 @@ class LatexMarkdownWithPostPreview extends StatelessWidget {
   Widget build(BuildContext context) {
     // 提取帖子链接
     final postIds = extractPostIds(data);
-    
+
     // 如果没有帖子链接，直接返回普通 LatexMarkdown
     if (postIds.isEmpty) {
       return LatexMarkdown(
@@ -1075,34 +1085,68 @@ class LatexMarkdownWithPostPreview extends StatelessWidget {
       );
     }
 
-    // 将帖子链接替换为占位符，避免在 Markdown 中显示原始链接
-    String processedData = data;
-    for (final postId in postIds) {
-      processedData = processedData.replaceAll(
-        RegExp(r'https?://ssemarket\.cn/new/postdetail/' + postId.toString() + r'(?![0-9])', caseSensitive: false),
-        '', // 移除链接文本，用卡片替代
+    // 将内容按帖子链接分割，交替渲染 Markdown 和帖子链接
+    final widgets = <Widget>[];
+    String remaining = data;
+
+    for (final match in _postLinkPattern.allMatches(data)) {
+      final beforeLink = data.substring(
+        data.indexOf(remaining),
+        match.start,
+      );
+
+      // 添加链接前的 Markdown 内容
+      if (beforeLink.trim().isNotEmpty) {
+        widgets.add(LatexMarkdown(
+          data: beforeLink,
+          selectable: selectable,
+          styleSheet: styleSheet,
+          enableImageCache: enableImageCache,
+          fontSize: fontSize,
+          shrinkWrap: true,
+        ));
+      }
+
+      // 添加帖子链接组件
+      final postIdStr = match.group(1);
+      if (postIdStr != null) {
+        final postId = int.tryParse(postIdStr);
+        if (postId != null) {
+          widgets.add(Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: _PostLinkInline(
+              postId: postId,
+              apiService: apiService,
+            ),
+          ));
+        }
+      }
+
+      remaining = data.substring(match.end);
+    }
+
+    // 添加最后剩余的内容
+    if (remaining.trim().isNotEmpty) {
+      widgets.add(LatexMarkdown(
+        data: remaining,
+        selectable: selectable,
+        styleSheet: styleSheet,
+        enableImageCache: enableImageCache,
+        fontSize: fontSize,
+        shrinkWrap: true,
+      ));
+    }
+
+    if (shrinkWrap) {
+      return Wrap(
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: widgets,
       );
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // 渲染 Markdown 内容
-        if (processedData.trim().isNotEmpty)
-          LatexMarkdown(
-            data: processedData,
-            selectable: selectable,
-            styleSheet: styleSheet,
-            enableImageCache: enableImageCache,
-            fontSize: fontSize,
-            shrinkWrap: shrinkWrap,
-          ),
-        // 渲染帖子预览卡片
-        ...postIds.map((postId) => PostLinkPreview(
-          postId: postId,
-          apiService: apiService,
-        )),
-      ],
+      children: widgets,
     );
   }
 }
