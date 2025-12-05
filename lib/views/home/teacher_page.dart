@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/post_model.dart';
 import 'package:sse_market_x/core/models/user_model.dart';
@@ -28,6 +30,7 @@ class TeacherPage extends StatefulWidget {
 
 class _TeacherPageState extends State<TeacherPage> {
   static const int _pageSize = 10;
+  static const String _cacheKey = 'posts_cache_teacher';
 
   List<Map<String, dynamic>> _teachers = [];
   String? _selectedTeacher;
@@ -36,6 +39,7 @@ class _TeacherPageState extends State<TeacherPage> {
   bool _hasMore = true;
   bool _isLoading = false;
   bool _isLoadingTeachers = true;
+  bool _hasLoadedOnce = false;
   UserModel _user = UserModel.empty();
 
   @override
@@ -67,21 +71,72 @@ class _TeacherPageState extends State<TeacherPage> {
       }
     }
 
-    // 加载帖子列表
-    _fetchPosts(refresh: true);
+    // 尝试从缓存加载帖子
+    await _loadCachedPosts();
+
+    // 后台刷新或正常加载
+    if (_hasLoadedOnce) {
+      _fetchPosts(refresh: true, silent: true);
+    } else {
+      _fetchPosts(refresh: true);
+    }
   }
 
-  Future<void> _fetchPosts({required bool refresh}) async {
-    if (_isLoading) return;
+  /// 从本地缓存加载帖子列表
+  Future<void> _loadCachedPosts() async {
+    // 只有在未选择教师时才使用缓存
+    if (_selectedTeacher != null) return;
 
-    setState(() {
-      _isLoading = true;
-      if (refresh) {
-        _posts = [];
-        _offset = 0;
-        _hasMore = true;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cachedJson = prefs.getString(_cacheKey);
+
+      if (cachedJson != null && cachedJson.isNotEmpty) {
+        final List<dynamic> jsonList = jsonDecode(cachedJson);
+        final cachedPosts =
+            jsonList.map((json) => PostModel.fromDynamic(json)).toList();
+
+        if (cachedPosts.isNotEmpty && mounted) {
+          setState(() {
+            _posts = cachedPosts;
+            _offset = cachedPosts.length;
+            _hasMore = true;
+            _hasLoadedOnce = true;
+          });
+        }
       }
-    });
+    } catch (e) {
+      debugPrint('加载教师分区缓存失败: $e');
+    }
+  }
+
+  /// 保存帖子列表到本地缓存
+  Future<void> _saveCachedPosts(List<PostModel> posts) async {
+    // 只有在未选择教师时才保存缓存
+    if (_selectedTeacher != null) return;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonList = posts.map((post) => post.toJson()).toList();
+      await prefs.setString(_cacheKey, jsonEncode(jsonList));
+    } catch (e) {
+      debugPrint('保存教师分区缓存失败: $e');
+    }
+  }
+
+  Future<void> _fetchPosts({required bool refresh, bool silent = false}) async {
+    if (_isLoading && !silent) return;
+
+    if (!silent) {
+      setState(() {
+        _isLoading = true;
+        if (refresh) {
+          _posts = [];
+          _offset = 0;
+          _hasMore = true;
+        }
+      });
+    }
 
     try {
       final params = GetPostsParams(
@@ -106,7 +161,13 @@ class _TeacherPageState extends State<TeacherPage> {
           _offset = _posts.length;
           _hasMore = list.length == _pageSize;
           _isLoading = false;
+          _hasLoadedOnce = true;
         });
+
+        // 保存到缓存（仅在正常刷新时）
+        if (!silent && refresh) {
+          _saveCachedPosts(_posts);
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -118,6 +179,7 @@ class _TeacherPageState extends State<TeacherPage> {
   void _onTeacherChanged(String? teacher) {
     setState(() {
       _selectedTeacher = teacher;
+      _hasLoadedOnce = false; // 切换教师时重置缓存状态
     });
     _fetchPosts(refresh: true);
   }
@@ -178,9 +240,9 @@ class _TeacherPageState extends State<TeacherPage> {
   }
 
   Widget _buildPostList() {
-    // 首次加载显示骨架屏
-    if (_isLoading && _posts.isEmpty) {
-      return const PostListSkeleton(itemCount: 5, isDense: true);
+    // 首次加载且无缓存时显示骨架屏
+    if (!_hasLoadedOnce && _isLoading && _posts.isEmpty) {
+      return const PostListSkeleton(itemCount: 5, isDense: false);
     }
 
     if (_posts.isEmpty && !_isLoading) {
@@ -228,7 +290,6 @@ class _TeacherPageState extends State<TeacherPage> {
             final post = _posts[index];
             return PostCard(
               post: post,
-              isDense: true,
               onTap: () => _navigateToPostDetail(post),
               onLikeTap: () async {
                 return await widget.apiService.likePost(post.id, _user.phone);
