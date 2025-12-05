@@ -319,58 +319,53 @@ class ProductGridSkeleton extends StatelessWidget {
   }
 }
 
-/// 评论骨架屏
+/// 评论骨架屏 - 与 CommentCard 样式保持一致
 class CommentSkeleton extends StatelessWidget {
   const CommentSkeleton({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Row(
+      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: context.surfaceColor,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 头像
-          SkeletonLoader(
-            width: 32,
-            height: 32,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          const SizedBox(width: 12),
-          // 内容
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 用户名
-                SkeletonLoader(
-                  width: 80,
-                  height: 14,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                const SizedBox(height: 8),
-                // 评论内容
-                SkeletonLoader(
-                  width: double.infinity,
-                  height: 14,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                const SizedBox(height: 6),
-                SkeletonLoader(
-                  width: MediaQuery.of(context).size.width * 0.6,
-                  height: 14,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                const SizedBox(height: 8),
-                // 操作按钮
-                Row(
+          // 用户信息行
+          Row(
+            children: [
+              // 头像
+              SkeletonLoader(
+                width: 32,
+                height: 32,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              const SizedBox(width: 8),
+              // 用户名和时间
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SkeletonLoader(
-                      width: 50,
-                      height: 12,
-                      borderRadius: BorderRadius.circular(4),
+                    Row(
+                      children: [
+                        SkeletonLoader(
+                          width: 70,
+                          height: 14,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        const SizedBox(width: 4),
+                        SkeletonLoader(
+                          width: 24,
+                          height: 10,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(height: 2),
                     SkeletonLoader(
                       width: 50,
                       height: 12,
@@ -378,8 +373,34 @@ class CommentSkeleton extends StatelessWidget {
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // 评论内容
+          SkeletonLoader(
+            width: double.infinity,
+            height: 14,
+            borderRadius: BorderRadius.circular(4),
+          ),
+          const SizedBox(height: 8),
+          // 操作按钮行
+          Row(
+            children: [
+              // 点赞
+              SkeletonLoader(
+                width: 40,
+                height: 12,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              const SizedBox(width: 16),
+              // 回复
+              SkeletonLoader(
+                width: 40,
+                height: 12,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ],
           ),
         ],
       ),
@@ -399,7 +420,8 @@ class CommentListSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      // 与真实评论列表的 padding 保持一致，包括顶部 12px 间距
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       child: Column(
         children: List.generate(
           itemCount,
