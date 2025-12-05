@@ -174,6 +174,14 @@ class _ImageViewerState extends State<ImageViewer> with TickerProviderStateMixin
         bottom: MediaQuery.of(context).padding.bottom + 16,
         left: 16,
         right: 16,
+        top: 24,
+      ),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.bottomCenter,
+          end: Alignment.topCenter,
+          colors: [Colors.black54, Colors.transparent],
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -183,7 +191,7 @@ class _ImageViewerState extends State<ImageViewer> with TickerProviderStateMixin
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.4),
+                color: Colors.black.withOpacity(0.5),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
