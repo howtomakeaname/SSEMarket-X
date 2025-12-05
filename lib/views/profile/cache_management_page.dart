@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sse_market_x/core/services/media_cache_service.dart';
+import 'package:sse_market_x/shared/components/media/image_viewer.dart';
 import 'package:sse_market_x/shared/components/overlays/custom_dialog.dart';
 import 'package:sse_market_x/shared/components/utils/snackbar_helper.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
@@ -344,6 +345,33 @@ class _CacheManagementPageState extends State<CacheManagementPage> {
         // 分类选择器
         if (!_isSelectionMode) _buildCategorySelector(),
         if (!_isSelectionMode) Divider(height: 1, color: context.dividerColor),
+        // 提示信息
+        if (!_isSelectionMode)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            color: context.surfaceColor,
+            child: Row(
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  size: 16,
+                  color: context.textTertiaryColor,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '长按可选择删除 · 点击可预览图片',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: context.textTertiaryColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        if (!_isSelectionMode) Divider(height: 1, color: context.dividerColor),
         // 当前分类统计
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -420,9 +448,31 @@ class _CacheManagementPageState extends State<CacheManagementPage> {
     );
   }
 
+  void _viewImage(CacheFileInfo fileInfo, List<CacheFileInfo> files) {
+    // 只查看图片类型
+    final imageFiles = files.where((f) => f.isImage).toList();
+    if (imageFiles.isEmpty || !fileInfo.isImage) return;
+    
+    final index = imageFiles.indexWhere((f) => f.fileName == fileInfo.fileName);
+    if (index == -1) return;
+    
+    // 使用 file:// 协议的路径作为 URL
+    final imageUrls = imageFiles.map((f) => f.file.path).toList();
+    final cachedFiles = {for (final f in imageFiles) f.file.path: f.file};
+    
+    ImageViewer.showMultiple(
+      context,
+      imageUrls,
+      initialIndex: index,
+      cachedFiles: cachedFiles,
+    );
+  }
+
   Widget _buildCacheItem(CacheFileInfo fileInfo, bool isSelected) {
     return GestureDetector(
-      onTap: () => _toggleSelection(fileInfo.fileName),
+      onTap: _isSelectionMode
+          ? () => _toggleSelection(fileInfo.fileName)
+          : () => _viewImage(fileInfo, _displayFiles),
       onLongPress: () {
         if (!_isSelectionMode) {
           _toggleSelection(fileInfo.fileName);

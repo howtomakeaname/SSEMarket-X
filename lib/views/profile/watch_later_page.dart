@@ -227,7 +227,7 @@ class _WatchLaterPageState extends State<WatchLaterPage> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    '这是一个纯本地功能，记录只在本地保存',
+                    '长按可选择删除 · 记录仅本地保存',
                     style: TextStyle(
                       fontSize: 12,
                       color: context.textTertiaryColor,
