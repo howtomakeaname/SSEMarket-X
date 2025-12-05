@@ -26,6 +26,17 @@ class MyApp extends StatelessWidget {
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system, // 跟随系统设置
       home: const AuthWrapper(),
+      builder: (context, child) {
+        // 限制系统字体缩放范围，避免 UI 布局异常
+        final mediaQuery = MediaQuery.of(context);
+        final scale = mediaQuery.textScaler.scale(1.0).clamp(0.85, 1.15);
+        return MediaQuery(
+          data: mediaQuery.copyWith(
+            textScaler: TextScaler.linear(scale),
+          ),
+          child: child!,
+        );
+      },
     );
   }
 }
