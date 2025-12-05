@@ -7,7 +7,7 @@ import 'package:sse_market_x/core/services/browse_history_service.dart';
 import 'package:sse_market_x/views/post/post_detail_page.dart';
 import 'package:sse_market_x/views/post/score_post_detail_page.dart';
 import 'package:sse_market_x/views/shop/product_detail_page.dart';
-import 'package:sse_market_x/shared/components/loading/loading_indicator.dart';
+import 'package:sse_market_x/shared/components/loading/skeleton_loader.dart';
 import 'package:sse_market_x/shared/components/cards/post_card.dart';
 import 'package:sse_market_x/shared/components/cards/rating_card.dart';
 import 'package:sse_market_x/shared/components/cards/product_card.dart';
@@ -415,7 +415,14 @@ class _BrowseHistoryPageState extends State<BrowseHistoryPage> {
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const LoadingIndicator.center(message: '加载中...');
+      // 根据当前类型显示对应的骨架屏
+      if (_currentType == BrowseHistoryType.product) {
+        return const ProductGridSkeleton(itemCount: 6);
+      } else {
+        final isDense = _currentType == BrowseHistoryType.rating || 
+                       _currentType == BrowseHistoryType.course;
+        return PostListSkeleton(itemCount: 5, isDense: isDense);
+      }
     }
 
     return Column(
@@ -831,6 +838,7 @@ class _BrowseHistoryPageState extends State<BrowseHistoryPage> {
       detailPage = PostDetailPage(
         postId: post.id,
         apiService: widget.apiService,
+        initialPost: post, // 传递初始数据
       );
     }
     

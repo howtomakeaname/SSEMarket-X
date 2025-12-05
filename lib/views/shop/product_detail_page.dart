@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/product_model.dart';
 import 'package:sse_market_x/core/services/storage_service.dart';
-import 'package:sse_market_x/shared/components/loading/loading_indicator.dart';
+import 'package:sse_market_x/shared/components/loading/skeleton_loader.dart';
 import 'package:sse_market_x/core/services/media_cache_service.dart';
 import 'package:sse_market_x/shared/components/media/cached_image.dart';
 import 'package:sse_market_x/shared/components/media/image_viewer.dart';
@@ -95,7 +95,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         actions: _isOwner && !_isLoading ? _buildOwnerActions() : null,
       ),
       body: _isLoading
-          ? const LoadingIndicator.center(message: '加载中...')
+          ? _buildProductDetailSkeleton()
           : Column(
               children: [
                 Expanded(
@@ -557,6 +557,127 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           ),
         ),
       ),
+    );
+  }
+
+  /// 商品详情骨架屏
+  Widget _buildProductDetailSkeleton() {
+    return Column(
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                // 图片轮播骨架 - 显示图标而不是纯色块
+                Container(
+                  width: double.infinity,
+                  height: 300,
+                  color: context.backgroundColor,
+                  child: Center(
+                    child: Icon(
+                      Icons.image_outlined,
+                      size: 80,
+                      color: context.dividerColor,
+                    ),
+                  ),
+                ),
+                // 商品信息骨架
+                Container(
+                  color: context.surfaceColor,
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 价格
+                      SkeletonLoader(
+                        width: 100,
+                        height: 24,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      const SizedBox(height: 12),
+                      // 标题
+                      SkeletonLoader(
+                        width: double.infinity,
+                        height: 18,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      const SizedBox(height: 8),
+                      // 描述 - 多行
+                      SkeletonLoader(
+                        width: double.infinity,
+                        height: 14,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      const SizedBox(height: 6),
+                      SkeletonLoader(
+                        width: double.infinity,
+                        height: 14,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      const SizedBox(height: 6),
+                      SkeletonLoader(
+                        width: MediaQuery.of(context).size.width * 0.6,
+                        height: 14,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      const SizedBox(height: 16),
+                      Divider(color: context.dividerColor),
+                      const SizedBox(height: 16),
+                      // 卖家信息
+                      Row(
+                        children: [
+                          SkeletonLoader(
+                            width: 40,
+                            height: 40,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SkeletonLoader(
+                                  width: 100,
+                                  height: 16,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                const SizedBox(height: 4),
+                                SkeletonLoader(
+                                  width: 60,
+                                  height: 12,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        // 底部按钮骨架
+        Container(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 12,
+            bottom: MediaQuery.of(context).padding.bottom + 12,
+          ),
+          decoration: BoxDecoration(
+            color: context.surfaceColor,
+            border: Border(top: BorderSide(color: context.dividerColor)),
+          ),
+          child: SkeletonLoader(
+            width: double.infinity,
+            height: 48,
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ],
     );
   }
 }

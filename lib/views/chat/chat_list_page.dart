@@ -157,11 +157,11 @@ class _ChatListPageState extends State<ChatListPage> {
 
   @override
   Widget build(BuildContext context) {
-    return _isLoading
-        ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-        : _contacts.isEmpty
-            ? _buildEmptyState(context)
-            : RefreshIndicator(
+    // 直接显示内容，不显示 loading 状态
+    // 如果正在加载且没有联系人，显示空状态
+    return _contacts.isEmpty
+        ? _buildEmptyState(context)
+        : RefreshIndicator(
                 onRefresh: () async {
                   _initWebSocket();
                   await Future.delayed(const Duration(seconds: 1));

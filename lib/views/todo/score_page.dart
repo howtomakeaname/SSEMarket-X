@@ -5,6 +5,7 @@ import 'package:sse_market_x/core/services/browse_history_service.dart';
 import 'package:sse_market_x/core/services/storage_service.dart';
 import 'package:sse_market_x/shared/components/cards/rating_card.dart';
 import 'package:sse_market_x/shared/components/layout/layout_config.dart';
+import 'package:sse_market_x/shared/components/loading/skeleton_loader.dart';
 import 'package:sse_market_x/shared/components/loading/loading_indicator.dart';
 import 'package:sse_market_x/shared/components/utils/snackbar_helper.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
@@ -161,7 +162,7 @@ class _ScorePageState extends State<ScorePage> {
 
   Widget _buildBody() {
     if (_isLoading && _posts.isEmpty) {
-      return const LoadingIndicator.center(message: '加载中...');
+      return const PostListSkeleton(itemCount: 5, isDense: true);
     }
 
     if (!_isLoading && _posts.isEmpty) {
@@ -258,10 +259,7 @@ class _ScorePageState extends State<ScorePage> {
           
           // Loading footer
           if (_isLoading && !_isRefreshing) {
-            return const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-            );
+            return const LoadingRow(message: '加载更多...', size: 16);
           }
           
           // No more data footer
