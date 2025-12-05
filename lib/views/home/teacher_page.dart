@@ -28,9 +28,11 @@ class TeacherPage extends StatefulWidget {
   State<TeacherPage> createState() => _TeacherPageState();
 }
 
-class _TeacherPageState extends State<TeacherPage> {
+class _TeacherPageState extends State<TeacherPage>
+    with AutomaticKeepAliveClientMixin {
   static const int _pageSize = 10;
   static const String _cacheKey = 'posts_cache_teacher';
+  static const String _teachersCacheKey = 'teachers_cache';
 
   List<Map<String, dynamic>> _teachers = [];
   String? _selectedTeacher;
@@ -41,6 +43,9 @@ class _TeacherPageState extends State<TeacherPage> {
   bool _isLoadingTeachers = true;
   bool _hasLoadedOnce = false;
   UserModel _user = UserModel.empty();
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -55,21 +60,11 @@ class _TeacherPageState extends State<TeacherPage> {
       _user = storageService.user!;
     }
 
-    // 加载教师列表
-    setState(() => _isLoadingTeachers = true);
-    try {
-      final teachers = await widget.apiService.getTeachers();
-      if (mounted) {
-        setState(() {
-          _teachers = teachers;
-          _isLoadingTeachers = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isLoadingTeachers = false);
-      }
-    }
+    // 先尝试从缓存加载教师列表
+    await _loadCachedTeachers();
+
+    // 后台刷新教师列表
+    _fetchTeachers();
 
     // 尝试从缓存加载帖子
     await _loadCachedPosts();
@@ -79,6 +74,59 @@ class _TeacherPageState extends State<TeacherPage> {
       _fetchPosts(refresh: true, silent: true);
     } else {
       _fetchPosts(refresh: true);
+    }
+  }
+
+  /// 从缓存加载教师列表
+  Future<void> _loadCachedTeachers() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cachedJson = prefs.getString(_teachersCacheKey);
+
+      if (cachedJson != null && cachedJson.isNotEmpty) {
+        final List<dynamic> jsonList = jsonDecode(cachedJson);
+        final cachedTeachers = jsonList
+            .map((json) => Map<String, dynamic>.from(json as Map))
+            .toList();
+
+        if (cachedTeachers.isNotEmpty && mounted) {
+          setState(() {
+            _teachers = cachedTeachers;
+            _isLoadingTeachers = false;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('加载教师列表缓存失败: $e');
+    }
+  }
+
+  /// 保存教师列表到缓存
+  Future<void> _saveCachedTeachers(List<Map<String, dynamic>> teachers) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_teachersCacheKey, jsonEncode(teachers));
+    } catch (e) {
+      debugPrint('保存教师列表缓存失败: $e');
+    }
+  }
+
+  /// 从 API 获取教师列表
+  Future<void> _fetchTeachers() async {
+    try {
+      final teachers = await widget.apiService.getTeachers();
+      if (mounted) {
+        setState(() {
+          _teachers = teachers;
+          _isLoadingTeachers = false;
+        });
+        // 保存到缓存
+        _saveCachedTeachers(teachers);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingTeachers = false);
+      }
     }
   }
 
@@ -186,6 +234,7 @@ class _TeacherPageState extends State<TeacherPage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // 必须调用 super.build
     return Column(
       children: [
         _buildHeader(context),
@@ -204,6 +253,9 @@ class _TeacherPageState extends State<TeacherPage> {
           )),
     ];
 
+    // 只有在没有教师数据且正在加载时才显示 loading
+    final showLoading = _teachers.isEmpty && _isLoadingTeachers;
+
     return Container(
       color: context.surfaceColor,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -217,7 +269,7 @@ class _TeacherPageState extends State<TeacherPage> {
             ),
           ),
           const SizedBox(width: 8),
-          if (_isLoadingTeachers)
+          if (showLoading)
             SizedBox(
               width: 14,
               height: 14,
