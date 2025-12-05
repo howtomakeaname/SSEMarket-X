@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:markdown/markdown.dart' as m;
@@ -298,6 +299,77 @@ class _CachedMarkdownImageState extends State<_CachedMarkdownImage>
     super.dispose();
   }
 
+  /// 打开图片查看器
+  void _openImageViewer(BuildContext context) {
+    final imageContext = MarkdownImageContext.of(context);
+    if (imageContext != null && imageContext.imageUrls.length > 1) {
+      final index = imageContext.imageUrls.indexOf(_originalUrl);
+      ImageViewer.showMultiple(
+        context,
+        imageContext.imageUrls,
+        initialIndex: index >= 0 ? index : 0,
+        cachedFiles: _cachedFile != null ? {_originalUrl: _cachedFile!} : null,
+      );
+    } else {
+      ImageViewer.show(context, _originalUrl, cachedFile: _cachedFile);
+    }
+  }
+
+  /// 显示图片操作菜单
+  void _showImageMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: context.surfaceColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 拖动指示器
+            Container(
+              width: 36,
+              height: 4,
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: context.dividerColor,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            // 查看原图
+            ListTile(
+              leading: Icon(Icons.zoom_in, color: context.textPrimaryColor),
+              title: Text('查看原图', style: TextStyle(color: context.textPrimaryColor)),
+              onTap: () {
+                Navigator.pop(ctx);
+                _openImageViewer(context);
+              },
+            ),
+            // 复制图片链接
+            ListTile(
+              leading: Icon(Icons.link, color: context.textPrimaryColor),
+              title: Text('复制图片链接', style: TextStyle(color: context.textPrimaryColor)),
+              onTap: () {
+                Clipboard.setData(ClipboardData(text: _originalUrl));
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text('已复制图片链接'),
+                    backgroundColor: AppColors.primary,
+                    behavior: SnackBarBehavior.floating,
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _loadImage() async {
     if (widget.url.isEmpty) {
       setState(() {
@@ -371,21 +443,8 @@ class _CachedMarkdownImageState extends State<_CachedMarkdownImage>
     }
 
     return GestureDetector(
-      onTap: () {
-        // 尝试获取图片上下文，支持多图浏览
-        final imageContext = MarkdownImageContext.of(context);
-        if (imageContext != null && imageContext.imageUrls.length > 1) {
-          final index = imageContext.imageUrls.indexOf(_originalUrl);
-          ImageViewer.showMultiple(
-            context,
-            imageContext.imageUrls,
-            initialIndex: index >= 0 ? index : 0,
-            cachedFiles: _cachedFile != null ? {_originalUrl: _cachedFile!} : null,
-          );
-        } else {
-          ImageViewer.show(context, _originalUrl, cachedFile: _cachedFile);
-        }
-      },
+      onTap: () => _openImageViewer(context),
+      onLongPress: () => _showImageMenu(context),
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 8),
         child: ClipRRect(
