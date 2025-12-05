@@ -94,6 +94,32 @@ class PostModel {
     );
   }
 
+  /// 转换为 JSON Map
+  Map<String, dynamic> toJson() {
+    return {
+      'PostID': id,
+      'Title': title,
+      'Content': content,
+      'Partition': partition,
+      'UserName': authorName,
+      'UserAvatar': authorAvatar,
+      'UserTelephone': authorPhone,
+      'PostTime': createdAt,
+      'LikeNum': likeCount,
+      'CommentNum': commentCount,
+      'SaveNum': saveCount,
+      'Browse': viewCount,
+      'UserScore': userScore,
+      'UserIdentity': userIdentity,
+      'IsLiked': isLiked,
+      'IsSaved': isSaved,
+      'Rating': rating,
+      'Stars': stars,
+      'UserRating': userRating,
+      'Heat': heat,
+    };
+  }
+
   factory PostModel.fromDynamic(dynamic raw) {
     if (raw is! Map) {
       return PostModel.empty();
