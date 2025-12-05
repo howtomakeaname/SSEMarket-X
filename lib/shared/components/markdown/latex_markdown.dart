@@ -139,6 +139,51 @@ class LatexSyntax extends m.InlineSyntax {
   }
 }
 
+/// 图片上下文 - 用于在多图场景下共享所有图片 URL
+class MarkdownImageContext extends InheritedWidget {
+  final List<String> imageUrls;
+
+  const MarkdownImageContext({
+    super.key,
+    required this.imageUrls,
+    required super.child,
+  });
+
+  static MarkdownImageContext? of(BuildContext context) {
+    return context.dependOnInheritedWidgetOfExactType<MarkdownImageContext>();
+  }
+
+  @override
+  bool updateShouldNotify(MarkdownImageContext oldWidget) {
+    return imageUrls != oldWidget.imageUrls;
+  }
+}
+
+/// 从 Markdown 文本中提取所有图片 URL
+List<String> _extractImageUrls(String markdown) {
+  final imagePattern = RegExp(r'!\[([^\]]*)\]\(([^)]+)\)');
+  final urls = <String>[];
+  
+  for (final match in imagePattern.allMatches(markdown)) {
+    var urlPart = match.group(2) ?? '';
+    // 处理带 title 的情况
+    final titleMatch = RegExp(r'^(.+?)\s+"([^"]*)"$').firstMatch(urlPart);
+    String url;
+    if (titleMatch != null) {
+      url = titleMatch.group(1)!.trim();
+    } else {
+      url = urlPart.trim();
+    }
+    // 转换为原图 URL
+    final originalUrl = _encodeImageUrl(_getOriginalImageUrl(url));
+    if (originalUrl.isNotEmpty) {
+      urls.add(originalUrl);
+    }
+  }
+  
+  return urls;
+}
+
 /// 自定义图片节点生成器 - 支持缓存和点击放大
 class CachedImageNode extends SpanNode {
   final String url;
@@ -326,7 +371,21 @@ class _CachedMarkdownImageState extends State<_CachedMarkdownImage>
     }
 
     return GestureDetector(
-      onTap: () => ImageViewer.show(context, _originalUrl, cachedFile: _cachedFile),
+      onTap: () {
+        // 尝试获取图片上下文，支持多图浏览
+        final imageContext = MarkdownImageContext.of(context);
+        if (imageContext != null && imageContext.imageUrls.length > 1) {
+          final index = imageContext.imageUrls.indexOf(_originalUrl);
+          ImageViewer.showMultiple(
+            context,
+            imageContext.imageUrls,
+            initialIndex: index >= 0 ? index : 0,
+            cachedFiles: _cachedFile != null ? {_originalUrl: _cachedFile!} : null,
+          );
+        } else {
+          ImageViewer.show(context, _originalUrl, cachedFile: _cachedFile);
+        }
+      },
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 8),
         child: ClipRRect(
@@ -481,22 +540,31 @@ class LatexMarkdown extends StatelessWidget {
       linesMargin: shrinkWrap ? EdgeInsets.zero : const EdgeInsets.symmetric(vertical: 8),
     );
 
+    // 提取所有图片 URL，用于多图浏览
+    final imageUrls = _extractImageUrls(data);
+
     // 紧凑模式：使用 markdown_widget 的 MarkdownWidget 的 shrinkWrap 模式
     if (shrinkWrap) {
-      return mw.MarkdownWidget(
-        data: processedData,
-        selectable: selectable,
-        shrinkWrap: true,
-        config: markdownConfig,
-        markdownGenerator: generator,
+      return MarkdownImageContext(
+        imageUrls: imageUrls,
+        child: mw.MarkdownWidget(
+          data: processedData,
+          selectable: selectable,
+          shrinkWrap: true,
+          config: markdownConfig,
+          markdownGenerator: generator,
+        ),
       );
     }
 
-    return MarkdownBlock(
-      data: processedData,
-      selectable: selectable,
-      config: markdownConfig,
-      generator: generator,
+    return MarkdownImageContext(
+      imageUrls: imageUrls,
+      child: MarkdownBlock(
+        data: processedData,
+        selectable: selectable,
+        config: markdownConfig,
+        generator: generator,
+      ),
     );
   }
 }

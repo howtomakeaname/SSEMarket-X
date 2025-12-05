@@ -353,7 +353,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
   void _openImageViewer(int index) {
     if (_product.photos.isEmpty) return;
-    ImageViewer.show(context, _product.photos[index]);
+    ImageViewer.showMultiple(context, _product.photos, initialIndex: index);
   }
 
   Widget _buildProductInfo() {
