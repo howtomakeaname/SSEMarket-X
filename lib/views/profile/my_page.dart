@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/user_model.dart';
 import 'package:sse_market_x/core/services/media_cache_service.dart';
+import 'package:sse_market_x/core/services/storage_service.dart';
 import 'package:sse_market_x/core/services/watch_later_service.dart';
 import 'package:sse_market_x/core/utils/level_utils.dart';
 import 'package:sse_market_x/shared/components/lists/settings_list_item.dart';
@@ -26,15 +27,41 @@ class MyPage extends StatefulWidget {
 }
 
 class _MyPageState extends State<MyPage> {
-  UserModel _user = UserModel.empty();
+  UserModel? _user;
+  bool _isLoading = false;
   bool _isWatchLaterEnabled = false;
   final WatchLaterService _watchLaterService = WatchLaterService();
 
   @override
   void initState() {
     super.initState();
-    _loadUser();
+    _initUserData();
     _loadWatchLaterStatus();
+  }
+
+  /// 初始化用户数据：先从缓存加载，再后台刷新
+  void _initUserData() {
+    // 1. 先从 StorageService 获取缓存的用户数据
+    final cachedUser = StorageService().user;
+    
+    // 2. 判断缓存数据是否完整（包含 score 等详细信息）
+    // 如果 score 为 0 且 intro 为空，可能是不完整的数据，显示骨架屏
+    // 但如果用户确实是新用户（score 真的是 0），也应该显示
+    // 所以我们采用更保守的策略：只要有缓存就先显示
+    if (cachedUser != null) {
+      setState(() {
+        _user = cachedUser;
+        _isLoading = false;
+      });
+      // 后台静默刷新最新数据
+      _refreshUser();
+    } else {
+      // 如果没有缓存，显示骨架屏并加载
+      setState(() {
+        _isLoading = true;
+      });
+      _refreshUser();
+    }
   }
 
   Future<void> _loadWatchLaterStatus() async {
@@ -46,7 +73,8 @@ class _MyPageState extends State<MyPage> {
     }
   }
 
-  Future<void> _loadUser() async {
+  /// 刷新用户数据（后台静默更新）
+  Future<void> _refreshUser() async {
     try {
       final basic = await widget.apiService.getUserInfo();
       UserModel detailed = basic;
@@ -57,12 +85,23 @@ class _MyPageState extends State<MyPage> {
       if (!mounted) return;
       setState(() {
         _user = detailed;
+        _isLoading = false;
       });
-    } finally {
+    } catch (e) {
       if (mounted) {
-        setState(() {});
+        setState(() {
+          _isLoading = false;
+        });
       }
     }
+  }
+
+  /// 强制重新加载用户数据（用于编辑后刷新）
+  Future<void> _loadUser() async {
+    setState(() {
+      _isLoading = true;
+    });
+    await _refreshUser();
   }
 
   @override
@@ -109,6 +148,30 @@ class _MyPageState extends State<MyPage> {
   }
 
   Widget _buildUserInfoCard(BuildContext context) {
+    if (_isLoading) {
+      return _buildUserInfoSkeleton(context);
+    }
+
+    if (_user == null) {
+      return Container(
+        margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: context.surfaceColor,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Center(
+          child: Text(
+            '加载用户信息失败',
+            style: TextStyle(
+              fontSize: 14,
+              color: context.textSecondaryColor,
+            ),
+          ),
+        ),
+      );
+    }
+
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       decoration: BoxDecoration(
@@ -123,7 +186,7 @@ class _MyPageState extends State<MyPage> {
               MaterialPageRoute(
                 builder: (_) => EditProfilePage(
                   apiService: widget.apiService,
-                  initialUser: _user,
+                  initialUser: _user!,
                 ),
               ),
             );
@@ -149,7 +212,7 @@ class _MyPageState extends State<MyPage> {
   }
 
   Widget _buildAvatar(BuildContext context) {
-    final hasAvatar = _user.avatar.isNotEmpty;
+    final hasAvatar = _user?.avatar.isNotEmpty ?? false;
     final defaultAvatar = SvgPicture.asset(
       'assets/icons/default_avatar.svg',
       fit: BoxFit.cover,
@@ -164,7 +227,7 @@ class _MyPageState extends State<MyPage> {
       clipBehavior: Clip.antiAlias,
       child: hasAvatar
           ? CachedImage(
-              imageUrl: _user.avatar,
+              imageUrl: _user!.avatar,
               width: 60,
               height: 60,
               fit: BoxFit.cover,
@@ -176,12 +239,12 @@ class _MyPageState extends State<MyPage> {
   }
 
   Widget _buildUserTextsAndExp(BuildContext context) {
-    final name = _user.name.isNotEmpty ? _user.name : '匿名用户';
-    final score = _user.score;
+    final name = _user?.name.isNotEmpty ?? false ? _user!.name : '匿名用户';
+    final score = _user?.score ?? 0;
     final levelName = LevelUtils.getLevelName(score);
     final nextExp = LevelUtils.getNextLevelExp(score);
     final progress = LevelUtils.getExpProgressPercent(score);
-    final intro = _user.intro;
+    final intro = _user?.intro ?? '';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -326,7 +389,7 @@ class _MyPageState extends State<MyPage> {
               MaterialPageRoute(
                 builder: (_) => SettingsPage(
                   apiService: widget.apiService,
-                  userEmail: _user.email,
+                  userEmail: _user?.email ?? '',
                 ),
               ),
             );
@@ -349,6 +412,91 @@ class _MyPageState extends State<MyPage> {
           isLast: true,
         ),
       ],
+    );
+  }
+
+  Widget _buildUserInfoSkeleton(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: context.surfaceColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // 头像骨架
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: context.backgroundColor,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 用户名和等级骨架
+                Row(
+                  children: [
+                    Container(
+                      width: 100,
+                      height: 18,
+                      decoration: BoxDecoration(
+                        color: context.backgroundColor,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      width: 40,
+                      height: 14,
+                      decoration: BoxDecoration(
+                        color: context.backgroundColor,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                // 经验文本骨架
+                Container(
+                  width: 120,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: context.backgroundColor,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                // 经验条骨架
+                Container(
+                  width: double.infinity,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: context.backgroundColor,
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                // 下一级文本骨架
+                Container(
+                  width: 80,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: context.backgroundColor,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

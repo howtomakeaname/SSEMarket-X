@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/post_model.dart';
 import 'package:sse_market_x/core/services/browse_history_service.dart';
@@ -28,10 +30,12 @@ class ScorePage extends StatefulWidget {
 
 class _ScorePageState extends State<ScorePage> {
   List<PostModel> _posts = [];
-  bool _isLoading = false;
+  bool _isLoading = true; // 初始化时设置为 true，避免显示空状态
   bool _isRefreshing = false;
   bool _hasMore = true;
+  bool _hasLoadedOnce = false;
   int _offset = 0;
+  int _newPostsCount = 0;
   static const int _pageSize = 20;
   final ScrollController _scrollController = ScrollController();
 
@@ -50,7 +54,55 @@ class _ScorePageState extends State<ScorePage> {
   }
 
   Future<void> _loadInitialPosts() async {
-    await _fetchPosts(refresh: true);
+    // 尝试从缓存加载
+    await _loadCachedPosts();
+    
+    // 后台静默刷新或首次加载
+    if (_hasLoadedOnce) {
+      _fetchPosts(refresh: true, silent: true);
+    } else {
+      // 首次加载，强制执行
+      _fetchPosts(refresh: true, forceLoad: true);
+    }
+  }
+  
+  /// 从本地缓存加载帖子列表
+  Future<void> _loadCachedPosts() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cachedJson = prefs.getString('score_posts_cache');
+      
+      if (cachedJson != null && cachedJson.isNotEmpty) {
+        final List<dynamic> jsonList = jsonDecode(cachedJson);
+        final cachedPosts = jsonList.map((json) => PostModel.fromDynamic(json)).toList();
+        
+        if (cachedPosts.isNotEmpty && mounted) {
+          setState(() {
+            _posts = cachedPosts;
+            _offset = cachedPosts.length;
+            _hasLoadedOnce = true;
+            _isLoading = false;
+          });
+          return;
+        }
+      }
+      
+      // 没有缓存，不设置 _isLoading，让后续的 _fetchPosts 正常执行
+    } catch (e) {
+      debugPrint('加载缓存打分帖子失败: $e');
+      // 加载失败，不设置 _isLoading，让后续的 _fetchPosts 正常执行
+    }
+  }
+  
+  /// 保存帖子列表到本地缓存
+  Future<void> _saveCachedPosts(List<PostModel> posts) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonList = posts.map((post) => post.toJson()).toList();
+      await prefs.setString('score_posts_cache', jsonEncode(jsonList));
+    } catch (e) {
+      debugPrint('保存缓存打分帖子失败: $e');
+    }
   }
 
   void _onScroll() {
@@ -64,16 +116,19 @@ class _ScorePageState extends State<ScorePage> {
     }
   }
 
-  Future<void> _fetchPosts({required bool refresh}) async {
-    if (_isLoading) return;
+  Future<void> _fetchPosts({required bool refresh, bool silent = false, bool forceLoad = false}) async {
+    // 如果正在加载且不是静默模式且不是强制加载，则跳过
+    if (_isLoading && !silent && !forceLoad) return;
 
-    setState(() {
-      _isLoading = true;
-      if (refresh) {
-        _isRefreshing = true;
-        _offset = 0;
-      }
-    });
+    if (!silent) {
+      setState(() {
+        _isLoading = true;
+        if (refresh) {
+          _isRefreshing = true;
+          _offset = 0;
+        }
+      });
+    }
 
     try {
       final userPhone = StorageService().user?.phone ?? '';
@@ -91,15 +146,31 @@ class _ScorePageState extends State<ScorePage> {
 
       if (!mounted) return;
 
+      // 静默刷新：比较新旧数据
+      int newCount = 0;
+      List<PostModel> finalPosts;
+      
+      if (silent && refresh && _posts.isNotEmpty) {
+        final existingIds = _posts.map((p) => p.id).toSet();
+        newCount = list.where((p) => !existingIds.contains(p.id)).length;
+        finalPosts = _posts;
+      } else {
+        finalPosts = refresh ? list : [..._posts, ...list];
+        newCount = 0;
+      }
+
       setState(() {
-        if (refresh) {
-          _posts = list;
-        } else {
-          _posts.addAll(list);
-        }
-        _offset += list.length;
+        _posts = finalPosts;
+        _offset = refresh ? list.length : _offset + list.length;
         _hasMore = list.length == _pageSize;
+        _hasLoadedOnce = true;
+        _newPostsCount = newCount;
       });
+      
+      // 保存到缓存（仅在正常刷新时）
+      if (!silent && refresh) {
+        _saveCachedPosts(finalPosts);
+      }
     } catch (e) {
       debugPrint('Fetch posts error: $e');
       if (mounted) {
@@ -161,7 +232,7 @@ class _ScorePageState extends State<ScorePage> {
   }
 
   Widget _buildBody() {
-    if (_isLoading && _posts.isEmpty) {
+    if (!_hasLoadedOnce && _isLoading && _posts.isEmpty) {
       return const PostListSkeleton(itemCount: 5, isDense: true);
     }
 
@@ -191,8 +262,9 @@ class _ScorePageState extends State<ScorePage> {
     return RefreshIndicator(
       onRefresh: () => _fetchPosts(refresh: true),
       color: AppColors.primary,
-      // backgroundColor: AppColors.surface, // 下拉不必改变背景色，使用默认即可
-      child: ListView.builder(
+      child: Stack(
+        children: [
+          ListView.builder(
         controller: _scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
         itemCount: _posts.length + 1,
@@ -277,6 +349,78 @@ class _ScorePageState extends State<ScorePage> {
           
           return const SizedBox.shrink();
         },
+      ),
+          // 新帖子提示条
+          if (_newPostsCount > 0)
+            Positioned(
+              top: 8,
+              left: 0,
+              right: 0,
+              child: _buildNewPostsIndicator(_newPostsCount),
+            ),
+        ],
+      ),
+    );
+  }
+  
+  /// 新帖子提示条
+  Widget _buildNewPostsIndicator(int count) {
+    return Center(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            _fetchPosts(refresh: true);
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.primary,
+                  AppColors.primary.withOpacity(0.9),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.fiber_new_rounded,
+                  color: Colors.white,
+                  size: 18,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '$count 条新内容',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                const Icon(
+                  Icons.touch_app_rounded,
+                  color: Colors.white,
+                  size: 14,
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
