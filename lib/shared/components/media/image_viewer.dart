@@ -206,26 +206,35 @@ class _ImageViewerState extends State<ImageViewer> with TickerProviderStateMixin
                 mainAxisSize: MainAxisSize.min,
                 children: List.generate(imageCount, (index) {
                   final isActive = _currentIndex == index;
-                  return AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeOutCubic,
-                    width: isActive ? 16 : 8,
-                    height: 8,
-                    margin: const EdgeInsets.symmetric(horizontal: 3),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(4),
-                      color: isActive
-                          ? Colors.white
-                          : Colors.white.withOpacity(0.5),
-                      boxShadow: isActive
-                          ? [
-                              BoxShadow(
-                                color: Colors.white.withOpacity(0.3),
-                                blurRadius: 4,
-                                spreadRadius: 1,
-                              ),
-                            ]
-                          : null,
+                  return GestureDetector(
+                    onTap: () => _pageController.animateToPage(
+                      index,
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeOutCubic,
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 4),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeOutCubic,
+                        width: isActive ? 16 : 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(4),
+                          color: isActive
+                              ? Colors.white
+                              : Colors.white.withOpacity(0.5),
+                          boxShadow: isActive
+                              ? [
+                                  BoxShadow(
+                                    color: Colors.white.withOpacity(0.3),
+                                    blurRadius: 4,
+                                    spreadRadius: 1,
+                                  ),
+                                ]
+                              : null,
+                        ),
+                      ),
                     ),
                   );
                 }),
