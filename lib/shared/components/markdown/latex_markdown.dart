@@ -6,10 +6,14 @@ import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:markdown/markdown.dart' as m;
 import 'package:markdown_widget/markdown_widget.dart' hide ImageViewer, MarkdownWidget;
 import 'package:markdown_widget/markdown_widget.dart' as mw show MarkdownWidget;
+import 'package:sse_market_x/core/api/api_service.dart';
+import 'package:sse_market_x/core/models/post_model.dart';
 import 'package:sse_market_x/core/services/media_cache_service.dart';
+import 'package:sse_market_x/shared/components/cards/post_card.dart';
 import 'package:sse_market_x/shared/components/media/image_viewer.dart';
 import 'package:sse_market_x/shared/components/utils/snackbar_helper.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
+import 'package:sse_market_x/views/post/post_detail_page.dart';
 
 /// 获取适配深色模式的 MarkdownStyleSheet
 MarkdownStyleSheet getAdaptiveMarkdownStyleSheet(BuildContext context) {
@@ -657,12 +661,68 @@ String _convertHtmlImagesToMarkdown(String content) {
   });
 }
 
-/// 预处理 Markdown 文本，转换 HTML img 标签并对图片 URL 进行编码
+/// 将 HTML audio/video 标签转换为 Markdown 链接格式
+/// 点击后使用系统播放器打开
+String _convertHtmlMediaToMarkdown(String content) {
+  // 匹配 audio 标签
+  final audioPattern = RegExp(
+    r'<audio\s+[^>]*src=["'']([^"''>]+)["''][^>]*>.*?</audio>|<audio\s+[^>]*src=["'']([^"''>]+)["''][^>]*/?>',
+    caseSensitive: false,
+  );
+  
+  content = content.replaceAllMapped(audioPattern, (match) {
+    final src = match.group(1) ?? match.group(2) ?? '';
+    if (src.isEmpty) return match.group(0) ?? '';
+    return '🎵 [音频播放]($src)';
+  });
+  
+  // 匹配 video 标签
+  final videoPattern = RegExp(
+    r'<video\s+[^>]*src=["'']([^"''>]+)["''][^>]*>.*?</video>|<video\s+[^>]*src=["'']([^"''>]+)["''][^>]*/?>',
+    caseSensitive: false,
+  );
+  
+  content = content.replaceAllMapped(videoPattern, (match) {
+    final src = match.group(1) ?? match.group(2) ?? '';
+    if (src.isEmpty) return match.group(0) ?? '';
+    return '🎬 [视频播放]($src)';
+  });
+  
+  // 匹配 source 标签（嵌套在 audio/video 中的情况）
+  final sourceAudioPattern = RegExp(
+    r'<audio[^>]*>\s*<source\s+[^>]*src=["'']([^"''>]+)["''][^>]*/?>\s*</audio>',
+    caseSensitive: false,
+  );
+  
+  content = content.replaceAllMapped(sourceAudioPattern, (match) {
+    final src = match.group(1) ?? '';
+    if (src.isEmpty) return match.group(0) ?? '';
+    return '🎵 [音频播放]($src)';
+  });
+  
+  final sourceVideoPattern = RegExp(
+    r'<video[^>]*>\s*<source\s+[^>]*src=["'']([^"''>]+)["''][^>]*/?>\s*</video>',
+    caseSensitive: false,
+  );
+  
+  content = content.replaceAllMapped(sourceVideoPattern, (match) {
+    final src = match.group(1) ?? '';
+    if (src.isEmpty) return match.group(0) ?? '';
+    return '🎬 [视频播放]($src)';
+  });
+  
+  return content;
+}
+
+/// 预处理 Markdown 文本，转换 HTML 标签并对图片 URL 进行编码
 String _preprocessMarkdownImageUrls(String markdown) {
   // 第一步：将 HTML img 标签转换为 Markdown 格式
   String processedMarkdown = _convertHtmlImagesToMarkdown(markdown);
   
-  // 第二步：匹配 Markdown 图片语法: ![alt](url)
+  // 第二步：将 HTML audio/video 标签转换为 Markdown 链接
+  processedMarkdown = _convertHtmlMediaToMarkdown(processedMarkdown);
+  
+  // 第三步：匹配 Markdown 图片语法: ![alt](url)
   final imagePattern = RegExp(r'!\[([^\]]*)\]\(([^)]+)\)');
 
   return processedMarkdown.replaceAllMapped(imagePattern, (match) {
@@ -800,6 +860,243 @@ class LatexMarkdown extends StatelessWidget {
         config: markdownConfig,
         generator: generator,
       ),
+    );
+  }
+}
+
+/// 帖子链接正则匹配模式
+/// 支持 https://ssemarket.cn/new/postdetail/123 格式
+final _postLinkPattern = RegExp(
+  r'https?://ssemarket\.cn/new/postdetail/(\d+)',
+  caseSensitive: false,
+);
+
+/// 从文本中提取所有帖子链接的 postId
+List<int> extractPostIds(String content) {
+  final ids = <int>[];
+  for (final match in _postLinkPattern.allMatches(content)) {
+    final idStr = match.group(1);
+    if (idStr != null) {
+      final id = int.tryParse(idStr);
+      if (id != null && !ids.contains(id)) {
+        ids.add(id);
+      }
+    }
+  }
+  return ids;
+}
+
+/// 帖子链接预览卡片组件
+/// 自动加载帖子信息并显示卡片预览
+class PostLinkPreview extends StatefulWidget {
+  final int postId;
+  final ApiService apiService;
+
+  const PostLinkPreview({
+    super.key,
+    required this.postId,
+    required this.apiService,
+  });
+
+  @override
+  State<PostLinkPreview> createState() => _PostLinkPreviewState();
+}
+
+class _PostLinkPreviewState extends State<PostLinkPreview> {
+  PostModel? _post;
+  bool _isLoading = true;
+  bool _hasError = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPost();
+  }
+
+  Future<void> _loadPost() async {
+    try {
+      final user = await widget.apiService.getUserInfo();
+      final post = await widget.apiService.getPostDetail(widget.postId, user.phone);
+      
+      if (mounted) {
+        setState(() {
+          _post = post;
+          _isLoading = false;
+          _hasError = post.id == 0;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _hasError = true;
+        });
+      }
+    }
+  }
+
+  void _navigateToPost() {
+    if (_post == null) return;
+    
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => PostDetailPage(
+          postId: widget.postId,
+          apiService: widget.apiService,
+          initialPost: _post,
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return _buildLoadingCard(context);
+    }
+
+    if (_hasError || _post == null) {
+      return _buildErrorCard(context);
+    }
+
+    return PostCard(
+      post: _post!,
+      isDense: true,
+      hidePartition: true,
+      onTap: _navigateToPost,
+    );
+  }
+
+  Widget _buildLoadingCard(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: context.surfaceColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: context.textSecondaryColor,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            '加载帖子中...',
+            style: TextStyle(
+              fontSize: 14,
+              color: context.textSecondaryColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorCard(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: context.surfaceColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: context.dividerColor),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.link_off,
+            size: 20,
+            color: context.textTertiaryColor,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              '帖子不存在或已删除',
+              style: TextStyle(
+                fontSize: 14,
+                color: context.textTertiaryColor,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 带帖子链接预览的 Markdown 组件
+/// 在普通 LatexMarkdown 基础上，自动解析并显示帖子链接预览卡片
+class LatexMarkdownWithPostPreview extends StatelessWidget {
+  final String data;
+  final ApiService apiService;
+  final bool selectable;
+  final MarkdownStyleSheet? styleSheet;
+  final bool enableImageCache;
+  final double fontSize;
+  final bool shrinkWrap;
+
+  const LatexMarkdownWithPostPreview({
+    super.key,
+    required this.data,
+    required this.apiService,
+    this.selectable = false,
+    this.styleSheet,
+    this.enableImageCache = true,
+    this.fontSize = 16,
+    this.shrinkWrap = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // 提取帖子链接
+    final postIds = extractPostIds(data);
+    
+    // 如果没有帖子链接，直接返回普通 LatexMarkdown
+    if (postIds.isEmpty) {
+      return LatexMarkdown(
+        data: data,
+        selectable: selectable,
+        styleSheet: styleSheet,
+        enableImageCache: enableImageCache,
+        fontSize: fontSize,
+        shrinkWrap: shrinkWrap,
+      );
+    }
+
+    // 将帖子链接替换为占位符，避免在 Markdown 中显示原始链接
+    String processedData = data;
+    for (final postId in postIds) {
+      processedData = processedData.replaceAll(
+        RegExp(r'https?://ssemarket\.cn/new/postdetail/' + postId.toString() + r'(?![0-9])', caseSensitive: false),
+        '', // 移除链接文本，用卡片替代
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 渲染 Markdown 内容
+        if (processedData.trim().isNotEmpty)
+          LatexMarkdown(
+            data: processedData,
+            selectable: selectable,
+            styleSheet: styleSheet,
+            enableImageCache: enableImageCache,
+            fontSize: fontSize,
+            shrinkWrap: shrinkWrap,
+          ),
+        // 渲染帖子预览卡片
+        ...postIds.map((postId) => PostLinkPreview(
+          postId: postId,
+          apiService: apiService,
+        )),
+      ],
     );
   }
 }

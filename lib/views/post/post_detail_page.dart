@@ -634,8 +634,9 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
   Widget _buildContent() {
     if (_post.content.isEmpty) return const SizedBox.shrink();
 
-    return LatexMarkdown(
+    return LatexMarkdownWithPostPreview(
       data: _post.content,
+      apiService: widget.apiService,
       selectable: true, // 支持长按选择文字
     );
   }
