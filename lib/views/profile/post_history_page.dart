@@ -22,6 +22,7 @@ class _PostHistoryPageState extends State<PostHistoryPage> {
   List<PostModel> _posts = [];
   UserModel _user = UserModel.empty();
   bool _isLoading = false;
+  bool _isInitialLoading = true; // 初始加载状态
   bool _hasMore = true;
   int _offset = 0;
   static const int _pageSize = 20;
@@ -98,12 +99,14 @@ class _PostHistoryPageState extends State<PostHistoryPage> {
         _offset += posts.length;
         _hasMore = posts.length == _pageSize;
         _isLoading = false;
+        _isInitialLoading = false;
       });
     } catch (e) {
       debugPrint('加载发帖历史失败: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
+          _isInitialLoading = false;
         });
       }
     }
@@ -136,7 +139,8 @@ class _PostHistoryPageState extends State<PostHistoryPage> {
   }
 
   Widget _buildBody() {
-    if (_isLoading && _posts.isEmpty) {
+    // 初始加载或正在加载且列表为空时显示骨架屏
+    if (_isInitialLoading || (_isLoading && _posts.isEmpty)) {
       return const PostListSkeleton(itemCount: 5, isDense: false);
     }
 
