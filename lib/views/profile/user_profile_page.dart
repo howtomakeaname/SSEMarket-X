@@ -178,24 +178,46 @@ class _UserProfilePageState extends State<UserProfilePage> {
       'assets/icons/default_avatar.svg',
       fit: BoxFit.cover,
     );
-    return Container(
+    return SizedBox(
       width: 64,
       height: 64,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: context.backgroundColor,
+      child: Stack(
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: context.backgroundColor,
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: hasAvatar
+                ? CachedImage(
+                    imageUrl: _user!.avatar,
+                    width: 64,
+                    height: 64,
+                    fit: BoxFit.cover,
+                    category: CacheCategory.avatar,
+                    errorWidget: defaultAvatar,
+                  )
+                : defaultAvatar,
+          ),
+          if (_user!.identity == 'teacher' || _user!.identity == 'organization')
+            Positioned(
+              right: 0,
+              bottom: 0,
+              child: Container(
+                width: 18,
+                height: 18,
+                decoration: BoxDecoration(
+                  color: LevelUtils.getIdentityBackgroundColor(_user!.identity),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
+                ),
+              ),
+            ),
+        ],
       ),
-      clipBehavior: Clip.antiAlias,
-      child: hasAvatar
-          ? CachedImage(
-              imageUrl: _user!.avatar,
-              width: 64,
-              height: 64,
-              fit: BoxFit.cover,
-              category: CacheCategory.avatar,
-              errorWidget: defaultAvatar,
-            )
-          : defaultAvatar,
     );
   }
 
