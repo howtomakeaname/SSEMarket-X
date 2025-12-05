@@ -36,6 +36,21 @@ class ProductModel {
     );
   }
 
+  /// 转换为 JSON Map
+  Map<String, dynamic> toJson() {
+    return {
+      'ProductID': id,
+      'SellerID': sellerId,
+      'Seller': sellerName,
+      'Price': price,
+      'Name': name,
+      'Description': description,
+      'Photos': photos,
+      'ISSold': isSold,
+      'ISAnonymous': isAnonymous,
+    };
+  }
+
   factory ProductModel.fromDynamic(dynamic raw) {
     if (raw is! Map) {
       return ProductModel.empty();
