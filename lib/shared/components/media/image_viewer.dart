@@ -62,6 +62,10 @@ class _ImageViewerState extends State<ImageViewer> with TickerProviderStateMixin
   
   // 每个页面的状态
   final Map<int, _ImagePageState> _pageStates = {};
+  
+  // 淡入淡出动画
+  double _opacity = 1.0;
+  bool _isTransitioning = false;
 
   @override
   void initState() {
@@ -85,6 +89,26 @@ class _ImageViewerState extends State<ImageViewer> with TickerProviderStateMixin
     });
   }
 
+  void _jumpToPage(int index) async {
+    if (_isTransitioning || index == _currentIndex) return;
+    _isTransitioning = true;
+    
+    // 淡出
+    setState(() => _opacity = 0.0);
+    await Future.delayed(const Duration(milliseconds: 150));
+    
+    if (!mounted) return;
+    
+    // 跳转
+    _pageController.jumpToPage(index);
+    
+    // 淡入
+    setState(() => _opacity = 1.0);
+    await Future.delayed(const Duration(milliseconds: 150));
+    
+    _isTransitioning = false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final imageCount = widget.imageUrls.length;
@@ -94,19 +118,23 @@ class _ImageViewerState extends State<ImageViewer> with TickerProviderStateMixin
       body: Stack(
         children: [
           // 图片区域 - PageView
-          PageView.builder(
-            controller: _pageController,
-            itemCount: imageCount,
-            onPageChanged: _onPageChanged,
-            itemBuilder: (context, index) {
-              return _ImagePage(
-                key: ValueKey(widget.imageUrls[index]),
-                imageUrl: widget.imageUrls[index],
-                cachedFile: widget.cachedFiles?[widget.imageUrls[index]],
-                onTap: () => Navigator.of(context).pop(),
-                onStateCreated: (state) => _pageStates[index] = state,
-              );
-            },
+          AnimatedOpacity(
+            opacity: _opacity,
+            duration: const Duration(milliseconds: 150),
+            child: PageView.builder(
+              controller: _pageController,
+              itemCount: imageCount,
+              onPageChanged: _onPageChanged,
+              itemBuilder: (context, index) {
+                return _ImagePage(
+                  key: ValueKey(widget.imageUrls[index]),
+                  imageUrl: widget.imageUrls[index],
+                  cachedFile: widget.cachedFiles?[widget.imageUrls[index]],
+                  onTap: () => Navigator.of(context).pop(),
+                  onStateCreated: (state) => _pageStates[index] = state,
+                );
+              },
+            ),
           ),
           // 顶部信息栏
           Positioned(
@@ -207,11 +235,7 @@ class _ImageViewerState extends State<ImageViewer> with TickerProviderStateMixin
                 children: List.generate(imageCount, (index) {
                   final isActive = _currentIndex == index;
                   return GestureDetector(
-                    onTap: () => _pageController.animateToPage(
-                      index,
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeOutCubic,
-                    ),
+                    onTap: () => _jumpToPage(index),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 4),
                       child: AnimatedContainer(
