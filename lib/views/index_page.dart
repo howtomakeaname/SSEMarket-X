@@ -359,6 +359,14 @@ class _IndexPageState extends State<IndexPage> {
             setState(() {
               _currentIndex = index;
             });
+            // 切换到首页时触发静默后台刷新
+            if (index == 0) {
+              _homePageKey.currentState?.silentRefresh();
+            }
+            // 切换到消息页时刷新通知未读数
+            if (index == 3) {
+              _fetchNoticeUnreadCount();
+            }
           },
         ),
       ),
