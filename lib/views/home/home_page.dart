@@ -136,6 +136,11 @@ class HomePageState extends State<HomePage> {
     await _fetchPosts(refresh: true);
   }
 
+  /// 静默后台刷新（不清空列表，检测新内容）
+  Future<void> silentRefresh() async {
+    await _fetchPosts(refresh: true, silent: true);
+  }
+
   /// 从本地缓存加载帖子列表
   Future<void> _loadCachedPosts() async {
     try {
