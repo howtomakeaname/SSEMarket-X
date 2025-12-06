@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sse_market_x/shared/components/transitions/page_transitions.dart';
 
 /// BuildContext 扩展，方便获取主题相关颜色
 extension AppColorsExtension on BuildContext {
@@ -114,7 +115,7 @@ class AppTheme {
     brightness: Brightness.light,
     primaryColor: AppColors.primary,
     scaffoldBackgroundColor: AppColors._lightBackground,
-    colorScheme: ColorScheme.light(
+    colorScheme: const ColorScheme.light(
       primary: AppColors.primary,
       secondary: AppColors.secondary,
       surface: AppColors._lightSurface,
@@ -127,6 +128,8 @@ class AppTheme {
     ),
     dividerColor: AppColors._lightDivider,
     cardColor: AppColors._lightSurface,
+    // 页面切换动画
+    pageTransitionsTheme: AppPageTransitionsTheme.theme,
     // 文字选择样式
     textSelectionTheme: TextSelectionThemeData(
       cursorColor: AppColors.primary,
@@ -139,7 +142,7 @@ class AppTheme {
     brightness: Brightness.dark,
     primaryColor: AppColors.primary,
     scaffoldBackgroundColor: AppColors._darkBackground,
-    colorScheme: ColorScheme.dark(
+    colorScheme: const ColorScheme.dark(
       primary: AppColors.primary,
       secondary: AppColors.secondary,
       surface: AppColors._darkSurface,
@@ -152,6 +155,8 @@ class AppTheme {
     ),
     dividerColor: AppColors._darkDivider,
     cardColor: AppColors._darkSurface,
+    // 页面切换动画
+    pageTransitionsTheme: AppPageTransitionsTheme.theme,
     // 文字选择样式
     textSelectionTheme: TextSelectionThemeData(
       cursorColor: AppColors.primary,
