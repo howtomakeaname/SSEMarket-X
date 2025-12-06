@@ -139,7 +139,7 @@ class _MyPageState extends State<MyPage> {
       child: Text(
         '我的',
         style: TextStyle(
-          fontSize: 20,
+          fontSize: 18,
           fontWeight: FontWeight.bold,
           color: context.textPrimaryColor,
         ),
