@@ -276,7 +276,7 @@ class _LoginFormState extends State<LoginForm> {
           foregroundColor: Colors.white,
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(12),
           ),
         ),
         child: _isLoading
@@ -402,22 +402,26 @@ class _LoginFormState extends State<LoginForm> {
           filled: true,
           fillColor: inputBgColor,
           prefixIcon: prefixIcon != null
-              ? Icon(
-                  prefixIcon,
-                  color: context.textTertiaryColor,
-                  size: 20,
+              ? Padding(
+                  padding: const EdgeInsets.only(left: 16, right: 12),
+                  child: Icon(
+                    prefixIcon,
+                    color: context.textTertiaryColor,
+                    size: 20,
+                  ),
                 )
               : null,
+          prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide.none,
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide.none,
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(
               color: AppColors.primary,
               width: 1.5,
@@ -452,21 +456,25 @@ class _LoginFormState extends State<LoginForm> {
           ),
           filled: true,
           fillColor: inputBgColor,
-          prefixIcon: Icon(
-            Icons.lock_outline,
-            color: context.textTertiaryColor,
-            size: 20,
+          prefixIcon: Padding(
+            padding: const EdgeInsets.only(left: 16, right: 12),
+            child: Icon(
+              Icons.lock_outline,
+              color: context.textTertiaryColor,
+              size: 20,
+            ),
           ),
+          prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide.none,
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide.none,
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(
               color: AppColors.primary,
               width: 1.5,
@@ -536,7 +544,7 @@ class _LoginFormState extends State<LoginForm> {
               foregroundColor: AppColors.primary,
               side: const BorderSide(color: AppColors.primary),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
             child: const Text(
