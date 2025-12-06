@@ -26,7 +26,8 @@ class NoticePage extends StatefulWidget {
   State<NoticePage> createState() => _NoticePageState();
 }
 
-class _NoticePageState extends State<NoticePage> {
+class _NoticePageState extends State<NoticePage>
+    with AutomaticKeepAliveClientMixin {
   final PageController _pageController = PageController();
   int _currentIndex = 0;
   List<Notice> _unreadNotices = [];
@@ -34,6 +35,9 @@ class _NoticePageState extends State<NoticePage> {
   bool _isLoading = true;
   int _chatUnreadCount = 0;
   StreamSubscription<int>? _chatUnreadSubscription;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -104,6 +108,7 @@ class _NoticePageState extends State<NoticePage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // 必须调用 super.build
     return Scaffold(
       backgroundColor: context.backgroundColor,
       appBar: AppBar(

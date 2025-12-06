@@ -222,7 +222,16 @@ class _IndexPageState extends State<IndexPage> {
     return Scaffold(
       backgroundColor: context.surfaceColor,
       body: SafeArea(
-        child: _buildBodyForTab(_getMobileTabIndex(_currentIndex), isDesktop: false, isThreeColumn: false),
+        child: IndexedStack(
+          index: _currentIndex,
+          children: [
+            _buildBodyForTab(0, isDesktop: false, isThreeColumn: false), // 首页
+            _buildBodyForTab(2, isDesktop: false, isThreeColumn: false), // 打分
+            _buildBodyForTab(3, isDesktop: false, isThreeColumn: false), // 闲置
+            _buildBodyForTab(4, isDesktop: false, isThreeColumn: false), // 消息
+            _buildBodyForTab(6, isDesktop: false, isThreeColumn: false), // 我的
+          ],
+        ),
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(

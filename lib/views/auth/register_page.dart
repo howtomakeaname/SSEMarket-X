@@ -341,6 +341,8 @@ class _RegisterPageState extends State<RegisterPage> {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               disabledBackgroundColor: AppColors.primary.withOpacity(0.4),
+              disabledForegroundColor: Colors.white.withOpacity(0.6),
+              foregroundColor: Colors.white,
               elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -348,7 +350,7 @@ class _RegisterPageState extends State<RegisterPage> {
             ),
             child: const Text(
               '发送验证码',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.white),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
           ),
         ),
@@ -442,6 +444,8 @@ class _RegisterPageState extends State<RegisterPage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     disabledBackgroundColor: AppColors.primary.withOpacity(0.4),
+              disabledForegroundColor: Colors.white.withOpacity(0.6),
+              foregroundColor: Colors.white,
               elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -449,7 +453,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                   child: const Text(
                     '继续',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.white),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                   ),
                 ),
               ),
@@ -524,6 +528,8 @@ class _RegisterPageState extends State<RegisterPage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     disabledBackgroundColor: AppColors.primary.withOpacity(0.4),
+              disabledForegroundColor: Colors.white.withOpacity(0.6),
+              foregroundColor: Colors.white,
               elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -531,7 +537,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                   child: const Text(
                     '注册',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.white),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                   ),
                 ),
               ),
