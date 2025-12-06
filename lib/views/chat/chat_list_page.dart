@@ -270,22 +270,21 @@ class _ChatListPageState extends State<ChatListPage>
                     // 未读红点
                     if (hasUnread)
                       Positioned(
-                        right: -2,
-                        top: -2,
+                        right: -6,
+                        top: -4,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                           decoration: BoxDecoration(
                             color: AppColors.error,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: context.surfaceColor, width: 1.5),
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                          constraints: const BoxConstraints(minWidth: 18, minHeight: 16),
+                          constraints: const BoxConstraints(minWidth: 16, minHeight: 14),
                           child: Center(
                             child: Text(
                               contact.unreadCount > 99 ? '99+' : '${contact.unreadCount}',
                               style: const TextStyle(
                                 color: Colors.white,
-                                fontSize: 10,
+                                fontSize: 9,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),

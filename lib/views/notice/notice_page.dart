@@ -234,14 +234,13 @@ class _NoticePageState extends State<NoticePage>
           ),
           if (badgeCount > 0)
             Positioned(
-              right: -4,
+              right: -6,
               top: -4,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFF4D4D),
+                  color: AppColors.error,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: context.surfaceColor, width: 1),
                 ),
                 constraints: const BoxConstraints(minWidth: 16, minHeight: 14),
                 child: Center(
