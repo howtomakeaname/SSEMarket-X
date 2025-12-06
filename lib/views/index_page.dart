@@ -21,6 +21,7 @@ import 'package:sse_market_x/views/chat/chat_detail_page.dart';
 import 'package:sse_market_x/core/models/user_model.dart';
 
 import 'package:sse_market_x/views/post/score_post_detail_page.dart';
+import 'package:sse_market_x/core/services/notice_service.dart';
 
 // Detail panel content types
 enum DetailContentType { 
@@ -75,6 +76,7 @@ class _IndexPageState extends State<IndexPage> {
   int _unreadCount = 0;
   int _noticeUnreadCount = 0;
   StreamSubscription<int>? _unreadSubscription;
+  StreamSubscription<int>? _noticeUnreadSubscription;
 
   // Keys for nested navigators to maintain state per tab
   final Map<int, GlobalKey<NavigatorState>> _navigatorKeys = {
@@ -107,6 +109,7 @@ class _IndexPageState extends State<IndexPage> {
   @override
   void dispose() {
     _unreadSubscription?.cancel();
+    _noticeUnreadSubscription?.cancel();
     super.dispose();
   }
 
@@ -143,6 +146,19 @@ class _IndexPageState extends State<IndexPage> {
   Future<void> _fetchNoticeUnreadCount() async {
     try {
       final noticeNum = await widget.apiService.getNoticeNum();
+      final noticeService = NoticeService();
+      noticeService.updateUnreadCount(noticeNum.unreadTotalNum);
+      
+      // 监听通知未读数变化
+      _noticeUnreadSubscription?.cancel();
+      _noticeUnreadSubscription = noticeService.unreadCount.listen((count) {
+        if (mounted) {
+          setState(() {
+            _noticeUnreadCount = count;
+          });
+        }
+      });
+      
       if (mounted) {
         setState(() {
           _noticeUnreadCount = noticeNum.unreadTotalNum;

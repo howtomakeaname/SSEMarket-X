@@ -9,6 +9,7 @@ import 'package:sse_market_x/shared/theme/app_colors.dart';
 import 'package:sse_market_x/views/chat/chat_list_page.dart';
 import 'package:sse_market_x/views/chat/chat_detail_page.dart';
 import 'package:sse_market_x/core/services/websocket_service.dart';
+import 'package:sse_market_x/core/services/notice_service.dart';
 import 'package:sse_market_x/core/models/user_model.dart';
 import 'dart:async';
 
@@ -77,6 +78,9 @@ class _NoticePageState extends State<NoticePage>
       _readNotices.insertAll(0, noticesToMark);
       _unreadNotices.clear();
     });
+
+    // 更新 NoticeService 中的未读数
+    NoticeService().clearUnreadCount();
 
     try {
       await Future.wait(noticesToMark.map((n) => widget.apiService.readNotice(n.noticeId)));
@@ -353,13 +357,19 @@ class _NoticePageState extends State<NoticePage>
                             children: [
                               _buildActionButton('标记已读', () async {
                                 final success = await widget.apiService.readNotice(notice.noticeId);
-                                if (success) _loadNotices(refresh: true);
+                                if (success) {
+                                  // 更新 NoticeService 中的未读数
+                                  NoticeService().decreaseUnreadCount();
+                                  _loadNotices(refresh: true);
+                                }
                               }),
                               if (notice.postId > 0) const SizedBox(width: 8),
                               if (notice.postId > 0)
                                 _buildActionButton('查看原帖', () async {
                                   // 先标记已读
                                   await widget.apiService.readNotice(notice.noticeId);
+                                  // 更新 NoticeService 中的未读数
+                                  NoticeService().decreaseUnreadCount();
                                   if (!mounted) return;
                                   // 刷新列表（因为这条消息已读了）
                                   _loadNotices(refresh: true);

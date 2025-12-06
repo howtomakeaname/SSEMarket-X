@@ -9,6 +9,7 @@ import 'package:sse_market_x/core/utils/level_utils.dart';
 import 'package:sse_market_x/core/services/media_cache_service.dart';
 import 'package:sse_market_x/shared/components/media/cached_image.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
+import 'package:sse_market_x/core/services/notice_service.dart';
 
 class SideMenu extends StatefulWidget {
   final int selectedIndex;
@@ -32,6 +33,7 @@ class _SideMenuState extends State<SideMenu> {
   int _unreadCount = 0;
   int _noticeUnreadCount = 0;
   StreamSubscription<int>? _unreadSubscription;
+  StreamSubscription<int>? _noticeUnreadSubscription;
 
   @override
   void initState() {
@@ -43,6 +45,19 @@ class _SideMenuState extends State<SideMenu> {
   Future<void> _fetchNoticeUnreadCount() async {
     try {
       final noticeNum = await widget.apiService.getNoticeNum();
+      final noticeService = NoticeService();
+      noticeService.updateUnreadCount(noticeNum.unreadTotalNum);
+      
+      // 监听通知未读数变化
+      _noticeUnreadSubscription?.cancel();
+      _noticeUnreadSubscription = noticeService.unreadCount.listen((count) {
+        if (mounted) {
+          setState(() {
+            _noticeUnreadCount = count;
+          });
+        }
+      });
+      
       if (mounted) {
         setState(() {
           _noticeUnreadCount = noticeNum.unreadTotalNum;
@@ -73,6 +88,7 @@ class _SideMenuState extends State<SideMenu> {
   @override
   void dispose() {
     _unreadSubscription?.cancel();
+    _noticeUnreadSubscription?.cancel();
     super.dispose();
   }
 
