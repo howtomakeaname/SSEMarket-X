@@ -301,6 +301,11 @@ class _LoginFormState extends State<LoginForm> {
     String? hintText,
     TextInputType? keyboardType,
   }) {
+    // 登录页面背景是白色，输入框使用浅灰色背景以区分
+    final inputBgColor = context.isDark
+        ? context.inputFillColor
+        : context.backgroundColor;
+
     return SizedBox(
       height: 50,
       child: TextField(
@@ -312,7 +317,7 @@ class _LoginFormState extends State<LoginForm> {
           hintText: hintText,
           hintStyle: TextStyle(color: context.textTertiaryColor),
           filled: true,
-          fillColor: context.inputFillColor,
+          fillColor: inputBgColor,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
           contentPadding: const EdgeInsets.symmetric(horizontal: 16),
         ),
@@ -321,6 +326,11 @@ class _LoginFormState extends State<LoginForm> {
   }
 
   Widget _buildPasswordField() {
+    // 登录页面背景是白色，输入框使用浅灰色背景以区分
+    final inputBgColor = context.isDark
+        ? context.inputFillColor
+        : context.backgroundColor;
+
     return SizedBox(
       height: 50,
       child: TextField(
@@ -332,7 +342,7 @@ class _LoginFormState extends State<LoginForm> {
           hintText: '请输入密码',
           hintStyle: TextStyle(color: context.textTertiaryColor),
           filled: true,
-          fillColor: context.inputFillColor,
+          fillColor: inputBgColor,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
           contentPadding: const EdgeInsets.symmetric(horizontal: 16),
           suffixIcon: Padding(
