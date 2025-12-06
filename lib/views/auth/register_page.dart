@@ -343,7 +343,7 @@ class _RegisterPageState extends State<RegisterPage> {
               disabledBackgroundColor: AppColors.primary.withOpacity(0.4),
               elevation: 0,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
             child: const Text(
@@ -423,7 +423,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     foregroundColor: AppColors.primary,
                     side: const BorderSide(color: AppColors.primary),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                   child: const Text(
@@ -444,7 +444,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     disabledBackgroundColor: AppColors.primary.withOpacity(0.4),
               elevation: 0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                   child: const Text(
@@ -501,7 +501,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     foregroundColor: AppColors.primary,
                     side: const BorderSide(color: AppColors.primary),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                   child: const Text(
@@ -526,7 +526,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     disabledBackgroundColor: AppColors.primary.withOpacity(0.4),
               elevation: 0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                   child: const Text(
@@ -571,19 +571,23 @@ class _RegisterPageState extends State<RegisterPage> {
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: TextStyle(color: context.textTertiaryColor, fontSize: 15),
-              prefixIcon: Icon(icon, color: context.textTertiaryColor, size: 20),
+              prefixIcon: Padding(
+                padding: const EdgeInsets.only(left: 16, right: 12),
+                child: Icon(icon, color: context.textTertiaryColor, size: 20),
+              ),
+              prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
               filled: true,
               fillColor: context.inputFillColor,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(12),
                 borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
               ),
               contentPadding: const EdgeInsets.symmetric(horizontal: 16),
