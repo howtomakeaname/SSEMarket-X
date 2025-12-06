@@ -121,7 +121,7 @@ class _NoticePageState extends State<NoticePage>
         title: Text(
           '消息',
           style: TextStyle(
-            fontSize: 20,
+            fontSize: 18,
             fontWeight: FontWeight.bold,
             color: context.textPrimaryColor,
           ),
