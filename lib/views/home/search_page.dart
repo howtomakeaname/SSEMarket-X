@@ -9,6 +9,7 @@ import 'package:sse_market_x/shared/components/loading/loading_indicator.dart';
 import 'package:sse_market_x/shared/components/cards/post_card.dart';
 import 'package:sse_market_x/shared/components/overlays/custom_dialog.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
+import 'package:sse_market_x/views/profile/user_profile_page.dart';
 
 /// 搜索页面
 class SearchPage extends StatefulWidget {
@@ -371,6 +372,17 @@ class _SearchPageState extends State<SearchPage> {
         final post = _posts[index];
         return PostCard(
           post: post,
+          onAvatarTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => UserProfilePage(
+                  apiService: widget.apiService,
+                  userId: 0,
+                  userPhone: post.authorPhone,
+                ),
+              ),
+            );
+          },
           onTap: () async {
             final result =
                 await Navigator.of(context).push<Map<String, dynamic>?>(

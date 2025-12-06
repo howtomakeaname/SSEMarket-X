@@ -12,6 +12,7 @@ import 'package:sse_market_x/shared/components/loading/loading_indicator.dart';
 import 'package:sse_market_x/shared/components/loading/skeleton_loader.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 import 'package:sse_market_x/views/post/post_detail_page.dart';
+import 'package:sse_market_x/views/profile/user_profile_page.dart';
 
 /// 教师分区页面
 class TeacherPage extends StatefulWidget {
@@ -345,6 +346,17 @@ class _TeacherPageState extends State<TeacherPage>
             final post = _posts[index];
             return PostCard(
               post: post,
+              onAvatarTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => UserProfilePage(
+                      apiService: widget.apiService,
+                      userId: 0,
+                      userPhone: post.authorPhone,
+                    ),
+                  ),
+                );
+              },
               onTap: () => _navigateToPostDetail(post),
               onLikeTap: () async {
                 return await widget.apiService.likePost(post.id, _user.phone);

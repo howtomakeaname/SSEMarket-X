@@ -15,6 +15,7 @@ class PostCard extends StatefulWidget {
   final bool hidePartition;
   final Widget? topWidget;
   final VoidCallback? onTap;
+  final VoidCallback? onAvatarTap;
   final Future<bool> Function()? onLikeTap;
 
   const PostCard({
@@ -26,6 +27,7 @@ class PostCard extends StatefulWidget {
     this.hidePartition = false,
     this.topWidget,
     this.onTap,
+    this.onAvatarTap,
     this.onLikeTap,
   });
 
@@ -229,31 +231,32 @@ class _PostCardState extends State<PostCard> {
   }
 
   Widget _buildAvatarWithIdentity() {
-    return SizedBox(
-      width: 40,
-      height: 40,
-      child: Stack(
-        children: [
-          _buildAvatar(),
-          // 身份标识
-          if (widget.post.userIdentity == 'teacher' || widget.post.userIdentity == 'organization')
-            Positioned(
-              right: 0,
-              bottom: 0,
-              child: Container(
-                width: 14,
-                height: 14,
-                padding: const EdgeInsets.all(2),
-                decoration: BoxDecoration(
-                  color: LevelUtils.getIdentityBackgroundColor(widget.post.userIdentity),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 1),
+    return GestureDetector(
+      onTap: widget.onAvatarTap,
+      child: SizedBox(
+        width: 40,
+        height: 40,
+        child: Stack(
+          children: [
+            _buildAvatar(),
+            // 身份标识
+            if (widget.post.userIdentity == 'teacher' || widget.post.userIdentity == 'organization')
+              Positioned(
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  width: 14,
+                  height: 14,
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: LevelUtils.getIdentityBackgroundColor(widget.post.userIdentity),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 1),
+                  ),
                 ),
-                // TODO: 添加身份图标，暂时用颜色区分
-                // child: SvgPicture.asset(...)
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -340,31 +343,36 @@ class _PostCardState extends State<PostCard> {
   }
 
   Widget _buildActionBar() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly, // 均匀分布
-      children: [
-        // 浏览量
-        _buildMetaItem(
-          'assets/icons/ic_view.svg',
-          widget.post.viewCount,
-        ),
-        
-        // 评论量
-        _buildMetaItem(
-          'assets/icons/ic_comment.svg',
-          widget.post.commentCount,
-        ),
-        
-        // 点赞量 - 使用本地状态实现乐观更新
-        GestureDetector(
-          onTap: _handleLikeTap,
-          child: _buildMetaItem(
-            _isLiked ? 'assets/icons/ic_like_filled.svg' : 'assets/icons/ic_like.svg',
-            _likeCount,
-            color: _isLiked ? Colors.red : context.textSecondaryColor,
+    // 使用 GestureDetector 包裹整个工具栏，阻止点击事件冒泡到卡片
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {}, // 空回调，阻止事件冒泡
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly, // 均匀分布
+        children: [
+          // 浏览量
+          _buildMetaItem(
+            'assets/icons/ic_view.svg',
+            widget.post.viewCount,
           ),
-        ),
-      ],
+          
+          // 评论量
+          _buildMetaItem(
+            'assets/icons/ic_comment.svg',
+            widget.post.commentCount,
+          ),
+          
+          // 点赞量 - 使用本地状态实现乐观更新
+          GestureDetector(
+            onTap: _handleLikeTap,
+            child: _buildMetaItem(
+              _isLiked ? 'assets/icons/ic_like_filled.svg' : 'assets/icons/ic_like.svg',
+              _likeCount,
+              color: _isLiked ? Colors.red : context.textSecondaryColor,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
