@@ -16,6 +16,7 @@ import 'package:sse_market_x/shared/components/loading/loading_indicator.dart';
 import 'package:sse_market_x/shared/components/loading/skeleton_loader.dart';
 import 'package:sse_market_x/shared/components/cards/post_card.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
+import 'package:sse_market_x/views/profile/user_profile_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({
@@ -423,6 +424,17 @@ class HomePageState extends State<HomePage> {
                 return PostCard(
                   post: post,
                   isDense: isDense,
+                  onAvatarTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => UserProfilePage(
+                          apiService: widget.apiService,
+                          userId: 0,
+                          userPhone: post.authorPhone,
+                        ),
+                      ),
+                    );
+                  },
                   onTap: () async {
                       // 添加到浏览历史（在点击时记录）
                       final postWithPartition = PostModel(
