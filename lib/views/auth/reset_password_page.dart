@@ -372,13 +372,14 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               disabledBackgroundColor: AppColors.primary.withOpacity(0.4),
+              elevation: 0,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(10),
               ),
             ),
             child: const Text(
               '发送验证码',
-              style: TextStyle(fontSize: 16, color: Colors.white),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.white),
             ),
           ),
         ),
@@ -449,7 +450,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                     foregroundColor: AppColors.primary,
                     side: const BorderSide(color: AppColors.primary),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                   child: const Text(
@@ -468,13 +469,14 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     disabledBackgroundColor: AppColors.primary.withOpacity(0.4),
+              elevation: 0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                   child: const Text(
                     '继续',
-                    style: TextStyle(fontSize: 16, color: Colors.white),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.white),
                   ),
                 ),
               ),
@@ -532,7 +534,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                     foregroundColor: AppColors.primary,
                     side: const BorderSide(color: AppColors.primary),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                   child: const Text(
@@ -554,13 +556,14 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     disabledBackgroundColor: AppColors.primary.withOpacity(0.4),
+              elevation: 0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                   child: const Text(
                     '重置密码',
-                    style: TextStyle(fontSize: 16, color: Colors.white),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.white),
                   ),
                 ),
               ),
@@ -591,27 +594,34 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
           ),
         ),
         const SizedBox(height: 8),
-        TextField(
-          controller: controller,
-          obscureText: obscureText,
-          readOnly: readOnly,
-          onChanged: (_) => setState(() {}),
-          style: TextStyle(color: context.textPrimaryColor),
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: TextStyle(color: context.textTertiaryColor),
-            prefixIcon: Padding(
-              padding: const EdgeInsets.only(left: 12, right: 8),
-              child: Icon(icon, color: context.textSecondaryColor),
+        SizedBox(
+          height: 50,
+          child: TextField(
+            controller: controller,
+            obscureText: obscureText,
+            readOnly: readOnly,
+            onChanged: (_) => setState(() {}),
+            style: TextStyle(color: context.textPrimaryColor, fontSize: 15),
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: TextStyle(color: context.textTertiaryColor, fontSize: 15),
+              prefixIcon: Icon(icon, color: context.textTertiaryColor, size: 20),
+              filled: true,
+              fillColor: context.inputFillColor,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16),
             ),
-            prefixIconConstraints: const BoxConstraints(minWidth: 48),
-            filled: true,
-            fillColor: context.inputFillColor,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide.none,
-            ),
-            contentPadding: const EdgeInsets.symmetric(vertical: 12),
           ),
         ),
       ],
@@ -637,36 +647,41 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
           ),
         ),
         const SizedBox(height: 8),
-        TextField(
-          controller: controller,
-          obscureText: obscureText,
-          onChanged: (_) => setState(() {}),
-          style: TextStyle(color: context.textPrimaryColor),
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: TextStyle(color: context.textTertiaryColor),
-            prefixIcon: Padding(
-              padding: const EdgeInsets.only(left: 12, right: 8),
-              child: Icon(Icons.lock_outline, color: context.textSecondaryColor),
-            ),
-            prefixIconConstraints: const BoxConstraints(minWidth: 48),
-            suffixIcon: Padding(
-              padding: const EdgeInsets.only(right: 4),
-              child: IconButton(
+        SizedBox(
+          height: 50,
+          child: TextField(
+            controller: controller,
+            obscureText: obscureText,
+            onChanged: (_) => setState(() {}),
+            style: TextStyle(color: context.textPrimaryColor, fontSize: 15),
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: TextStyle(color: context.textTertiaryColor, fontSize: 15),
+              prefixIcon: Icon(Icons.lock_outline, color: context.textTertiaryColor, size: 20),
+              suffixIcon: IconButton(
                 icon: Icon(
-                  obscureText ? Icons.visibility_off : Icons.visibility,
-                  color: context.textSecondaryColor,
+                  obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                  color: context.textTertiaryColor,
+                  size: 20,
                 ),
                 onPressed: onToggleObscure,
               ),
+              filled: true,
+              fillColor: context.inputFillColor,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16),
             ),
-            filled: true,
-            fillColor: context.inputFillColor,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide.none,
-            ),
-            contentPadding: const EdgeInsets.symmetric(vertical: 12),
           ),
         ),
       ],
