@@ -23,10 +23,15 @@ class ChatListPage extends StatefulWidget {
   State<ChatListPage> createState() => _ChatListPageState();
 }
 
-class _ChatListPageState extends State<ChatListPage> {
+class _ChatListPageState extends State<ChatListPage>
+    with AutomaticKeepAliveClientMixin {
   bool _isLoading = true;
+  bool _hasLoadedOnce = false;
   final List<ChatContact> _contacts = [];
   StreamSubscription<List<ChatContact>>? _contactsSubscription;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -48,24 +53,32 @@ class _ChatListPageState extends State<ChatListPage> {
       }
 
       // 使用已有的联系人数据
-      if (ws.currentContacts.isNotEmpty) {
+      if (ws.currentContacts.isNotEmpty && !_hasLoadedOnce) {
         _contacts.clear();
         _contacts.addAll(ws.currentContacts);
         _loadLatestMessages();
+      } else if (_hasLoadedOnce) {
+        // 已经加载过，只更新数据不重新排序
+        _updateContactsWithoutReorder(ws.currentContacts);
       }
 
       // 监听联系人更新
       _contactsSubscription = ws.contacts.listen((contacts) {
         if (mounted) {
-          _contacts.clear();
-          _contacts.addAll(contacts);
-          _loadLatestMessages();
+          if (!_hasLoadedOnce) {
+            _contacts.clear();
+            _contacts.addAll(contacts);
+            _loadLatestMessages();
+          } else {
+            // 已经加载过，只更新数据不重新排序
+            _updateContactsWithoutReorder(contacts);
+          }
         }
       });
     } catch (e) {
       debugPrint('ChatListPage WebSocket init error: $e');
     }
-    
+
     // Fallback: if no contacts after some time, show empty or stop loading
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted && _isLoading) {
@@ -74,6 +87,27 @@ class _ChatListPageState extends State<ChatListPage> {
         });
       }
     });
+  }
+
+  /// 更新联系人数据但不重新排序
+  void _updateContactsWithoutReorder(List<ChatContact> newContacts) {
+    // 更新现有联系人的数据（未读数等）
+    for (final newContact in newContacts) {
+      final index = _contacts.indexWhere((c) => c.userId == newContact.userId);
+      if (index != -1) {
+        _contacts[index].unreadCount = newContact.unreadCount;
+        _contacts[index].lastMessage = newContact.lastMessage ?? _contacts[index].lastMessage;
+        if (newContact.lastMessageTime != null) {
+          _contacts[index].lastMessageTime = newContact.lastMessageTime;
+        }
+      } else {
+        // 新联系人，添加到列表开头
+        _contacts.insert(0, newContact);
+      }
+    }
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   /// 为每个联系人加载最新消息
@@ -105,13 +139,16 @@ class _ChatListPageState extends State<ChatListPage> {
       }
     }));
 
-    // 按最新消息时间排序（最新的在前）
-    _contacts.sort((a, b) {
-      if (a.lastMessageTime == null && b.lastMessageTime == null) return 0;
-      if (a.lastMessageTime == null) return 1;
-      if (b.lastMessageTime == null) return -1;
-      return b.lastMessageTime!.compareTo(a.lastMessageTime!);
-    });
+    // 只在首次加载时排序
+    if (!_hasLoadedOnce) {
+      _contacts.sort((a, b) {
+        if (a.lastMessageTime == null && b.lastMessageTime == null) return 0;
+        if (a.lastMessageTime == null) return 1;
+        if (b.lastMessageTime == null) return -1;
+        return b.lastMessageTime!.compareTo(a.lastMessageTime!);
+      });
+      _hasLoadedOnce = true;
+    }
 
     if (mounted) {
       setState(() => _isLoading = false);
@@ -158,6 +195,7 @@ class _ChatListPageState extends State<ChatListPage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // 必须调用 super.build
     // 直接显示内容，不显示 loading 状态
     // 如果正在加载且没有联系人，显示空状态
     return _contacts.isEmpty

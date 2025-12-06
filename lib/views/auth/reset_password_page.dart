@@ -372,6 +372,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               disabledBackgroundColor: AppColors.primary.withOpacity(0.4),
+              disabledForegroundColor: Colors.white.withOpacity(0.6),
+              foregroundColor: Colors.white,
               elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -379,7 +381,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
             ),
             child: const Text(
               '发送验证码',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.white),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
           ),
         ),
@@ -469,6 +471,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     disabledBackgroundColor: AppColors.primary.withOpacity(0.4),
+              disabledForegroundColor: Colors.white.withOpacity(0.6),
+              foregroundColor: Colors.white,
               elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -476,7 +480,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   ),
                   child: const Text(
                     '继续',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.white),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                   ),
                 ),
               ),
@@ -556,6 +560,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     disabledBackgroundColor: AppColors.primary.withOpacity(0.4),
+              disabledForegroundColor: Colors.white.withOpacity(0.6),
+              foregroundColor: Colors.white,
               elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -563,7 +569,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   ),
                   child: const Text(
                     '重置密码',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.white),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                   ),
                 ),
               ),
@@ -666,14 +672,18 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                 child: Icon(Icons.lock_outline, color: context.textTertiaryColor, size: 20),
               ),
               prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
-              suffixIcon: IconButton(
-                icon: Icon(
-                  obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                  color: context.textTertiaryColor,
-                  size: 20,
+              suffixIcon: Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: IconButton(
+                  icon: Icon(
+                    obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                    color: context.textTertiaryColor,
+                    size: 20,
+                  ),
+                  onPressed: onToggleObscure,
                 ),
-                onPressed: onToggleObscure,
               ),
+              suffixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
               filled: true,
               fillColor: context.inputFillColor,
               border: OutlineInputBorder(
