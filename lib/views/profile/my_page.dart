@@ -276,11 +276,12 @@ class _MyPageState extends State<MyPage> {
           const SizedBox(height: 4),
           Text(
             intro,
-            maxLines: 2,
+            maxLines: 3,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 12,
               color: context.textSecondaryColor,
+              height: 1.4,
             ),
           ),
         ],
