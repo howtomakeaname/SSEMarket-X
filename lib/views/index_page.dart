@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/post_model.dart';
+import 'package:sse_market_x/core/models/user_model.dart';
 import 'package:sse_market_x/core/services/storage_service.dart';
 import 'package:sse_market_x/core/services/websocket_service.dart';
 import 'package:sse_market_x/views/post/create_post_page.dart';
@@ -12,13 +13,13 @@ import 'package:sse_market_x/views/notice/notice_page.dart';
 import 'package:sse_market_x/views/post/post_detail_page.dart';
 import 'package:sse_market_x/views/shop/product_detail_page.dart';
 import 'package:sse_market_x/views/todo/score_page.dart';
+import 'package:sse_market_x/shared/components/cards/post_preview_card.dart';
 import 'package:sse_market_x/shared/components/layout/layout_config.dart';
 import 'package:sse_market_x/shared/components/layout/side_menu.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 import 'package:sse_market_x/views/shop/shop_page.dart';
 // import 'package:sse_market_x/views/chat/chat_list_page.dart'; // Removed
 import 'package:sse_market_x/views/chat/chat_detail_page.dart';
-import 'package:sse_market_x/core/models/user_model.dart';
 
 import 'package:sse_market_x/views/post/score_post_detail_page.dart';
 import 'package:sse_market_x/core/services/notice_service.dart';
@@ -66,10 +67,9 @@ class _IndexPageState extends State<IndexPage> {
   UserModel? _selectedChatUser; // Track selected user for chat detail
   
   DetailContentType _detailContentType = DetailContentType.placeholder;
-  Map<String, dynamic> _previewData = {}; // Data for preview content
   
-  // Preview state
-  final ValueNotifier<PostModel?> _previewPostNotifier = ValueNotifier(null);
+  // Preview state - 使用 ValueNotifier 实现实时更新
+  final ValueNotifier<Map<String, dynamic>> _previewDataNotifier = ValueNotifier({});
   bool _isShowingPreview = false;
   
   // 未读消息数（用于移动端底部 tab 小红点）
@@ -560,7 +560,8 @@ class _IndexPageState extends State<IndexPage> {
           initialPost: _selectedPost,
         );
       case DetailContentType.postPreview:
-        return _buildPostPreview();
+        // 预览现在通过 navigator push 方式显示，这里返回 placeholder
+        return _buildPlaceholderContent();
       case DetailContentType.productDetail:
         return _buildProductDetail();
       case DetailContentType.chatDetail:
@@ -628,43 +629,6 @@ class _IndexPageState extends State<IndexPage> {
     );
   }
 
-  Widget _buildPostPreview() {
-    final title = _previewData['title'] as String? ?? '';
-    final content = _previewData['content'] as String? ?? '';
-    final user = StorageService().user;
-    
-    if (user == null) {
-      return _buildPlaceholderContent();
-    }
-    
-    // Create a preview post model using current user data
-    final previewPost = PostModel(
-      id: -1, // Special ID for preview
-      title: title,
-      content: content,
-      partition: '预览',
-      authorName: user.name,
-      authorAvatar: user.avatar,
-      authorPhone: user.phone,
-      createdAt: DateTime.now().toString(),
-      likeCount: 0,
-      commentCount: 0,
-      saveCount: 0,
-      viewCount: 0,
-      userScore: user.score,
-      userIdentity: user.identity,
-      isLiked: false,
-      isSaved: false,
-    );
-    
-    return PostDetailPage(
-      postId: -1,
-      apiService: widget.apiService,
-      isEmbedded: true,
-      previewPost: previewPost,
-    );
-  }
-
   Widget _buildProductDetail() {
     final productId = _currentDetailProductId;
     if (productId == null) {
@@ -721,51 +685,57 @@ class _IndexPageState extends State<IndexPage> {
     final user = StorageService().user;
     if (user == null) return;
 
-    // Update preview data for potential rebuilds
-    _previewData['title'] = title;
-    _previewData['content'] = content;
-
-    final previewPost = PostModel(
-      id: -1, // Special ID for preview
-      title: title,
-      content: content,
-      partition: '预览',
-      authorName: user.name,
-      authorAvatar: user.avatar,
-      authorPhone: user.phone,
-      createdAt: DateTime.now().toString(),
-      likeCount: 0,
-      commentCount: 0,
-      saveCount: 0,
-      viewCount: 0,
-      userScore: user.score,
-      userIdentity: user.identity,
-      isLiked: false,
-      isSaved: false,
-    );
-
-    _previewPostNotifier.value = previewPost;
+    // 更新预览数据，触发 ValueNotifier 通知
+    _previewDataNotifier.value = {
+      'title': title,
+      'content': content,
+      'user': user,
+    };
 
     if (!_isShowingPreview) {
       _isShowingPreview = true;
       // Push preview page wrapper to navigator
       _detailNavigatorKey.currentState?.push(
         MaterialPageRoute(
-          builder: (_) => ValueListenableBuilder<PostModel?>(
-            valueListenable: _previewPostNotifier,
-            builder: (context, post, child) {
-              if (post == null) return _buildPlaceholderContent();
-              return PostDetailPage(
-                postId: -1,
-                apiService: widget.apiService,
-                isEmbedded: true,
-                previewPost: post,
-              );
-            },
-          ),
+          builder: (_) => _buildPostPreviewPage(),
         ),
       );
     }
+  }
+
+  /// 构建帖子预览页面（使用 PostPreviewCard 组件）
+  Widget _buildPostPreviewPage() {
+    return Scaffold(
+      backgroundColor: context.backgroundColor,
+      appBar: AppBar(
+        backgroundColor: context.surfaceColor,
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        centerTitle: false,
+        title: Text(
+          '预览',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: context.textPrimaryColor,
+          ),
+        ),
+      ),
+      body: SingleChildScrollView(
+        child: ValueListenableBuilder<Map<String, dynamic>>(
+          valueListenable: _previewDataNotifier,
+          builder: (context, data, child) {
+            final user = data['user'] as UserModel?;
+            if (user == null) return _buildPlaceholderContent();
+            return PostPreviewCard(
+              title: data['title'] ?? '',
+              content: data['content'] ?? '',
+              user: user,
+            );
+          },
+        ),
+      ),
+    );
   }
 
   void _updateProductDetail(int productId) {

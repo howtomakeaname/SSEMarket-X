@@ -1,16 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/user_model.dart';
-import 'package:sse_market_x/core/services/media_cache_service.dart';
-import 'package:sse_market_x/core/utils/level_utils.dart';
 import 'package:sse_market_x/views/post/markdown_help_page.dart';
+import 'package:sse_market_x/shared/components/cards/post_preview_card.dart';
 import 'package:sse_market_x/shared/components/markdown/latex_markdown.dart';
-import 'package:sse_market_x/shared/components/media/cached_image.dart';
 import 'package:sse_market_x/shared/components/media/image_editor.dart';
 import 'package:sse_market_x/shared/components/utils/snackbar_helper.dart';
 import 'package:sse_market_x/shared/components/inputs/toolbar_icon_button.dart';
@@ -764,144 +761,10 @@ class _CreatePostPageState extends State<CreatePostPage> {
 
   /// 完整预览（类似帖子详情页的效果）
   Widget _buildFullPreview() {
-    final title = _titleController.text.trim();
-    final content = _contentController.text.trim();
-    
-    return Container(
-      color: context.surfaceColor,
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 用户信息
-          _buildPreviewUserInfo(),
-          const SizedBox(height: 16),
-          // 标题
-          if (title.isNotEmpty)
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: context.textPrimaryColor,
-                height: 1.3,
-              ),
-            ),
-          if (title.isNotEmpty) const SizedBox(height: 12),
-          // 内容
-          if (content.isEmpty)
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 48),
-                child: Text(
-                  '暂无内容预览',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: context.textSecondaryColor,
-                  ),
-                ),
-              ),
-            )
-          else
-            LatexMarkdown(data: content),
-        ],
-      ),
-    );
-  }
-
-  /// 预览模式下的用户信息
-  Widget _buildPreviewUserInfo() {
-    return Row(
-      children: [
-        // 头像
-        SizedBox(
-          width: 40,
-          height: 40,
-          child: Stack(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: context.backgroundColor,
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: _user.avatar.isNotEmpty
-                    ? CachedImage(
-                        imageUrl: _user.avatar,
-                        width: 40,
-                        height: 40,
-                        fit: BoxFit.cover,
-                        category: CacheCategory.avatar,
-                        errorWidget: SvgPicture.asset(
-                          'assets/icons/default_avatar.svg',
-                          fit: BoxFit.cover,
-                        ),
-                      )
-                    : SvgPicture.asset(
-                        'assets/icons/default_avatar.svg',
-                        fit: BoxFit.cover,
-                      ),
-              ),
-              // 身份标识
-              if (_user.identity == 'teacher' || _user.identity == 'organization')
-                Positioned(
-                  right: 0,
-                  bottom: 0,
-                  child: Container(
-                    width: 16,
-                    height: 16,
-                    decoration: BoxDecoration(
-                      color: LevelUtils.getIdentityBackgroundColor(_user.identity),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 1.5),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Text(
-                    _user.name.isNotEmpty ? _user.name : '匿名用户',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: context.textPrimaryColor,
-                    ),
-                  ),
-                  if (_user.score > 0 || _user.score == 0) ...[
-                    const SizedBox(width: 6),
-                    Text(
-                      LevelUtils.getLevelName(_user.score),
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: LevelUtils.getLevelColor(_user.score),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-              const SizedBox(height: 2),
-              Text(
-                '刚刚',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: context.textSecondaryColor,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
+    return PostPreviewCard(
+      title: _titleController.text.trim(),
+      content: _contentController.text.trim(),
+      user: _user,
     );
   }
 }
