@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/user_model.dart';
+import 'package:sse_market_x/core/services/storage_service.dart';
 import 'package:sse_market_x/views/post/markdown_help_page.dart';
 import 'package:sse_market_x/shared/components/cards/post_preview_card.dart';
 import 'package:sse_market_x/shared/components/markdown/latex_markdown.dart';
@@ -132,6 +133,15 @@ class _CreatePostPageState extends State<CreatePostPage> {
   }
 
   Future<void> _loadUser() async {
+    // 优先使用缓存的用户信息（立即可用）
+    final cachedUser = StorageService().user;
+    if (cachedUser != null && mounted) {
+      setState(() {
+        _user = cachedUser;
+      });
+    }
+    
+    // 然后从 API 获取最新信息
     try {
       final user = await widget.apiService.getUserInfo();
       if (mounted) {
@@ -399,7 +409,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
-          '新建帖子',
+          _showPreview ? '预览' : '新建帖子',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
