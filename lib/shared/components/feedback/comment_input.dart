@@ -255,79 +255,115 @@ class _CommentInputState extends State<CommentInput> {
           else
             _buildEditor(),
           const SizedBox(height: 6),
-          // 悬浮按钮组
-          if (!_showPreview)
-            Align(
-              alignment: Alignment.centerRight,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 颜文字按钮
-                  Container(
-                    key: _kaomojiButtonKey,
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: context.surfaceColor,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: context.dividerColor,
-                        width: 0.5,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withAlpha(15),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
+          // 底部按钮组
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // 左侧：帮助和预览按钮
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Markdown帮助按钮
+                    _buildBottomIconButton(
+                    icon: Icons.help_outline,
+                    tooltip: 'Markdown帮助',
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const MarkdownHelpPage(),
                         ),
-                      ],
-                    ),
-                    child: IconButton(
-                      onPressed: _toggleKaomoji,
-                      icon: const Icon(Icons.emoji_emotions_outlined, size: 16),
-                      color: _kaomojiOverlay != null ? AppColors.primary : context.textSecondaryColor,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
+                      );
+                    },
                   ),
                   const SizedBox(width: 8),
-                  // 发送按钮
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: _controller.text.trim().isEmpty 
-                          ? context.textSecondaryColor.withAlpha(100)
-                          : AppColors.primary,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withAlpha(15),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: IconButton(
-                      onPressed: (_isSending || _controller.text.trim().isEmpty) ? null : _handleSend,
-                      icon: _isSending 
-                          ? const SizedBox(
-                              width: 12,
-                              height: 12,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 1.5,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Icon(Icons.send, size: 14),
-                      color: Colors.white,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
+                  // 预览按钮
+                  _buildBottomIconButton(
+                    icon: _showPreview ? Icons.edit : Icons.visibility,
+                    tooltip: _showPreview ? '编辑' : '预览',
+                    onPressed: () {
+                      setState(() {
+                        _showPreview = !_showPreview;
+                      });
+                    },
+                    isActive: _showPreview,
                   ),
                 ],
               ),
+              // 右侧：颜文字和发送按钮
+              if (!_showPreview)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // 颜文字按钮
+                    Container(
+                      key: _kaomojiButtonKey,
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: context.surfaceColor,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: context.dividerColor,
+                          width: 0.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withAlpha(15),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: IconButton(
+                        onPressed: _toggleKaomoji,
+                        icon: const Icon(Icons.emoji_emotions_outlined, size: 16),
+                        color: _kaomojiOverlay != null ? AppColors.primary : context.textSecondaryColor,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // 发送按钮
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: _controller.text.trim().isEmpty 
+                            ? context.textSecondaryColor.withAlpha(100)
+                            : AppColors.primary,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withAlpha(15),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: IconButton(
+                        onPressed: (_isSending || _controller.text.trim().isEmpty) ? null : _handleSend,
+                        icon: _isSending 
+                            ? const SizedBox(
+                                width: 12,
+                                height: 12,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 1.5,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.send, size: 14),
+                        color: Colors.white,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
+          ),
           const SizedBox(height: 4),
         ],
       ),
@@ -425,68 +461,48 @@ class _CommentInputState extends State<CommentInput> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Markdown 工具按钮
-          if (!_showPreview) ...[
-            _buildToolButton(
-              icon: Icons.format_bold,
-              tooltip: '粗体：**粗体文字**',
-              onPressed: () => _insertMarkdown('**', '**', placeholder: '粗体文字'),
-            ),
-            _buildToolButton(
-              icon: Icons.format_italic,
-              tooltip: '斜体：*斜体文字*',
-              onPressed: () => _insertMarkdown('*', '*', placeholder: '斜体文字'),
-            ),
-            _buildToolButton(
-              icon: Icons.format_list_bulleted,
-              tooltip: '列表：- 列表项',
-              onPressed: () => _insertMarkdown('\n- ', '\n', placeholder: '列表项'),
-            ),
-            _buildToolButton(
-              icon: Icons.code,
-              tooltip: '代码：`代码`',
-              onPressed: () => _insertMarkdown('`', '`', placeholder: '代码'),
-            ),
-            _buildToolButton(
-              icon: Icons.format_quote,
-              tooltip: '引用：> 引用内容',
-              onPressed: () => _insertMarkdown('\n> ', '\n', placeholder: '引用内容'),
-            ),
-            _buildToolButton(
-              icon: Icons.image,
-              tooltip: '上传图片',
-              onPressed: _isUploading 
-                  ? () {} // 空函数而不是 null
-                  : () {
-                      _pickAndUploadImage();
-                    },
-            ),
-          ],
-          const Spacer(),
-          // Markdown帮助
-          _buildToolButton(
-            icon: Icons.help_outline,
-            tooltip: 'Markdown帮助',
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const MarkdownHelpPage(),
+          // 左侧：Markdown 格式按钮
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (!_showPreview) ...[
+                _buildToolButton(
+                  icon: Icons.format_bold,
+                  tooltip: '粗体：**粗体文字**',
+                  onPressed: () => _insertMarkdown('**', '**', placeholder: '粗体文字'),
                 ),
-              );
-            },
+                _buildToolButton(
+                  icon: Icons.format_italic,
+                  tooltip: '斜体：*斜体文字*',
+                  onPressed: () => _insertMarkdown('*', '*', placeholder: '斜体文字'),
+                ),
+                _buildToolButton(
+                  icon: Icons.format_list_bulleted,
+                  tooltip: '列表：- 列表项',
+                  onPressed: () => _insertMarkdown('\n- ', '\n', placeholder: '列表项'),
+                ),
+                _buildToolButton(
+                  icon: Icons.code,
+                  tooltip: '代码：`代码`',
+                  onPressed: () => _insertMarkdown('`', '`', placeholder: '代码'),
+                ),
+                _buildToolButton(
+                  icon: Icons.format_quote,
+                  tooltip: '引用：> 引用内容',
+                  onPressed: () => _insertMarkdown('\n> ', '\n', placeholder: '引用内容'),
+                ),
+              ],
+            ],
           ),
-          // 预览按钮
-          _buildToolButton(
-            icon: _showPreview ? Icons.edit : Icons.visibility,
-            tooltip: _showPreview ? '编辑' : '预览',
-            onPressed: () {
-              setState(() {
-                _showPreview = !_showPreview;
-              });
-            },
-            isActive: _showPreview,
-          ),
+          // 右侧：上传图片按钮
+          if (!_showPreview)
+            _buildToolButton(
+              icon: _isUploading ? Icons.hourglass_empty : Icons.image,
+              tooltip: '上传图片',
+              onPressed: _isUploading ? () {} : _pickAndUploadImage,
+            ),
         ],
       ),
     );
@@ -504,6 +520,44 @@ class _CommentInputState extends State<CommentInput> {
       tooltip: tooltip,
       onPressed: onPressed,
       isActive: isActive,
+    );
+  }
+
+  /// 底部图标按钮（左下角帮助和预览按钮）
+  Widget _buildBottomIconButton({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback onPressed,
+    bool isActive = false,
+  }) {
+    return Container(
+      width: 32,
+      height: 32,
+      decoration: BoxDecoration(
+        color: context.surfaceColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: context.dividerColor,
+          width: 0.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(15),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Tooltip(
+        message: tooltip,
+        child: IconButton(
+          onPressed: onPressed,
+          icon: Icon(icon, size: 16),
+          color: isActive ? AppColors.primary : context.textSecondaryColor,
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(),
+        ),
+      ),
     );
   }
 
