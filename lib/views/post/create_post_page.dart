@@ -141,12 +141,18 @@ class _CreatePostPageState extends State<CreatePostPage> {
       });
     }
     
-    // 然后从 API 获取最新信息
+    // 然后从 API 获取最新信息（包括详细的 score）
     try {
-      final user = await widget.apiService.getUserInfo();
+      final basic = await widget.apiService.getUserInfo();
+      UserModel detailed = basic;
+      // 获取详细信息（包含 score 和 intro）
+      if (basic.phone.isNotEmpty) {
+        final d = await widget.apiService.getDetailedUserInfo(basic.phone);
+        detailed = basic.copyWith(score: d.score, intro: d.intro);
+      }
       if (mounted) {
         setState(() {
-          _user = user;
+          _user = detailed;
         });
       }
     } catch (e) {
