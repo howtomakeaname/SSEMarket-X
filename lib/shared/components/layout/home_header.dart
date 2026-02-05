@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sse_market_x/core/models/user_model.dart';
@@ -41,13 +42,32 @@ class HomeHeader extends StatelessWidget {
     final verticalPaddingTop = showAvatar && showAddButton ? 4.0 : 8.0;
     final verticalPaddingBottom = showAvatar && showAddButton ? 4.0 : 8.0;
     
-    return Column(
-      children: [
-        Container(
-          color: context.surfaceColor,
-          padding: EdgeInsets.fromLTRB(horizontalPadding, verticalPaddingTop, horizontalPadding, verticalPaddingBottom),
-          child: Row(
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          decoration: BoxDecoration(
+            color: context.surfaceColor.withOpacity(0.88),
+            border: Border(
+              bottom: BorderSide(
+                color: context.dividerColor.withOpacity(0.3),
+                width: 0.5,
+              ),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
+              Container(
+                // Remove solid color, use transparency from parent
+                padding: EdgeInsets.fromLTRB(
+                  horizontalPadding, 
+                  verticalPaddingTop + MediaQuery.of(context).padding.top, // Add SafeArea top padding
+                  horizontalPadding, 
+                  verticalPaddingBottom
+                ),
+                child: Row(
+                  children: [
               if (showAvatar) ...[
                 GestureDetector(
                   onTap: onAvatarTap,
@@ -128,14 +148,13 @@ class HomeHeader extends StatelessWidget {
                   onPressed: onAddPostTap,
                 ),
               ],
-            ],
-          ),
-        ),
-        Container(
-          height: 36,
-          color: context.surfaceColor,
-          padding: EdgeInsets.fromLTRB(horizontalPadding - 4, 0, horizontalPadding - 4, 0), // Adjust padding for underline style
-          child: SingleChildScrollView(
+            ])),
+          // Tabs Container
+          Container(
+            height: 36,
+            // Remove solid color
+            padding: EdgeInsets.fromLTRB(horizontalPadding - 4, 0, horizontalPadding - 4, 0), // Adjust padding for underline style
+            child: SingleChildScrollView(
             controller: tabScrollController,
             scrollDirection: Axis.horizontal,
             child: Row(
@@ -183,7 +202,7 @@ class HomeHeader extends StatelessWidget {
             ),
           ),
         ),
-      ],
-    );
+      ]),
+    )));
   }
 }

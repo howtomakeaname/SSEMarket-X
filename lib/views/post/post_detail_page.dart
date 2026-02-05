@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/comment_model.dart';
@@ -355,6 +356,8 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
 
   @override
   Widget build(BuildContext context) {
+    final topPadding = MediaQuery.of(context).padding.top + kToolbarHeight;
+    
     return PopScope(
       canPop: false,
       onPopInvoked: (didPop) {
@@ -364,9 +367,27 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
       },
       child: Scaffold(
         backgroundColor: context.backgroundColor,
+        extendBodyBehindAppBar: true,
         appBar: AppBar(
-          backgroundColor: context.surfaceColor,
+          backgroundColor: Colors.transparent, // Important: Transparency for blur
+          flexibleSpace: ClipRect(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: context.surfaceColor.withOpacity(0.88),
+                  border: Border(
+                    bottom: BorderSide(
+                      color: context.dividerColor.withOpacity(0.3),
+                      width: 0.5,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
           elevation: 0,
+          scrolledUnderElevation: 0,
           automaticallyImplyLeading: false,
           leading: widget.previewPost == null ? IconButton(
             icon: Icon(Icons.arrow_back, color: context.textPrimaryColor),
@@ -446,14 +467,16 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
             : null,
       ),
       body: _isLoading
-          ? _buildDetailSkeleton()
+          ? _buildDetailSkeleton(topPadding)
           : RefreshIndicator(
               onRefresh: _loadPostDetail,
+              edgeOffset: topPadding,
               color: AppColors.primary,
               backgroundColor: context.surfaceColor,
               child: SingleChildScrollView(
                 controller: _scrollController,
                 physics: const AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.only(top: topPadding),
                 child: Column(
                   children: [
                     // 帖子内容区
@@ -724,10 +747,8 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
           // 评论输入框 (不在预览模式下显示)
           if (widget.previewPost == null) ...[
             Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
                 color: context.surfaceColor,
-                borderRadius: BorderRadius.circular(12),
               ),
               child: CommentInput(
                 postId: widget.postId,
@@ -910,8 +931,9 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
   }
 
   /// 详情页骨架屏
-  Widget _buildDetailSkeleton() {
+  Widget _buildDetailSkeleton(double topPadding) {
     return SingleChildScrollView(
+      padding: EdgeInsets.only(top: topPadding),
       child: Container(
         color: context.surfaceColor,
         padding: const EdgeInsets.all(16),

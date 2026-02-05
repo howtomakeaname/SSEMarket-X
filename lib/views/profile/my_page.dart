@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/user_model.dart';
@@ -106,42 +107,66 @@ class _MyPageState extends State<MyPage> {
 
   @override
   Widget build(BuildContext context) {
+    final topPadding = MediaQuery.of(context).padding.top + 56; // Header height
+    final bottomPadding = kBottomNavigationBarHeight + MediaQuery.of(context).padding.bottom;
+
     return Scaffold(
       backgroundColor: context.backgroundColor,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(context),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Column(
-                  children: [
-                    _buildUserInfoCard(context),
-                    _buildMainMenu(context),
-                    _buildOtherOptions(context),
-                  ],
-                ),
-              ),
+      extendBodyBehindAppBar: true,
+      body: Stack(
+        children: [
+          // Content Layer
+          SingleChildScrollView(
+            padding: EdgeInsets.only(top: topPadding, bottom: bottomPadding + 16),
+            child: Column(
+              children: [
+                _buildUserInfoCard(context),
+                _buildMainMenu(context),
+                _buildOtherOptions(context),
+              ],
             ),
-          ],
-        ),
+          ),
+          // Blurred Header Layer
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: _buildHeader(context),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildHeader(BuildContext context) {
-    return Container(
-      height: 56,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      alignment: Alignment.centerLeft,
-      color: context.surfaceColor,
-      child: Text(
-        '我的',
-        style: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          color: context.textPrimaryColor,
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          height: 56 + MediaQuery.of(context).padding.top,
+          padding: EdgeInsets.only(
+            top: MediaQuery.of(context).padding.top,
+            left: 16,
+            right: 16,
+          ),
+          decoration: BoxDecoration(
+            color: context.surfaceColor.withOpacity(0.88),
+            border: Border(
+              bottom: BorderSide(
+                color: context.dividerColor.withOpacity(0.3),
+                width: 0.5,
+              ),
+            ),
+          ),
+          alignment: Alignment.centerLeft,
+          child: Text(
+            '我的',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: context.textPrimaryColor,
+            ),
+          ),
         ),
       ),
     );

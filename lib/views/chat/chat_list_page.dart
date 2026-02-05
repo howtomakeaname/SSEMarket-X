@@ -12,11 +12,13 @@ import 'package:sse_market_x/shared/theme/app_colors.dart';
 class ChatListPage extends StatefulWidget {
   final ApiService apiService;
   final Function(UserModel user) onUserTap;
+  final EdgeInsetsGeometry? contentPadding;
 
   const ChatListPage({
     super.key,
     required this.apiService,
     required this.onUserTap,
+    this.contentPadding,
   });
 
   @override
@@ -196,18 +198,26 @@ class _ChatListPageState extends State<ChatListPage>
   @override
   Widget build(BuildContext context) {
     super.build(context); // 必须调用 super.build
+    
+    // Default padding if not provided. Default includes bottom 60 for tabbar
+    final padding = widget.contentPadding ?? const EdgeInsets.fromLTRB(16, 12, 16, 60);
+
     // 直接显示内容，不显示 loading 状态
     // 如果正在加载且没有联系人，显示空状态
     return _contacts.isEmpty
-        ? _buildEmptyState(context)
+        ? Padding(
+             padding: EdgeInsets.only(top: padding.resolve(TextDirection.ltr).top), 
+             child: _buildEmptyState(context)
+          )
         : RefreshIndicator(
-                onRefresh: () async {
+             edgeOffset: padding.resolve(TextDirection.ltr).top,
+             onRefresh: () async {
                   _initWebSocket();
                   await Future.delayed(const Duration(seconds: 1));
                 },
                 color: AppColors.primary,
                 child: ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 60),
+                  padding: padding,
                   itemCount: _contacts.length,
                   itemBuilder: (context, index) {
                     final contact = _contacts[index];
