@@ -303,7 +303,7 @@ class _TeacherPageState extends State<TeacherPage>
     // 3. 正在加载教师列表（说明刚进入页面）
     if (_posts.isEmpty && (_isLoading || !_hasLoadedOnce || _isLoadingTeachers)) {
       return Padding(
-        padding: padding,
+        padding: padding.add(const EdgeInsets.only(top: 8)),
         child: const PostListSkeleton(itemCount: 5, isDense: false),
       );
     }

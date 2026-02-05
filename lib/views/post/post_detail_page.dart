@@ -7,6 +7,7 @@ import 'package:sse_market_x/core/models/post_model.dart';
 import 'package:sse_market_x/core/models/user_model.dart';
 import 'package:sse_market_x/core/services/media_cache_service.dart';
 import 'package:sse_market_x/core/services/watch_later_service.dart';
+import 'package:sse_market_x/core/services/blur_effect_service.dart';
 import 'package:sse_market_x/core/utils/level_utils.dart';
 import 'package:sse_market_x/core/utils/time_utils.dart';
 import 'package:sse_market_x/shared/components/cards/comment_card.dart';
@@ -370,12 +371,14 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
         extendBodyBehindAppBar: true,
         appBar: AppBar(
           backgroundColor: Colors.transparent, // Important: Transparency for blur
-          flexibleSpace: ClipRect(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-              child: Container(
+          flexibleSpace: ValueListenableBuilder<bool>(
+            valueListenable: BlurEffectService().enabledNotifier,
+            builder: (context, isBlurEnabled, _) {
+              Widget content = Container(
                 decoration: BoxDecoration(
-                  color: context.surfaceColor.withOpacity(0.88),
+                  color: isBlurEnabled 
+                      ? context.blurBackgroundColor.withOpacity(0.82)
+                      : context.surfaceColor,
                   border: Border(
                     bottom: BorderSide(
                       color: context.dividerColor.withOpacity(0.3),
@@ -383,8 +386,19 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
                     ),
                   ),
                 ),
-              ),
-            ),
+              );
+              
+              if (isBlurEnabled) {
+                return ClipRect(
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                    child: content,
+                  ),
+                );
+              } else {
+                return content;
+              }
+            },
           ),
           elevation: 0,
           scrolledUnderElevation: 0,

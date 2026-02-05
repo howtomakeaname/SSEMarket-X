@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 import 'package:sse_market_x/core/services/storage_service.dart';
 import 'package:sse_market_x/core/services/media_cache_service.dart';
+import 'package:sse_market_x/core/services/blur_effect_service.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/views/auth/login_page.dart';
 import 'package:sse_market_x/views/index_page.dart';
@@ -11,6 +12,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await StorageService().init();
   await MediaCacheService().init();
+  await BlurEffectService().init();
   runApp(const MyApp());
 }
 

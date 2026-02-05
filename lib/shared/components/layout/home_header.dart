@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sse_market_x/core/models/user_model.dart';
 import 'package:sse_market_x/core/services/media_cache_service.dart';
+import 'package:sse_market_x/core/services/blur_effect_service.dart';
 import 'package:sse_market_x/shared/components/media/cached_image.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 
@@ -42,12 +43,16 @@ class HomeHeader extends StatelessWidget {
     final verticalPaddingTop = showAvatar && showAddButton ? 4.0 : 8.0;
     final verticalPaddingBottom = showAvatar && showAddButton ? 4.0 : 8.0;
     
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(
+    final blurService = BlurEffectService();
+    
+    return ValueListenableBuilder<bool>(
+      valueListenable: blurService.enabledNotifier,
+      builder: (context, isBlurEnabled, child) {
+        Widget content = Container(
           decoration: BoxDecoration(
-            color: context.surfaceColor.withOpacity(0.88),
+            color: isBlurEnabled 
+                ? context.blurBackgroundColor.withOpacity(0.82)
+                : context.surfaceColor,
             border: Border(
               bottom: BorderSide(
                 color: context.dividerColor.withOpacity(0.3),
@@ -203,6 +208,19 @@ class HomeHeader extends StatelessWidget {
           ),
         ),
       ]),
-    )));
+    );
+        
+        if (isBlurEnabled) {
+          return ClipRect(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+              child: content,
+            ),
+          );
+        } else {
+          return content;
+        }
+      },
+    );
   }
 }
