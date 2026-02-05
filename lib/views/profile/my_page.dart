@@ -6,6 +6,7 @@ import 'package:sse_market_x/core/models/user_model.dart';
 import 'package:sse_market_x/core/services/media_cache_service.dart';
 import 'package:sse_market_x/core/services/storage_service.dart';
 import 'package:sse_market_x/core/services/watch_later_service.dart';
+import 'package:sse_market_x/core/services/blur_effect_service.dart';
 import 'package:sse_market_x/core/utils/level_utils.dart';
 import 'package:sse_market_x/shared/components/lists/settings_list_item.dart';
 import 'package:sse_market_x/shared/components/media/cached_image.dart';
@@ -139,10 +140,12 @@ class _MyPageState extends State<MyPage> {
   }
 
   Widget _buildHeader(BuildContext context) {
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(
+    final blurService = BlurEffectService();
+    
+    return ValueListenableBuilder<bool>(
+      valueListenable: blurService.enabledNotifier,
+      builder: (context, isBlurEnabled, _) {
+        Widget content = Container(
           height: 56 + MediaQuery.of(context).padding.top,
           padding: EdgeInsets.only(
             top: MediaQuery.of(context).padding.top,
@@ -150,7 +153,9 @@ class _MyPageState extends State<MyPage> {
             right: 16,
           ),
           decoration: BoxDecoration(
-            color: context.surfaceColor.withOpacity(0.88),
+            color: isBlurEnabled 
+                ? context.blurBackgroundColor.withOpacity(0.82)
+                : context.surfaceColor,
             border: Border(
               bottom: BorderSide(
                 color: context.dividerColor.withOpacity(0.3),
@@ -167,8 +172,19 @@ class _MyPageState extends State<MyPage> {
               color: context.textPrimaryColor,
             ),
           ),
-        ),
-      ),
+        );
+        
+        if (isBlurEnabled) {
+          return ClipRect(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+              child: content,
+            ),
+          );
+        } else {
+          return content;
+        }
+      },
     );
   }
 

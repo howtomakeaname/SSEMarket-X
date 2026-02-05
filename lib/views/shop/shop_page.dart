@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/product_model.dart';
+import 'package:sse_market_x/core/services/blur_effect_service.dart';
 import 'package:sse_market_x/views/shop/product_detail_page.dart';
 import 'package:sse_market_x/views/shop/create_product_page.dart';
 import 'package:sse_market_x/shared/components/loading/skeleton_loader.dart';
@@ -205,12 +206,14 @@ class _ShopPageState extends State<ShopPage> {
           ),
         ],
         backgroundColor: Colors.transparent, // Important: Transparency for blur
-        flexibleSpace: ClipRect(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-            child: Container(
+        flexibleSpace: ValueListenableBuilder<bool>(
+          valueListenable: BlurEffectService().enabledNotifier,
+          builder: (context, isBlurEnabled, _) {
+            Widget content = Container(
               decoration: BoxDecoration(
-                color: context.surfaceColor.withOpacity(0.88),
+                color: isBlurEnabled 
+                    ? context.blurBackgroundColor.withOpacity(0.82)
+                    : context.surfaceColor,
                 border: Border(
                   bottom: BorderSide(
                     color: context.dividerColor.withOpacity(0.3),
@@ -218,8 +221,19 @@ class _ShopPageState extends State<ShopPage> {
                   ),
                 ),
               ),
-            ),
-          ),
+            );
+            
+            if (isBlurEnabled) {
+              return ClipRect(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                  child: content,
+                ),
+              );
+            } else {
+              return content;
+            }
+          },
         ),
         elevation: 0,
         scrolledUnderElevation: 0,

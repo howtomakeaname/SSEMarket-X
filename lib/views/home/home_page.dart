@@ -412,7 +412,7 @@ class HomePageState extends State<HomePage> {
     // 如果已经加载过（hasLoadedOnce），即使列表为空也不显示骨架屏（可能是真的没有数据）
     if (!state.hasLoadedOnce && (_loadingUser || state.isLoading) && state.posts.isEmpty) {
       return Padding(
-        padding: EdgeInsets.only(top: topPadding, bottom: bottomPadding),
+        padding: EdgeInsets.only(top: topPadding + 8, bottom: bottomPadding),
         child: _buildSkeletonLoader(isDense),
       );
     }

@@ -7,6 +7,7 @@ import 'package:sse_market_x/core/models/post_model.dart';
 import 'package:sse_market_x/core/models/user_model.dart';
 import 'package:sse_market_x/core/services/storage_service.dart';
 import 'package:sse_market_x/core/services/websocket_service.dart';
+import 'package:sse_market_x/core/services/blur_effect_service.dart';
 import 'package:sse_market_x/views/post/create_post_page.dart';
 import 'package:sse_market_x/views/home/home_page.dart';
 import 'package:sse_market_x/views/profile/my_page.dart';
@@ -249,12 +250,14 @@ class _IndexPageState extends State<IndexPage> {
             _buildBodyForTab(6, isDesktop: false, isThreeColumn: false), // 我的
           ],
         ),
-      bottomNavigationBar: ClipRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(
+      bottomNavigationBar: ValueListenableBuilder<bool>(
+        valueListenable: BlurEffectService().enabledNotifier,
+        builder: (context, isBlurEnabled, child) {
+          Widget navContent = Container(
             decoration: BoxDecoration(
-              color: context.surfaceColor.withOpacity(0.88), // Semi-transparent
+              color: isBlurEnabled 
+                  ? context.blurBackgroundColor.withOpacity(0.82)
+                  : context.surfaceColor,
               border: Border(
                 top: BorderSide(color: context.dividerColor, width: 0.5),
               ),
@@ -372,8 +375,21 @@ class _IndexPageState extends State<IndexPage> {
             }
           },
         ),
+      );
+          
+          if (isBlurEnabled) {
+            return ClipRect(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                child: navContent,
+              ),
+            );
+          } else {
+            return navContent;
+          }
+        },
       ),
-    )));
+    );
   }
 
   Widget _buildDesktopLayout({required bool isThreeColumn}) {

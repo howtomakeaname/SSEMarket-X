@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/notice_model.dart';
 import 'package:sse_market_x/core/utils/time_utils.dart';
+import 'package:sse_market_x/core/services/blur_effect_service.dart';
 import 'package:sse_market_x/views/post/post_detail_page.dart';
 import 'package:sse_market_x/shared/components/loading/loading_indicator.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
@@ -123,12 +124,14 @@ class _NoticePageState extends State<NoticePage>
       backgroundColor: context.backgroundColor,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        flexibleSpace: ClipRect(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-            child: Container(
+        flexibleSpace: ValueListenableBuilder<bool>(
+          valueListenable: BlurEffectService().enabledNotifier,
+          builder: (context, isBlurEnabled, _) {
+            Widget content = Container(
               decoration: BoxDecoration(
-                color: context.surfaceColor.withOpacity(0.88),
+                color: isBlurEnabled 
+                    ? context.blurBackgroundColor.withOpacity(0.82)
+                    : context.surfaceColor,
                 border: Border(
                   bottom: BorderSide(
                     color: context.dividerColor.withOpacity(0.3),
@@ -136,8 +139,19 @@ class _NoticePageState extends State<NoticePage>
                   ),
                 ),
               ),
-            ),
-          ),
+            );
+            
+            if (isBlurEnabled) {
+              return ClipRect(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                  child: content,
+                ),
+              );
+            } else {
+              return content;
+            }
+          },
         ),
         backgroundColor: Colors.transparent, // Important: Transparency for blur
         elevation: 0,

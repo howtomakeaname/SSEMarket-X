@@ -6,6 +6,7 @@ import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/post_model.dart';
 import 'package:sse_market_x/core/services/browse_history_service.dart';
 import 'package:sse_market_x/core/services/storage_service.dart';
+import 'package:sse_market_x/core/services/blur_effect_service.dart';
 import 'package:sse_market_x/shared/components/cards/rating_card.dart';
 import 'package:sse_market_x/shared/components/layout/layout_config.dart';
 import 'package:sse_market_x/shared/components/loading/skeleton_loader.dart';
@@ -196,12 +197,14 @@ class _ScorePageState extends State<ScorePage> {
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
-        flexibleSpace: ClipRect(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-            child: Container(
+        flexibleSpace: ValueListenableBuilder<bool>(
+          valueListenable: BlurEffectService().enabledNotifier,
+          builder: (context, isBlurEnabled, _) {
+            Widget content = Container(
               decoration: BoxDecoration(
-                color: context.surfaceColor.withOpacity(0.88),
+                color: isBlurEnabled 
+                    ? context.blurBackgroundColor.withOpacity(0.82)
+                    : context.surfaceColor,
                 border: Border(
                   bottom: BorderSide(
                     color: context.dividerColor.withOpacity(0.3),
@@ -209,8 +212,19 @@ class _ScorePageState extends State<ScorePage> {
                   ),
                 ),
               ),
-            ),
-          ),
+            );
+            
+            if (isBlurEnabled) {
+              return ClipRect(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                  child: content,
+                ),
+              );
+            } else {
+              return content;
+            }
+          },
         ),
         title: Text(
           '打分',
@@ -251,35 +265,41 @@ class _ScorePageState extends State<ScorePage> {
 
   Widget _buildBody(double topPadding, double bottomPadding) {
     if (!_hasLoadedOnce && _isLoading && _posts.isEmpty) {
-      return Padding(
+      return ListView(
         padding: EdgeInsets.only(top: topPadding + 8, bottom: bottomPadding),
-        child: const PostListSkeleton(itemCount: 5, isDense: true),
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: const [
+          PostListSkeleton(itemCount: 5, isDense: true),
+        ],
       );
     }
 
     if (!_isLoading && _posts.isEmpty) {
-      return Padding(
-        padding: EdgeInsets.only(top: topPadding),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                '暂无打分数据',
-                style: TextStyle(color: context.textSecondaryColor, fontSize: 16),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () => _fetchPosts(refresh: true),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
+      return ListView(
+        padding: EdgeInsets.only(top: topPadding + 100),
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  '暂无打分数据',
+                  style: TextStyle(color: context.textSecondaryColor, fontSize: 16),
                 ),
-                child: const Text('刷新重试'),
-              ),
-            ],
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => _fetchPosts(refresh: true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('刷新重试'),
+                ),
+              ],
+            ),
           ),
-        ),
+        ],
       );
     }
 

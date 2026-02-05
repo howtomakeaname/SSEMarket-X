@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:sse_market_x/shared/components/transitions/page_transitions.dart';
 
 /// BuildContext 扩展，方便获取主题相关颜色
@@ -11,6 +12,7 @@ extension AppColorsExtension on BuildContext {
   Color get textTertiaryColor => AppColors.getTextTertiary(this);
   Color get dividerColor => AppColors.getDivider(this);
   Color get inputFillColor => AppColors.getInputFill(this);
+  Color get blurBackgroundColor => AppColors.getBlurBackground(this);
 }
 
 /// 应用颜色配置
@@ -101,6 +103,16 @@ class AppColors {
         : _lightSurface; // 亮色模式使用白色，与灰色背景区分
   }
 
+  // ===== 模糊背景色（用于毛玻璃效果）=====
+  /// 带有淡蓝色调的模糊背景色，提升视觉质感
+  /// 亮色模式使用纯白但降低透明度，让内容透出来增加层次感
+  /// 暗色模式使用深色表面色
+  static Color getBlurBackground(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? _darkSurface // 深色模式：使用表面色
+        : _lightSurface; // 亮色模式：使用白色
+  }
+
   // ===== 卡片阴影色 =====
   static Color getCardShadow(BuildContext context) {
     return Theme.of(context).brightness == Brightness.dark
@@ -125,6 +137,11 @@ class AppTheme {
       backgroundColor: AppColors._lightSurface,
       foregroundColor: AppColors._lightTextPrimary,
       elevation: 0,
+      systemOverlayStyle: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark, // 亮色模式用深色图标
+        statusBarBrightness: Brightness.light, // iOS
+      ),
     ),
     dividerColor: AppColors._lightDivider,
     cardColor: AppColors._lightSurface,
@@ -152,6 +169,11 @@ class AppTheme {
       backgroundColor: AppColors._darkSurface,
       foregroundColor: AppColors._darkTextPrimary,
       elevation: 0,
+      systemOverlayStyle: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light, // 深色模式用浅色图标
+        statusBarBrightness: Brightness.dark, // iOS
+      ),
     ),
     dividerColor: AppColors._darkDivider,
     cardColor: AppColors._darkSurface,
