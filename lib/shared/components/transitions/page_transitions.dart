@@ -16,45 +16,20 @@ class CustomPageTransitionsBuilder extends PageTransitionsBuilder {
     Animation<double> secondaryAnimation,
     Widget child,
   ) {
-    // 新页面从右侧滑入
-    final slideIn = Tween<Offset>(
-      begin: const Offset(1.0, 0.0),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: animation,
-      // easeOutCubic: 开始快，结束时减速，感觉更自然
-      curve: Curves.easeOutCubic,
-      reverseCurve: Curves.easeInCubic,
-    ));
-
-    // 旧页面轻微向左移动（视差效果）
-    final slideOut = Tween<Offset>(
-      begin: Offset.zero,
-      end: const Offset(-0.3, 0.0),
-    ).animate(CurvedAnimation(
-      parent: secondaryAnimation,
-      curve: Curves.easeOutCubic,
-      reverseCurve: Curves.easeInCubic,
-    ));
-
-    // 新页面轻微淡入（只在前半段）
-    final fadeIn = Tween<double>(
-      begin: 0.92,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: animation,
-      curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
-    ));
-
+    // 性能优化版本：仅保留最核心的左滑进入动画
+    // 移除了视差（SlideOut）和淡入（FadeIn）叠加，大幅降低 GPU 和 Raster 线程压力
+    // 解决了旧版 Flutter 引擎和低端设备上的丢帧卡顿问题
     return SlideTransition(
-      position: slideOut,
-      child: SlideTransition(
-        position: slideIn,
-        child: FadeTransition(
-          opacity: fadeIn,
-          child: child,
-        ),
-      ),
+      position: Tween<Offset>(
+        begin: const Offset(1.0, 0.0),
+        end: Offset.zero,
+      ).animate(CurvedAnimation(
+        parent: animation,
+        // 使用标准的 fastOutSlowIn (Material 标准 ease)
+        // 这种曲线符合物理直觉，且计算开销小
+        curve: Curves.fastOutSlowIn, 
+      )),
+      child: child,
     );
   }
 }
@@ -150,6 +125,7 @@ class AppPageTransitionsTheme {
           TargetPlatform.windows: CustomPageTransitionsBuilder(),
           TargetPlatform.linux: CustomPageTransitionsBuilder(),
           TargetPlatform.fuchsia: CustomPageTransitionsBuilder(),
+          TargetPlatform.ohos: CustomPageTransitionsBuilder(),
         },
       );
 }
