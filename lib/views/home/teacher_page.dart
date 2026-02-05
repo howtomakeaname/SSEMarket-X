@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
@@ -6,6 +7,7 @@ import 'package:sse_market_x/core/models/post_model.dart';
 import 'package:sse_market_x/core/models/user_model.dart';
 import 'package:sse_market_x/core/services/storage_service.dart';
 import 'package:sse_market_x/core/services/browse_history_service.dart';
+import 'package:sse_market_x/core/services/blur_effect_service.dart';
 import 'package:sse_market_x/shared/components/cards/post_card.dart';
 import 'package:sse_market_x/shared/components/inputs/teacher_dropdown.dart';
 import 'package:sse_market_x/shared/components/loading/loading_indicator.dart';
@@ -247,6 +249,9 @@ class _TeacherPageState extends State<TeacherPage>
   }
 
   Widget _buildHeader(BuildContext context) {
+    final padding = widget.contentPadding ?? EdgeInsets.zero;
+    final topPadding = padding.resolve(TextDirection.ltr).top;
+    final blurService = BlurEffectService();
     final options = [
       const TeacherOption(value: null, label: '全部教师'),
       ..._teachers.map((t) => TeacherOption(
@@ -259,49 +264,80 @@ class _TeacherPageState extends State<TeacherPage>
     // 只有在没有教师数据且正在加载时才显示 loading
     final showLoading = _teachers.isEmpty && _isLoadingTeachers;
 
-    return Container(
-      color: context.surfaceColor,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: Row(
-        children: [
-          Text(
-            '筛选',
-            style: TextStyle(
-              fontSize: 13,
-              color: context.textTertiaryColor,
-            ),
-          ),
-          const SizedBox(width: 8),
-          if (showLoading)
-            SizedBox(
-              width: 14,
-              height: 14,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: context.textTertiaryColor,
+    return Padding(
+      padding: EdgeInsets.only(top: topPadding),
+      child: ValueListenableBuilder<bool>(
+        valueListenable: blurService.enabledNotifier,
+        builder: (context, isBlurEnabled, child) {
+          final filterContent = Container(
+            decoration: BoxDecoration(
+              color: isBlurEnabled
+                  ? context.blurBackgroundColor.withOpacity(0.82)
+                  : context.surfaceColor,
+              border: Border(
+                bottom: BorderSide(
+                  color: context.dividerColor.withOpacity(0.3),
+                  width: 0.5,
+                ),
               ),
-            )
-          else
-            TeacherDropdown(
-              options: options,
-              value: _selectedTeacher,
-              hint: '全部教师',
-              onChanged: _onTeacherChanged,
             ),
-        ],
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(
+              children: [
+                Text(
+                  '筛选',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: context.textTertiaryColor,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                if (showLoading)
+                  SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: context.textTertiaryColor,
+                    ),
+                  )
+                else
+                  TeacherDropdown(
+                    options: options,
+                    value: _selectedTeacher,
+                    hint: '全部教师',
+                    onChanged: _onTeacherChanged,
+                  ),
+              ],
+            ),
+          );
+
+          if (isBlurEnabled) {
+            return ClipRect(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                child: filterContent,
+              ),
+            );
+          }
+
+          return filterContent;
+        },
       ),
     );
   }
 
   Widget _buildPostList() {
     final padding = widget.contentPadding ?? EdgeInsets.zero;
-    final topPadding = padding.resolve(TextDirection.ltr).top;
+    final resolvedPadding = padding.resolve(TextDirection.ltr);
+    final listBasePadding = resolvedPadding.copyWith(top: 0);
 
     // 显示骨架屏的条件：
     // 1. 正在加载中且列表为空
     // 2. 还没加载过且列表为空（首次进入）
     // 3. 正在加载教师列表（说明刚进入页面）
-    if (_posts.isEmpty && (_isLoading || !_hasLoadedOnce || _isLoadingTeachers)) {
+    if (_posts.isEmpty &&
+        (_isLoading || !_hasLoadedOnce || _isLoadingTeachers)) {
       return Padding(
         padding: padding.add(const EdgeInsets.only(top: 8)),
         child: const PostListSkeleton(itemCount: 5, isDense: false),
@@ -316,12 +352,13 @@ class _TeacherPageState extends State<TeacherPage>
     return Container(
       color: context.backgroundColor,
       child: RefreshIndicator(
-        edgeOffset: topPadding,
+        edgeOffset: 0,
         onRefresh: () => _fetchPosts(refresh: true),
         color: AppColors.primary,
         backgroundColor: context.surfaceColor,
         child: ListView.builder(
-          padding: padding.add(const EdgeInsets.only(top: 8, bottom: 16)),
+          padding:
+              listBasePadding.add(const EdgeInsets.only(top: 8, bottom: 16)),
           physics: const AlwaysScrollableScrollPhysics(),
           itemCount: _posts.length + 1,
           itemBuilder: (context, index) {
