@@ -228,13 +228,14 @@ class _ShopPageState extends State<ShopPage> {
 
   Widget _buildTabs(BuildContext context) {
     return Container(
-      height: 48,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      height: 36,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       color: context.surfaceColor,
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           _buildTabButton(context, '广场', 0),
-          const SizedBox(width: 8),
+          const SizedBox(width: 24),
           _buildTabButton(context, '我的发布', 1),
         ],
       ),
@@ -247,20 +248,32 @@ class _ShopPageState extends State<ShopPage> {
       onTap: () {
         _pageController.jumpToPage(index);
       },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : context.backgroundColor,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            color: isSelected ? Colors.white : context.textPrimaryColor,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 15,
+                color: isSelected ? AppColors.primary : context.textSecondaryColor,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
           ),
-        ),
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            height: 3,
+            width: isSelected ? 20 : 0,
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(1.5),
+            ),
+            margin: const EdgeInsets.only(bottom: 1),
+          ),
+        ],
       ),
     );
   }

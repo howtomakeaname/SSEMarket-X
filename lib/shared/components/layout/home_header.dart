@@ -132,42 +132,50 @@ class HomeHeader extends StatelessWidget {
           ),
         ),
         Container(
-          height: 40,
+          height: 36,
           color: context.surfaceColor,
-          padding: EdgeInsets.fromLTRB(horizontalPadding, 0, horizontalPadding, 4),
+          padding: EdgeInsets.fromLTRB(horizontalPadding - 4, 0, horizontalPadding - 4, 0), // Adjust padding for underline style
           child: SingleChildScrollView(
             controller: tabScrollController,
             scrollDirection: Axis.horizontal,
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: displayPartitions.asMap().entries.map((entry) {
                 final index = entry.key;
                 final p = entry.value;
                 final selected = p == currentPartition;
-                return Padding(
-                  padding: EdgeInsets.only(
-                      right: index < displayPartitions.length - 1 ? 4 : 0),
-                  child: GestureDetector(
-                    key: tabKeys[p],
-                    onTap: () => onPartitionTap(p),
-                    child: Container(
-                      height: 32,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 6),
-                      decoration: BoxDecoration(
-                        color:
-                            selected ? AppColors.primary : context.backgroundColor,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Text(
-                        p,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color:
-                              selected ? Colors.white : context.textPrimaryColor,
-                          fontWeight:
-                              selected ? FontWeight.w600 : FontWeight.normal,
+                return GestureDetector(
+                  key: tabKeys[p],
+                  onTap: () => onPartitionTap(p),
+                  behavior: HitTestBehavior.opaque,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Text(
+                            p,
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: selected ? AppColors.primary : context.textSecondaryColor,
+                              fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                            ),
+                          ),
                         ),
-                      ),
+                        // Indicator
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          height: 3,
+                          width: selected ? 20 : 0,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(1.5),
+                          ),
+                          margin: const EdgeInsets.only(bottom: 1),
+                        ),
+                      ],
                     ),
                   ),
                 );
