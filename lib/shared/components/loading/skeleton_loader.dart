@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 
-/// 骨架屏加载组件 - 提供更自然的加载体验
+/// 骨架屏加载组件
 class SkeletonLoader extends StatefulWidget {
   final double width;
   final double height;
@@ -30,7 +30,7 @@ class _SkeletonLoaderState extends State<SkeletonLoader>
       duration: const Duration(milliseconds: 1200),
       vsync: this,
     )..repeat();
-    
+
     _animation = Tween<double>(begin: -1.0, end: 2.0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOutSine),
     );
@@ -45,7 +45,7 @@ class _SkeletonLoaderState extends State<SkeletonLoader>
   @override
   Widget build(BuildContext context) {
     final isDark = context.isDark;
-    
+
     return AnimatedBuilder(
       animation: _animation,
       builder: (context, child) {
@@ -134,7 +134,7 @@ class PostCardSkeleton extends StatelessWidget {
             ),
             const SizedBox(height: 12),
           ],
-          // 标题 - 更接近实际高度
+          // 标题
           SkeletonLoader(
             width: double.infinity,
             height: isDense ? 16 : 18,
@@ -149,7 +149,7 @@ class PostCardSkeleton extends StatelessWidget {
             ),
           ],
           SizedBox(height: isDense ? 4 : 8),
-          // 内容预览 - 非紧凑模式显示
+          // 内容预览（非紧凑模式显示）
           if (!isDense) ...[
             SkeletonLoader(
               width: double.infinity,
@@ -170,7 +170,7 @@ class PostCardSkeleton extends StatelessWidget {
             ),
             const SizedBox(height: 12),
           ],
-          // 底部统计信息 - 使用更真实的间距
+          // 底部统计信息
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
@@ -219,7 +219,7 @@ class ProductCardSkeleton extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 商品图片 - 使用 Expanded 保持比例
+          // 商品图片
           Expanded(
             child: Container(
               width: double.infinity,
@@ -265,7 +265,7 @@ class ProductCardSkeleton extends StatelessWidget {
   }
 }
 
-/// 列表骨架屏 - 显示多个帖子卡片骨架
+/// 列表骨架屏（显示多个帖子卡片骨架）
 class PostListSkeleton extends StatelessWidget {
   final int itemCount;
   final bool isDense;
@@ -290,7 +290,7 @@ class PostListSkeleton extends StatelessWidget {
   }
 }
 
-/// 网格骨架屏 - 显示多个商品卡片骨架
+/// 网格骨架屏（显示多个商品卡片骨架）
 class ProductGridSkeleton extends StatelessWidget {
   final int itemCount;
 
@@ -319,91 +319,242 @@ class ProductGridSkeleton extends StatelessWidget {
   }
 }
 
-/// 评论骨架屏 - 与 CommentCard 样式保持一致
+/// 评论骨架屏
 class CommentSkeleton extends StatelessWidget {
-  const CommentSkeleton({super.key});
+  final bool showSubReplies;
+
+  const CommentSkeleton({
+    super.key,
+    this.showSubReplies = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
-      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
         color: context.surfaceColor,
-        borderRadius: BorderRadius.circular(8),
+        border: Border(
+          bottom: BorderSide(
+            color: context.dividerColor,
+            width: 0.5,
+          ),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 用户信息行
-          Row(
-            children: [
-              // 头像
-              SkeletonLoader(
-                width: 32,
-                height: 32,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              const SizedBox(width: 8),
-              // 用户名和时间
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          _buildHeader(context),
+          const SizedBox(height: 8),
+          _buildContent(context),
+          const SizedBox(height: 8),
+          _buildActionBar(context),
+          if (showSubReplies) ...[
+            const SizedBox(height: 12),
+            _buildSubReplies(context),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SkeletonLoader(
+            width: 32,
+            height: 32,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    Row(
-                      children: [
-                        SkeletonLoader(
-                          width: 70,
-                          height: 14,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        const SizedBox(width: 4),
-                        SkeletonLoader(
-                          width: 24,
-                          height: 10,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
                     SkeletonLoader(
-                      width: 50,
-                      height: 12,
+                      width: 90,
+                      height: 14,
                       borderRadius: BorderRadius.circular(4),
+                    ),
+                    const SizedBox(width: 6),
+                    SkeletonLoader(
+                      width: 36,
+                      height: 10,
+                      borderRadius: BorderRadius.circular(3),
                     ),
                   ],
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          // 评论内容
-          SkeletonLoader(
-            width: double.infinity,
-            height: 14,
-            borderRadius: BorderRadius.circular(4),
-          ),
-          const SizedBox(height: 8),
-          // 操作按钮行
-          Row(
-            children: [
-              // 点赞
-              SkeletonLoader(
-                width: 40,
-                height: 12,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              const SizedBox(width: 16),
-              // 回复
-              SkeletonLoader(
-                width: 40,
-                height: 12,
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ],
+                const SizedBox(height: 2),
+                SkeletonLoader(
+                  width: 80,
+                  height: 12,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ],
+            ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildContent(BuildContext context) {
+    final contentWidth = (MediaQuery.of(context).size.width - 32)
+        .clamp(120.0, double.infinity)
+        .toDouble();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SkeletonLoader(
+            width: contentWidth,
+            height: 14,
+            borderRadius: BorderRadius.circular(4),
+          ),
+          const SizedBox(height: 6),
+          SkeletonLoader(
+            width: contentWidth * 0.85,
+            height: 14,
+            borderRadius: BorderRadius.circular(4),
+          ),
+          const SizedBox(height: 6),
+          SkeletonLoader(
+            width: contentWidth * 0.6,
+            height: 14,
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionBar(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          SkeletonLoader(
+            width: 46,
+            height: 12,
+            borderRadius: BorderRadius.circular(4),
+          ),
+          const SizedBox(width: 16),
+          SkeletonLoader(
+            width: 52,
+            height: 12,
+            borderRadius: BorderRadius.circular(4),
+          ),
+          if (showSubReplies) ...[
+            const SizedBox(width: 16),
+            SkeletonLoader(
+              width: 48,
+              height: 12,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSubReplies(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: context.backgroundColor,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          children: [
+            _buildSubReplyItem(context, widthFactor: 1.0),
+            const SizedBox(height: 12),
+            _buildSubReplyItem(context, widthFactor: 0.8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSubReplyItem(BuildContext context,
+      {required double widthFactor}) {
+    final baseWidth = (MediaQuery.of(context).size.width - 56)
+        .clamp(100.0, double.infinity)
+        .toDouble();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SkeletonLoader(
+              width: 24,
+              height: 24,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      SkeletonLoader(
+                        width: 70 * widthFactor,
+                        height: 12,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      const SizedBox(width: 6),
+                      SkeletonLoader(
+                        width: 48,
+                        height: 10,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  SkeletonLoader(
+                    width: 60,
+                    height: 10,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        SkeletonLoader(
+          width: baseWidth * widthFactor,
+          height: 12,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            SkeletonLoader(
+              width: 36,
+              height: 10,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            const SizedBox(width: 12),
+            SkeletonLoader(
+              width: 44,
+              height: 10,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -419,15 +570,14 @@ class CommentListSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      // 与真实评论列表的 padding 保持一致，包括顶部 12px 间距
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-      child: Column(
-        children: List.generate(
-          itemCount,
-          (index) => const CommentSkeleton(),
-        ),
-      ),
+    return Column(
+      children: [
+        const SizedBox(height: 12),
+        ...List.generate(itemCount, (index) {
+          final showSubReplies = index == 0 && itemCount > 1;
+          return CommentSkeleton(showSubReplies: showSubReplies);
+        }),
+      ],
     );
   }
 }
