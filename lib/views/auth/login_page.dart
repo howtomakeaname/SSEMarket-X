@@ -95,10 +95,11 @@ class _LoginFormState extends State<LoginForm> {
           await StorageService().setUser(user, token, rememberMe: true);
           if (!mounted) return;
           SnackBarHelper.show(context, '登录成功');
-          Navigator.of(context, rootNavigator: true).pushReplacement(
+          // Navigation is handled by GoRouter redirect due to StorageService change
+          /* Navigator.of(context, rootNavigator: true).pushReplacement(
             MaterialPageRoute(
                 builder: (_) => IndexPage(apiService: _apiService)),
-          );
+          ); */
         } else {
           SnackBarHelper.show(context, '获取用户信息失败');
         }
