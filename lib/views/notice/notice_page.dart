@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/notice_model.dart';
@@ -113,11 +114,34 @@ class _NoticePageState extends State<NoticePage>
   @override
   Widget build(BuildContext context) {
     super.build(context); // 必须调用 super.build
+    
+    // Calculate paddings
+    final topPadding = MediaQuery.of(context).padding.top + kToolbarHeight + 36;
+    final bottomPadding = kBottomNavigationBarHeight + MediaQuery.of(context).padding.bottom;
+
     return Scaffold(
       backgroundColor: context.backgroundColor,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: context.surfaceColor,
+        flexibleSpace: ClipRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: Container(
+              decoration: BoxDecoration(
+                color: context.surfaceColor.withOpacity(0.88),
+                border: Border(
+                  bottom: BorderSide(
+                    color: context.dividerColor.withOpacity(0.3),
+                    width: 0.5,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        backgroundColor: Colors.transparent, // Important: Transparency for blur
         elevation: 0,
+        scrolledUnderElevation: 0,
         title: Text(
           '消息',
           style: TextStyle(
@@ -128,59 +152,63 @@ class _NoticePageState extends State<NoticePage>
         ),
         centerTitle: false,
         titleSpacing: 16,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(36),
+          child: _buildTabs(transparent: true),
+        ),
       ),
-      body: Column(
+      body: PageView(
+        controller: _pageController,
+        onPageChanged: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
         children: [
-          _buildTabs(),
-          Expanded(
-            child: PageView(
-              controller: _pageController,
-              onPageChanged: (index) {
-                setState(() {
-                  _currentIndex = index;
-                });
-              },
-              children: [
-                // 私信列表
-                ChatListPage(
-                  apiService: widget.apiService,
-                  onUserTap: (user) {
-                    if (widget.onChatTap != null) {
-                      widget.onChatTap!(user);
-                    } else {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => ChatDetailPage(
-                            apiService: widget.apiService,
-                            targetUser: user,
-                            isEmbedded: false,
-                          ),
-                        ),
-                      );
-                    }
-                  },
-                ),
-                // 未读通知
-                _isLoading 
-                    ? const LoadingIndicator.center(message: '加载中...')
-                    : _buildNoticeList(_unreadNotices, isUnread: true),
-                // 已读通知
-                _isLoading
-                    ? const LoadingIndicator.center(message: '加载中...')
-                    : _buildNoticeList(_readNotices, isUnread: false),
-              ],
-            ),
+          // 私信列表
+          ChatListPage(
+            contentPadding: EdgeInsets.fromLTRB(16, topPadding + 16, 16, bottomPadding + 16),
+            apiService: widget.apiService,
+            onUserTap: (user) {
+              if (widget.onChatTap != null) {
+                widget.onChatTap!(user);
+              } else {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => ChatDetailPage(
+                      apiService: widget.apiService,
+                      targetUser: user, 
+                      isEmbedded: false,
+                    ),
+                  ),
+                );
+              }
+            },
           ),
+          // 未读通知
+          _isLoading 
+              ? Padding(
+                  padding: EdgeInsets.only(top: topPadding, bottom: bottomPadding),
+                  child: const LoadingIndicator.center(message: '加载中...'),
+                )
+              : _buildNoticeList(_unreadNotices, isUnread: true, topPadding: topPadding, bottomPadding: bottomPadding),
+          // 已读通知
+          _isLoading
+              ? Padding(
+                  padding: EdgeInsets.only(top: topPadding, bottom: bottomPadding),
+                  child: const LoadingIndicator.center(message: '加载中...'),
+                )
+              : _buildNoticeList(_readNotices, isUnread: false, topPadding: topPadding, bottomPadding: bottomPadding),
         ],
       ),
     );
   }
 
-  Widget _buildTabs() {
+  Widget _buildTabs({bool transparent = false}) {
     return Container(
       height: 36,
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      color: context.surfaceColor,
+      color: transparent ? Colors.transparent : context.surfaceColor,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
@@ -282,18 +310,22 @@ class _NoticePageState extends State<NoticePage>
     );
   }
 
-  Widget _buildNoticeList(List<Notice> notices, {required bool isUnread}) {
+  Widget _buildNoticeList(List<Notice> notices, {required bool isUnread, required double topPadding, required double bottomPadding}) {
     if (notices.isEmpty) {
-      return Center(
-        child: Text(isUnread ? '暂无未读通知' : '暂无已读通知', style: TextStyle(fontSize: 16, color: context.textTertiaryColor)),
+      return Padding(
+        padding: EdgeInsets.only(top: topPadding, bottom: bottomPadding),
+        child: Center(
+          child: Text(isUnread ? '暂无未读通知' : '暂无已读通知', style: TextStyle(fontSize: 16, color: context.textTertiaryColor)),
+        ),
       );
     }
 
     return RefreshIndicator(
+      edgeOffset: topPadding,
       onRefresh: () => _loadNotices(refresh: true),
       color: AppColors.primary,
       child: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 60),
+        padding: EdgeInsets.fromLTRB(16, topPadding + 16, 16, bottomPadding + 16),
         itemCount: notices.length,
         itemBuilder: (context, index) {
           final notice = notices[index];

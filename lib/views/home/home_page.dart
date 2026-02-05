@@ -353,10 +353,15 @@ class HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    final layoutConfig = LayoutConfig.of(context);
+    final showAvatar = layoutConfig != null ? !layoutConfig.isDesktop : widget.showHeaderAvatar;
+    final showAddButton = layoutConfig != null ? !layoutConfig.isDesktop : widget.showHeaderAddButton;
+    final topPadding = MediaQuery.of(context).padding.top + ((showAvatar && showAddButton) ? 80.0 : 88.0);
+
+    return Stack(
       children: [
-        _buildHeader(context),
-        Expanded(
+        // Content Layer
+        Positioned.fill(
           child: PageView.builder(
             controller: _pageController,
             onPageChanged: _onPageChanged,
@@ -368,44 +373,61 @@ class HomePageState extends State<HomePage> {
               if (partition == '教师') {
                 final layoutConfig = LayoutConfig.of(context);
                 final onPostTap = layoutConfig?.onPostTap ?? widget.onPostTap;
+                // TeacherPage handles its own scrolling but needs padding to not be hidden by header
                 return TeacherPage(
-                  apiService: widget.apiService,
-                  onPostTap: onPostTap,
+                    apiService: widget.apiService,
+                    onPostTap: onPostTap,
+                    contentPadding: EdgeInsets.only(top: topPadding),
                 );
               }
               
               final apiPartition = _displayToApiPartition[partition] ?? partition;
               final state = _partitionStates[apiPartition] ?? _PartitionState();
-              return _buildPostList(state, partition);
+              return _buildPostList(state, partition, topPadding);
             },
           ),
+        ),
+        // Header Layer (Blurred)
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: _buildHeader(context),
         ),
       ],
     );
   }
 
-  Widget _buildPostList(_PartitionState state, String partition) {
+  Widget _buildPostList(_PartitionState state, String partition, double topPadding) {
     final isDense = partition == '课程';
     final apiPartition = _displayToApiPartition[partition] ?? partition; // 获取 API 分区名
     final layoutConfig = LayoutConfig.of(context);
     final onPostTap = layoutConfig?.onPostTap ?? widget.onPostTap;
+    
+    // Bottom padding for mobile bottom nav
+    // Top padding includes header height
+    final bottomPadding = kBottomNavigationBarHeight + MediaQuery.of(context).padding.bottom;
 
     // 只在首次加载且列表为空时显示骨架屏
     // 如果已经加载过（hasLoadedOnce），即使列表为空也不显示骨架屏（可能是真的没有数据）
     if (!state.hasLoadedOnce && (_loadingUser || state.isLoading) && state.posts.isEmpty) {
-      return _buildSkeletonLoader(isDense);
+      return Padding(
+        padding: EdgeInsets.only(top: topPadding, bottom: bottomPadding),
+        child: _buildSkeletonLoader(isDense),
+      );
     }
 
     return Container(
       color: context.backgroundColor, // Use consistent background color
       child: RefreshIndicator(
+        edgeOffset: topPadding, // Ensure RefreshIndicator appears below header
         onRefresh: () => _fetchPosts(refresh: true),
         color: AppColors.primary,
         backgroundColor: context.surfaceColor,
         child: Stack(
           children: [
             ListView.builder(
-              padding: const EdgeInsets.only(top: 8, bottom: 16),
+              padding: EdgeInsets.only(top: topPadding + 8, bottom: bottomPadding + 16),
               physics: const AlwaysScrollableScrollPhysics(),
               itemCount: state.posts.length + 1,
               itemBuilder: (context, index) {

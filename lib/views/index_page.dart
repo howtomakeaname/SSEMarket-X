@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
@@ -237,8 +238,8 @@ class _IndexPageState extends State<IndexPage> {
   Widget _buildMobileLayout() {
     return Scaffold(
       backgroundColor: context.surfaceColor,
-      body: SafeArea(
-        child: IndexedStack(
+      extendBody: true,
+      body: IndexedStack( // Remove SafeArea to allow content behind/under
           index: _currentIndex,
           children: [
             _buildBodyForTab(0, isDesktop: false, isThreeColumn: false), // 首页
@@ -248,25 +249,27 @@ class _IndexPageState extends State<IndexPage> {
             _buildBodyForTab(6, isDesktop: false, isThreeColumn: false), // 我的
           ],
         ),
-      ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: context.surfaceColor,
-          border: Border(
-            top: BorderSide(color: context.dividerColor, width: 0.5),
-          ),
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: context.surfaceColor,
-          selectedItemColor: AppColors.primary,
-          unselectedItemColor: context.textSecondaryColor,
-          elevation: 0,
-          selectedFontSize: 12,
-          unselectedFontSize: 12,
-          iconSize: 24,
-          items: [
+      bottomNavigationBar: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            decoration: BoxDecoration(
+              color: context.surfaceColor.withOpacity(0.88), // Semi-transparent
+              border: Border(
+                top: BorderSide(color: context.dividerColor, width: 0.5),
+              ),
+            ),
+            child: BottomNavigationBar(
+              currentIndex: _currentIndex,
+              type: BottomNavigationBarType.fixed,
+              backgroundColor: Colors.transparent, // Transparent for blur
+              selectedItemColor: AppColors.primary,
+              unselectedItemColor: context.textSecondaryColor,
+              elevation: 0,
+              selectedFontSize: 12,
+              unselectedFontSize: 12,
+              iconSize: 24,
+              items: [
             BottomNavigationBarItem(
               icon: Padding(
                 padding: const EdgeInsets.only(bottom: 4),
@@ -370,7 +373,7 @@ class _IndexPageState extends State<IndexPage> {
           },
         ),
       ),
-    );
+    )));
   }
 
   Widget _buildDesktopLayout({required bool isThreeColumn}) {

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
@@ -188,8 +189,29 @@ class _ScorePageState extends State<ScorePage> {
 
   @override
   Widget build(BuildContext context) {
+    final topPadding = MediaQuery.of(context).padding.top + kToolbarHeight;
+    final bottomPadding = kBottomNavigationBarHeight + MediaQuery.of(context).padding.bottom;
+
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        flexibleSpace: ClipRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: Container(
+              decoration: BoxDecoration(
+                color: context.surfaceColor.withOpacity(0.88),
+                border: Border(
+                  bottom: BorderSide(
+                    color: context.dividerColor.withOpacity(0.3),
+                    width: 0.5,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
         title: Text(
           '打分',
           style: TextStyle(
@@ -217,55 +239,59 @@ class _ScorePageState extends State<ScorePage> {
             ),
           ),
         ],
-        backgroundColor: context.surfaceColor,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
         automaticallyImplyLeading: false,
       ),
       backgroundColor: context.backgroundColor,
-      body: Padding(
-        padding: const EdgeInsets.only(top: 8),
-        child: _buildBody(),
-      ),
+      body: _buildBody(topPadding, bottomPadding),
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildBody(double topPadding, double bottomPadding) {
     if (!_hasLoadedOnce && _isLoading && _posts.isEmpty) {
-      return const PostListSkeleton(itemCount: 5, isDense: true);
+      return Padding(
+        padding: EdgeInsets.only(top: topPadding + 8, bottom: bottomPadding),
+        child: const PostListSkeleton(itemCount: 5, isDense: true),
+      );
     }
 
     if (!_isLoading && _posts.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              '暂无打分数据',
-              style: TextStyle(color: context.textSecondaryColor, fontSize: 16),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => _fetchPosts(refresh: true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
+      return Padding(
+        padding: EdgeInsets.only(top: topPadding),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                '暂无打分数据',
+                style: TextStyle(color: context.textSecondaryColor, fontSize: 16),
               ),
-              child: const Text('刷新重试'),
-            ),
-          ],
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => _fetchPosts(refresh: true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('刷新重试'),
+              ),
+            ],
+          ),
         ),
       );
     }
 
     return RefreshIndicator(
+      edgeOffset: topPadding,
       onRefresh: () => _fetchPosts(refresh: true),
       color: AppColors.primary,
       child: Stack(
         children: [
           ListView.builder(
         controller: _scrollController,
+        padding: EdgeInsets.only(top: topPadding + 8, bottom: bottomPadding + 16),
         physics: const AlwaysScrollableScrollPhysics(),
         itemCount: _posts.length + 1,
         itemBuilder: (context, index) {

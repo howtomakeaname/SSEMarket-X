@@ -18,11 +18,13 @@ import 'package:sse_market_x/views/profile/user_profile_page.dart';
 class TeacherPage extends StatefulWidget {
   final ApiService apiService;
   final Function(int postId)? onPostTap;
+  final EdgeInsetsGeometry? contentPadding;
 
   const TeacherPage({
     super.key,
     required this.apiService,
     this.onPostTap,
+    this.contentPadding,
   });
 
   @override
@@ -292,12 +294,18 @@ class _TeacherPageState extends State<TeacherPage>
   }
 
   Widget _buildPostList() {
+    final padding = widget.contentPadding ?? EdgeInsets.zero;
+    final topPadding = padding.resolve(TextDirection.ltr).top;
+
     // 显示骨架屏的条件：
     // 1. 正在加载中且列表为空
     // 2. 还没加载过且列表为空（首次进入）
     // 3. 正在加载教师列表（说明刚进入页面）
     if (_posts.isEmpty && (_isLoading || !_hasLoadedOnce || _isLoadingTeachers)) {
-      return const PostListSkeleton(itemCount: 5, isDense: false);
+      return Padding(
+        padding: padding,
+        child: const PostListSkeleton(itemCount: 5, isDense: false),
+      );
     }
 
     // 只有在加载完成后且列表为空时才显示空状态
@@ -308,11 +316,12 @@ class _TeacherPageState extends State<TeacherPage>
     return Container(
       color: context.backgroundColor,
       child: RefreshIndicator(
+        edgeOffset: topPadding,
         onRefresh: () => _fetchPosts(refresh: true),
         color: AppColors.primary,
         backgroundColor: context.surfaceColor,
         child: ListView.builder(
-          padding: const EdgeInsets.only(top: 8, bottom: 16),
+          padding: padding.add(const EdgeInsets.only(top: 8, bottom: 16)),
           physics: const AlwaysScrollableScrollPhysics(),
           itemCount: _posts.length + 1,
           itemBuilder: (context, index) {
