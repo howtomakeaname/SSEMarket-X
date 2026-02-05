@@ -8,6 +8,7 @@ import 'package:sse_market_x/core/models/user_model.dart';
 import 'package:sse_market_x/core/services/storage_service.dart';
 import 'package:sse_market_x/core/services/websocket_service.dart';
 import 'package:sse_market_x/core/services/blur_effect_service.dart';
+import 'package:sse_market_x/core/services/desktop_layout_preference_service.dart';
 import 'package:sse_market_x/views/post/create_post_page.dart';
 import 'package:sse_market_x/views/home/home_page.dart';
 import 'package:sse_market_x/views/profile/my_page.dart';
@@ -27,11 +28,11 @@ import 'package:sse_market_x/views/post/score_post_detail_page.dart';
 import 'package:sse_market_x/core/services/notice_service.dart';
 
 // Detail panel content types
-enum DetailContentType { 
-  placeholder, 
-  postDetail, 
+enum DetailContentType {
+  placeholder,
+  postDetail,
   scorePostDetail,
-  postPreview, 
+  postPreview,
   productDetail,
   chatDetail
 }
@@ -47,9 +48,9 @@ class IndexPage extends StatefulWidget {
 
 class _DetailNavigatorObserver extends NavigatorObserver {
   final Function(bool isInitialRoute) onRouteChanged;
-  
+
   _DetailNavigatorObserver({required this.onRouteChanged});
-  
+
   @override
   void didPop(Route route, Route? previousRoute) {
     super.didPop(route, previousRoute);
@@ -64,16 +65,29 @@ class _IndexPageState extends State<IndexPage> {
   int _currentIndex = 0;
   int? _selectedPostId; // For desktop 3-column layout
   PostModel? _selectedPost; // Store selected post model for init data
-  int? _currentDetailPostId; // Track current post in detail panel (Legacy, can be removed but kept for compatibility if needed)
+  int?
+      _currentDetailPostId; // Track current post in detail panel (Legacy, can be removed but kept for compatibility if needed)
   int? _currentDetailProductId; // Track current product in detail panel
   UserModel? _selectedChatUser; // Track selected user for chat detail
-  
+
+  final DesktopLayoutPreferenceService _layoutPrefService =
+      DesktopLayoutPreferenceService();
+
+  static const double _splitterWidth = 6;
+  static const double _minMiddleWidth = 420;
+  static const double _minDetailWidth = 360;
+  double? _middleColumnWidth;
+  double? _sideMenuWidthValue;
+  static const double _minSideMenuWidth = 220;
+  static const double _maxSideMenuWidth = 420;
+
   DetailContentType _detailContentType = DetailContentType.placeholder;
-  
+
   // Preview state - 使用 ValueNotifier 实现实时更新
-  final ValueNotifier<Map<String, dynamic>> _previewDataNotifier = ValueNotifier({});
+  final ValueNotifier<Map<String, dynamic>> _previewDataNotifier =
+      ValueNotifier({});
   bool _isShowingPreview = false;
-  
+
   // 未读消息数（用于移动端底部 tab 小红点）
   int _unreadCount = 0;
   int _noticeUnreadCount = 0;
@@ -90,16 +104,23 @@ class _IndexPageState extends State<IndexPage> {
     5: GlobalKey<NavigatorState>(),
     6: GlobalKey<NavigatorState>(),
   };
-  
+
   // Key for detail panel navigator in 3-column layout
-  final GlobalKey<NavigatorState> _detailNavigatorKey = GlobalKey<NavigatorState>();
-  
+  final GlobalKey<NavigatorState> _detailNavigatorKey =
+      GlobalKey<NavigatorState>();
+
   // Key for HomePage to access its state
   final GlobalKey<HomePageState> _homePageKey = GlobalKey<HomePageState>();
 
   @override
   void initState() {
     super.initState();
+    _sideMenuWidthValue = _layoutPrefService.sideWidth;
+    _middleColumnWidth = _layoutPrefService.middleWidth;
+    _layoutPrefService.sideWidthNotifier
+        .addListener(_handleSideWidthPreferenceChanged);
+    _layoutPrefService.middleWidthNotifier
+        .addListener(_handleMiddleWidthPreferenceChanged);
     // 初始化 WebSocket 连接，以便获取未读消息数
     _initWebSocket();
     // 初始化未读消息监听
@@ -110,9 +131,27 @@ class _IndexPageState extends State<IndexPage> {
 
   @override
   void dispose() {
+    _layoutPrefService.sideWidthNotifier
+        .removeListener(_handleSideWidthPreferenceChanged);
+    _layoutPrefService.middleWidthNotifier
+        .removeListener(_handleMiddleWidthPreferenceChanged);
     _unreadSubscription?.cancel();
     _noticeUnreadSubscription?.cancel();
     super.dispose();
+  }
+
+  void _handleSideWidthPreferenceChanged() {
+    if (!mounted) return;
+    setState(() {
+      _sideMenuWidthValue = _layoutPrefService.sideWidth;
+    });
+  }
+
+  void _handleMiddleWidthPreferenceChanged() {
+    if (!mounted) return;
+    setState(() {
+      _middleColumnWidth = _layoutPrefService.middleWidth;
+    });
   }
 
   void _initWebSocket() {
@@ -150,7 +189,7 @@ class _IndexPageState extends State<IndexPage> {
       final noticeNum = await widget.apiService.getNoticeNum();
       final noticeService = NoticeService();
       noticeService.updateUnreadCount(noticeNum.unreadTotalNum);
-      
+
       // 监听通知未读数变化
       _noticeUnreadSubscription?.cancel();
       _noticeUnreadSubscription = noticeService.unreadCount.listen((count) {
@@ -160,7 +199,7 @@ class _IndexPageState extends State<IndexPage> {
           });
         }
       });
-      
+
       if (mounted) {
         setState(() {
           _noticeUnreadCount = noticeNum.unreadTotalNum;
@@ -174,16 +213,17 @@ class _IndexPageState extends State<IndexPage> {
   /// 刷新用户信息并更新到 StorageService
   Future<void> _refreshUserInfo() async {
     if (!StorageService().isLoggedIn) return;
-    
+
     try {
       // 获取基本用户信息
       final basicUser = await widget.apiService.getUserInfo();
       UserModel detailedUser = basicUser;
-      
+
       // 如果有手机号，获取详细信息（包含 score 和 intro）
       if (basicUser.phone.isNotEmpty) {
         try {
-          final detailed = await widget.apiService.getDetailedUserInfo(basicUser.phone);
+          final detailed =
+              await widget.apiService.getDetailedUserInfo(basicUser.phone);
           // 合并详细信息到基本信息
           detailedUser = basicUser.copyWith(
             score: detailed.score,
@@ -194,7 +234,7 @@ class _IndexPageState extends State<IndexPage> {
           // 如果获取详细信息失败，仍然使用基本信息
         }
       }
-      
+
       final storage = StorageService();
       // 更新用户信息，保持当前 token 和 rememberMe 状态
       await storage.setUser(
@@ -223,11 +263,11 @@ class _IndexPageState extends State<IndexPage> {
         // Use 1000 as breakpoint for 3-column layout
         if (constraints.maxWidth >= 1000) {
           return _buildDesktopLayout(isThreeColumn: true);
-        } 
+        }
         // Use 600 as breakpoint for 2-column layout (Tablet/Desktop)
         else if (constraints.maxWidth >= 600) {
           return _buildDesktopLayout(isThreeColumn: false);
-        } 
+        }
         // Mobile layout
         else {
           return _buildMobileLayout();
@@ -240,22 +280,23 @@ class _IndexPageState extends State<IndexPage> {
     return Scaffold(
       backgroundColor: context.surfaceColor,
       extendBody: true,
-      body: IndexedStack( // Remove SafeArea to allow content behind/under
-          index: _currentIndex,
-          children: [
-            _buildBodyForTab(0, isDesktop: false, isThreeColumn: false), // 首页
-            _buildBodyForTab(2, isDesktop: false, isThreeColumn: false), // 打分
-            _buildBodyForTab(3, isDesktop: false, isThreeColumn: false), // 闲置
-            _buildBodyForTab(4, isDesktop: false, isThreeColumn: false), // 消息
-            _buildBodyForTab(6, isDesktop: false, isThreeColumn: false), // 我的
-          ],
-        ),
+      body: IndexedStack(
+        // Remove SafeArea to allow content behind/under
+        index: _currentIndex,
+        children: [
+          _buildBodyForTab(0, isDesktop: false, isThreeColumn: false), // 首页
+          _buildBodyForTab(2, isDesktop: false, isThreeColumn: false), // 打分
+          _buildBodyForTab(3, isDesktop: false, isThreeColumn: false), // 闲置
+          _buildBodyForTab(4, isDesktop: false, isThreeColumn: false), // 消息
+          _buildBodyForTab(6, isDesktop: false, isThreeColumn: false), // 我的
+        ],
+      ),
       bottomNavigationBar: ValueListenableBuilder<bool>(
         valueListenable: BlurEffectService().enabledNotifier,
         builder: (context, isBlurEnabled, child) {
           Widget navContent = Container(
             decoration: BoxDecoration(
-              color: isBlurEnabled 
+              color: isBlurEnabled
                   ? context.blurBackgroundColor.withOpacity(0.82)
                   : context.surfaceColor,
               border: Border(
@@ -273,110 +314,110 @@ class _IndexPageState extends State<IndexPage> {
               unselectedFontSize: 12,
               iconSize: 24,
               items: [
-            BottomNavigationBarItem(
-              icon: Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: SvgPicture.asset(
-                  'assets/icons/home_normal.svg',
-                  width: 24,
-                  height: 24,
+                BottomNavigationBarItem(
+                  icon: Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: SvgPicture.asset(
+                      'assets/icons/home_normal.svg',
+                      width: 24,
+                      height: 24,
+                    ),
+                  ),
+                  activeIcon: Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: SvgPicture.asset(
+                      'assets/icons/home_selected.svg',
+                      width: 24,
+                      height: 24,
+                    ),
+                  ),
+                  label: '首页',
                 ),
-              ),
-              activeIcon: Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: SvgPicture.asset(
-                  'assets/icons/home_selected.svg',
-                  width: 24,
-                  height: 24,
+                BottomNavigationBarItem(
+                  icon: Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: SvgPicture.asset(
+                      'assets/icons/todo_normal_new.svg',
+                      width: 24,
+                      height: 24,
+                    ),
+                  ),
+                  activeIcon: Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: SvgPicture.asset(
+                      'assets/icons/todo_selected_new.svg',
+                      width: 24,
+                      height: 24,
+                    ),
+                  ),
+                  label: '打分',
                 ),
-              ),
-              label: '首页',
+                BottomNavigationBarItem(
+                  icon: Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: SvgPicture.asset(
+                      'assets/icons/shop_normal.svg',
+                      width: 24,
+                      height: 24,
+                    ),
+                  ),
+                  activeIcon: Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: SvgPicture.asset(
+                      'assets/icons/shop_selected.svg',
+                      width: 24,
+                      height: 24,
+                    ),
+                  ),
+                  label: '闲置',
+                ),
+                BottomNavigationBarItem(
+                  icon: Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: _buildMessageIcon(isSelected: false),
+                  ),
+                  activeIcon: Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: _buildMessageIcon(isSelected: true),
+                  ),
+                  label: '消息',
+                ),
+                BottomNavigationBarItem(
+                  icon: Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: SvgPicture.asset(
+                      'assets/icons/profile_normal.svg',
+                      width: 24,
+                      height: 24,
+                    ),
+                  ),
+                  activeIcon: Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: SvgPicture.asset(
+                      'assets/icons/profile_selected.svg',
+                      width: 24,
+                      height: 24,
+                    ),
+                  ),
+                  label: '我的',
+                ),
+              ],
+              onTap: (index) {
+                setState(() {
+                  _currentIndex = index;
+                });
+                // 切换到首页时触发静默后台刷新
+                if (index == 0) {
+                  _homePageKey.currentState?.silentRefresh();
+                }
+                // 切换到消息页时刷新通知未读数
+                if (index == 3) {
+                  _fetchNoticeUnreadCount();
+                }
+              },
             ),
-            BottomNavigationBarItem(
-              icon: Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: SvgPicture.asset(
-                  'assets/icons/todo_normal_new.svg',
-                  width: 24,
-                  height: 24,
-                ),
-              ),
-              activeIcon: Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: SvgPicture.asset(
-                  'assets/icons/todo_selected_new.svg',
-                  width: 24,
-                  height: 24,
-                ),
-              ),
-              label: '打分',
-            ),
-            BottomNavigationBarItem(
-              icon: Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: SvgPicture.asset(
-                  'assets/icons/shop_normal.svg',
-                  width: 24,
-                  height: 24,
-                ),
-              ),
-              activeIcon: Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: SvgPicture.asset(
-                  'assets/icons/shop_selected.svg',
-                  width: 24,
-                  height: 24,
-                ),
-              ),
-              label: '闲置',
-            ),
-            BottomNavigationBarItem(
-              icon: Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: _buildMessageIcon(isSelected: false),
-              ),
-              activeIcon: Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: _buildMessageIcon(isSelected: true),
-              ),
-              label: '消息',
-            ),
-            BottomNavigationBarItem(
-              icon: Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: SvgPicture.asset(
-                  'assets/icons/profile_normal.svg',
-                  width: 24,
-                  height: 24,
-                ),
-              ),
-              activeIcon: Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: SvgPicture.asset(
-                  'assets/icons/profile_selected.svg',
-                  width: 24,
-                  height: 24,
-                ),
-              ),
-              label: '我的',
-            ),
-          ],
-          onTap: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-            // 切换到首页时触发静默后台刷新
-            if (index == 0) {
-              _homePageKey.currentState?.silentRefresh();
-            }
-            // 切换到消息页时刷新通知未读数
-            if (index == 3) {
-              _fetchNoticeUnreadCount();
-            }
-          },
-        ),
-      );
-          
+          );
+
           if (isBlurEnabled) {
             return ClipRect(
               child: BackdropFilter(
@@ -397,74 +438,310 @@ class _IndexPageState extends State<IndexPage> {
       isDesktop: true,
       isThreeColumn: isThreeColumn,
       onPostTap: isThreeColumn
-          ? (postId, {isScorePost = false, post}) => _navigateToPostDetail(postId, isScorePost: isScorePost, post: post)
+          ? (postId, {isScorePost = false, post}) => _navigateToPostDetail(
+              postId,
+              isScorePost: isScorePost,
+              post: post)
           : null,
       child: Scaffold(
         backgroundColor: context.surfaceColor,
-        body: Row(
-          children: [
-            // Side Menu
-            SideMenu(
-              apiService: widget.apiService,
-              selectedIndex: _currentIndex,
-              onItemTap: (index) {
-                setState(() {
-                  _currentIndex = index;
-                  // Clear detail panel navigator when changing tabs
-                  _detailNavigatorKey.currentState?.popUntil((route) => route.isFirst);
-                  
-                  // Reset detail content type to placeholder for all tabs
-                  // The specific content (like preview) will be pushed by the page itself
-                  _detailContentType = DetailContentType.placeholder;
-                });
-              },
-              onAvatarTap: () {
-                setState(() {
-                  _currentIndex = 6;
-                  // Clear detail panel navigator
-                  _detailNavigatorKey.currentState?.popUntil((route) => route.isFirst);
-                  _detailContentType = DetailContentType.placeholder;
-                });
-              },
-            ),
-            
-            // Main Content Area with Nested Navigator
-            Expanded(
-              flex: 5,
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border(right: BorderSide(color: context.dividerColor, width: 1)),
-                ),
-                // Use IndexedStack to preserve state of each tab
-                child: IndexedStack(
-                  index: _currentIndex,
-                  children: List.generate(7, (index) {
-                    return Navigator(
-                      key: _navigatorKeys[index],
-                      onGenerateRoute: (settings) {
-                        return MaterialPageRoute(
-                          builder: (_) => _buildBodyForTab(index, isDesktop: true, isThreeColumn: isThreeColumn),
-                        );
+        body: LayoutBuilder(
+          builder: (context, constraints) {
+            final totalWidth = constraints.maxWidth;
+            final desiredSideWidth = _sideMenuWidthValue ??
+                DesktopLayoutPreferenceService.defaultSideWidth;
+            final desiredMiddleWidth = _middleColumnWidth ??
+                DesktopLayoutPreferenceService.defaultMiddleWidth;
+
+            if (isThreeColumn) {
+              double sideWidth = desiredSideWidth;
+              double middleWidth = desiredMiddleWidth;
+
+              final maxSideWidth = totalWidth -
+                  (2 * _splitterWidth) -
+                  _minMiddleWidth -
+                  _minDetailWidth;
+              final effectiveMaxSide = maxSideWidth < _minSideMenuWidth
+                  ? _minSideMenuWidth
+                  : (maxSideWidth > _maxSideMenuWidth
+                      ? _maxSideMenuWidth
+                      : maxSideWidth);
+              sideWidth = sideWidth.clamp(_minSideMenuWidth, effectiveMaxSide);
+
+              final rawMaxMiddle = totalWidth -
+                  sideWidth -
+                  (2 * _splitterWidth) -
+                  _minDetailWidth;
+              final effectiveMaxMiddle = rawMaxMiddle < _minMiddleWidth
+                  ? _minMiddleWidth
+                  : rawMaxMiddle;
+              middleWidth =
+                  middleWidth.clamp(_minMiddleWidth, effectiveMaxMiddle);
+
+              double detailWidth =
+                  totalWidth - sideWidth - middleWidth - (2 * _splitterWidth);
+              if (detailWidth < _minDetailWidth) {
+                final deficit = _minDetailWidth - detailWidth;
+                final reducibleFromMiddle = middleWidth - _minMiddleWidth;
+                final reduceFromMiddle = reducibleFromMiddle >= deficit
+                    ? deficit
+                    : reducibleFromMiddle;
+                middleWidth -= reduceFromMiddle;
+                detailWidth += reduceFromMiddle;
+
+                if (detailWidth < _minDetailWidth) {
+                  final remaining = _minDetailWidth - detailWidth;
+                  final reducibleFromSide = sideWidth - _minSideMenuWidth;
+                  final reduceFromSide = reducibleFromSide >= remaining
+                      ? remaining
+                      : reducibleFromSide;
+                  sideWidth -= reduceFromSide;
+                  detailWidth += reduceFromSide;
+
+                  if (detailWidth < _minDetailWidth) {
+                    detailWidth = _minDetailWidth;
+                  }
+                }
+              }
+
+              final maxMiddleWidth = totalWidth -
+                  sideWidth -
+                  (2 * _splitterWidth) -
+                  _minDetailWidth;
+
+              return Row(
+                children: [
+                  SizedBox(
+                    width: sideWidth,
+                    child: SideMenu(
+                      apiService: widget.apiService,
+                      selectedIndex: _currentIndex,
+                      onItemTap: (index) {
+                        setState(() {
+                          _currentIndex = index;
+                          _detailNavigatorKey.currentState
+                              ?.popUntil((route) => route.isFirst);
+                          _detailContentType = DetailContentType.placeholder;
+                        });
                       },
-                    );
-                  }),
+                      onAvatarTap: () {
+                        setState(() {
+                          _currentIndex = 6;
+                          _detailNavigatorKey.currentState
+                              ?.popUntil((route) => route.isFirst);
+                          _detailContentType = DetailContentType.placeholder;
+                        });
+                      },
+                    ),
+                  ),
+                  MouseRegion(
+                    cursor: SystemMouseCursors.resizeColumn,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onHorizontalDragUpdate: (details) {
+                        setState(() {
+                          final proposed = (_sideMenuWidthValue ?? sideWidth) +
+                              details.delta.dx;
+                          final upperBound = effectiveMaxSide;
+                          double newSide = proposed;
+                          if (upperBound < _minSideMenuWidth) {
+                            newSide = _minSideMenuWidth;
+                          } else {
+                            if (newSide < _minSideMenuWidth)
+                              newSide = _minSideMenuWidth;
+                            if (newSide > upperBound) newSide = upperBound;
+                          }
+                          _sideMenuWidthValue = newSide;
+
+                          final double middleUpper = totalWidth -
+                              newSide -
+                              (2 * _splitterWidth) -
+                              _minDetailWidth;
+                          if (_middleColumnWidth != null) {
+                            double newMiddle = _middleColumnWidth!;
+                            if (middleUpper < _minMiddleWidth) {
+                              newMiddle = _minMiddleWidth;
+                            } else if (newMiddle > middleUpper) {
+                              newMiddle = middleUpper;
+                            }
+                            _middleColumnWidth = newMiddle;
+                          }
+                        });
+                      },
+                      onHorizontalDragEnd: (_) {
+                        if (_sideMenuWidthValue != null) {
+                          unawaited(_layoutPrefService
+                              .setSideWidth(_sideMenuWidthValue!));
+                        }
+                        if (_middleColumnWidth != null) {
+                          unawaited(_layoutPrefService
+                              .setMiddleWidth(_middleColumnWidth!));
+                        }
+                      },
+                      child: Container(
+                        width: _splitterWidth,
+                        height: double.infinity,
+                        color: context.surfaceColor,
+                        child: Center(
+                          child: Container(
+                            width: 2,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: context.dividerColor.withOpacity(0.8),
+                              borderRadius: BorderRadius.circular(1),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                    width: middleWidth,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border(
+                            right: BorderSide(
+                                color: context.dividerColor, width: 1)),
+                      ),
+                      child: IndexedStack(
+                        index: _currentIndex,
+                        children: List.generate(7, (index) {
+                          return Navigator(
+                            key: _navigatorKeys[index],
+                            onGenerateRoute: (settings) {
+                              return MaterialPageRoute(
+                                builder: (_) => _buildBodyForTab(index,
+                                    isDesktop: true,
+                                    isThreeColumn: isThreeColumn),
+                              );
+                            },
+                          );
+                        }),
+                      ),
+                    ),
+                  ),
+                  MouseRegion(
+                    cursor: SystemMouseCursors.resizeColumn,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onHorizontalDragUpdate: (details) {
+                        setState(() {
+                          final proposed = (_middleColumnWidth ?? middleWidth) +
+                              details.delta.dx;
+                          final upperBound = maxMiddleWidth < _minMiddleWidth
+                              ? _minMiddleWidth
+                              : maxMiddleWidth;
+                          double newMiddle = proposed;
+                          if (upperBound < _minMiddleWidth) {
+                            newMiddle = _minMiddleWidth;
+                          } else {
+                            if (newMiddle < _minMiddleWidth)
+                              newMiddle = _minMiddleWidth;
+                            if (newMiddle > upperBound) newMiddle = upperBound;
+                          }
+                          _middleColumnWidth = newMiddle;
+                        });
+                      },
+                      onHorizontalDragEnd: (_) {
+                        if (_middleColumnWidth != null) {
+                          unawaited(_layoutPrefService
+                              .setMiddleWidth(_middleColumnWidth!));
+                        }
+                      },
+                      child: Container(
+                        width: _splitterWidth,
+                        height: double.infinity,
+                        color: context.surfaceColor,
+                        child: Center(
+                          child: Container(
+                            width: 2,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: context.dividerColor.withOpacity(0.8),
+                              borderRadius: BorderRadius.circular(1),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: _buildDetailPanel(),
+                  ),
+                ],
+              );
+            }
+
+            double sideWidth =
+                desiredSideWidth.clamp(_minSideMenuWidth, _maxSideMenuWidth);
+            final double minContentWidth = 600;
+            double maxSideForTwoColumn = totalWidth - minContentWidth;
+            if (maxSideForTwoColumn < _minSideMenuWidth) {
+              maxSideForTwoColumn = _minSideMenuWidth;
+            }
+            if (sideWidth > maxSideForTwoColumn) {
+              sideWidth = maxSideForTwoColumn;
+            }
+
+            return Row(
+              children: [
+                SizedBox(
+                  width: sideWidth,
+                  child: SideMenu(
+                    apiService: widget.apiService,
+                    selectedIndex: _currentIndex,
+                    onItemTap: (index) {
+                      setState(() {
+                        _currentIndex = index;
+                        _detailNavigatorKey.currentState
+                            ?.popUntil((route) => route.isFirst);
+                        _detailContentType = DetailContentType.placeholder;
+                      });
+                    },
+                    onAvatarTap: () {
+                      setState(() {
+                        _currentIndex = 6;
+                        _detailNavigatorKey.currentState
+                            ?.popUntil((route) => route.isFirst);
+                        _detailContentType = DetailContentType.placeholder;
+                      });
+                    },
+                  ),
                 ),
-              ),
-            ),
-            
-            // Detail Panel (Only for 3-column layout)
-            if (isThreeColumn)
-              Expanded(
-                flex: 6,
-                child: _buildDetailPanel(),
-              ),
-          ],
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border(
+                          right: BorderSide(
+                              color: context.dividerColor, width: 1)),
+                    ),
+                    child: IndexedStack(
+                      index: _currentIndex,
+                      children: List.generate(7, (index) {
+                        return Navigator(
+                          key: _navigatorKeys[index],
+                          onGenerateRoute: (settings) {
+                            return MaterialPageRoute(
+                              builder: (_) => _buildBodyForTab(index,
+                                  isDesktop: true,
+                                  isThreeColumn: isThreeColumn),
+                            );
+                          },
+                        );
+                      }),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _buildBodyForTab(int index, {required bool isDesktop, required bool isThreeColumn}) {
+  Widget _buildBodyForTab(int index,
+      {required bool isDesktop, required bool isThreeColumn}) {
     switch (index) {
       case 0:
         return HomePage(
@@ -480,7 +757,7 @@ class _IndexPageState extends State<IndexPage> {
               });
             }
           },
-          onPostTap: isThreeColumn 
+          onPostTap: isThreeColumn
               ? (postId) => _navigateToPostDetail(postId, isScorePost: false)
               : null,
         );
@@ -505,7 +782,7 @@ class _IndexPageState extends State<IndexPage> {
       case 3:
         return ShopPage(
           apiService: widget.apiService,
-          onProductTap: isThreeColumn 
+          onProductTap: isThreeColumn
               ? (productId) => _updateProductDetail(productId)
               : null,
         );
@@ -513,9 +790,8 @@ class _IndexPageState extends State<IndexPage> {
         // Message Page (includes Chat and Notice)
         return NoticePage(
           apiService: widget.apiService,
-          onChatTap: isThreeColumn
-              ? (user) => _navigateToChatDetail(user)
-              : null,
+          onChatTap:
+              isThreeColumn ? (user) => _navigateToChatDetail(user) : null,
         );
       case 5:
         // Unused (previously Chat)
@@ -536,10 +812,10 @@ class _IndexPageState extends State<IndexPage> {
             if (isInitialRoute) {
               setState(() {
                 _selectedPostId = null;
-                _currentDetailPostId = null; 
-                _currentDetailProductId = null; 
+                _currentDetailPostId = null;
+                _currentDetailProductId = null;
                 _selectedChatUser = null;
-                _detailContentType = DetailContentType.placeholder; 
+                _detailContentType = DetailContentType.placeholder;
                 _isShowingPreview = false; // Reset preview flag
               });
             }
@@ -548,7 +824,7 @@ class _IndexPageState extends State<IndexPage> {
       ],
       onGenerateRoute: (settings) {
         return MaterialPageRoute(
-          // Fix: Always use placeholder for the root route to prevent it from 
+          // Fix: Always use placeholder for the root route to prevent it from
           // changing into a detail page when state updates.
           builder: (_) => _buildPlaceholderContent(),
         );
@@ -598,7 +874,7 @@ class _IndexPageState extends State<IndexPage> {
   Widget _buildPlaceholderContent() {
     String message;
     IconData icon;
-    
+
     switch (_currentIndex) {
       case 0:
         message = '选择一个帖子查看详情';
@@ -632,7 +908,7 @@ class _IndexPageState extends State<IndexPage> {
         message = '选择内容以查看';
         icon = Icons.article_outlined;
     }
-    
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -640,7 +916,7 @@ class _IndexPageState extends State<IndexPage> {
           Icon(icon, size: 64, color: context.dividerColor),
           const SizedBox(height: 16),
           Text(
-            message, 
+            message,
             style: TextStyle(fontSize: 16, color: context.textSecondaryColor),
           ),
         ],
@@ -653,7 +929,7 @@ class _IndexPageState extends State<IndexPage> {
     if (productId == null) {
       return _buildPlaceholderContent();
     }
-    
+
     return ProductDetailPage(
       productId: productId,
       apiService: widget.apiService,
@@ -666,7 +942,7 @@ class _IndexPageState extends State<IndexPage> {
       _selectedChatUser = user;
       _detailContentType = DetailContentType.chatDetail;
     });
-    
+
     _detailNavigatorKey.currentState?.pushReplacement(
       MaterialPageRoute(
         builder: (_) => ChatDetailPage(
@@ -678,20 +954,23 @@ class _IndexPageState extends State<IndexPage> {
     );
   }
 
-  void _navigateToPostDetail(int postId, {bool isScorePost = false, PostModel? post}) {
+  void _navigateToPostDetail(int postId,
+      {bool isScorePost = false, PostModel? post}) {
     // Check if the same post is already displayed and content type matches
-    final expectedType = isScorePost ? DetailContentType.scorePostDetail : DetailContentType.postDetail;
-    
+    final expectedType = isScorePost
+        ? DetailContentType.scorePostDetail
+        : DetailContentType.postDetail;
+
     if (_selectedPostId == postId && _detailContentType == expectedType) {
       return; // Don't push if same post is already displayed
     }
-    
+
     setState(() {
       _selectedPostId = postId;
       _selectedPost = post;
       _detailContentType = expectedType;
     });
-    
+
     // Push new post detail page to the navigator
     _detailNavigatorKey.currentState?.push(
       MaterialPageRoute(
@@ -765,7 +1044,7 @@ class _IndexPageState extends State<IndexPage> {
 
     // Update current product ID
     _currentDetailProductId = productId;
-    
+
     // Push product detail page to navigator
     _detailNavigatorKey.currentState?.push(
       MaterialPageRoute(
@@ -798,12 +1077,14 @@ class _IndexPageState extends State<IndexPage> {
   /// 构建消息图标（带未读小红点）
   Widget _buildMessageIcon({required bool isSelected}) {
     final totalUnread = _unreadCount + _noticeUnreadCount;
-    
+
     return Stack(
       clipBehavior: Clip.none,
       children: [
         SvgPicture.asset(
-          isSelected ? 'assets/icons/notice_selected.svg' : 'assets/icons/notice_normal.svg',
+          isSelected
+              ? 'assets/icons/notice_selected.svg'
+              : 'assets/icons/notice_normal.svg',
           width: 24,
           height: 24,
         ),
