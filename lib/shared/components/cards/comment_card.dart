@@ -40,9 +40,9 @@ class CommentCard extends StatefulWidget {
 }
 
 class _CommentCardState extends State<CommentCard> {
-  late bool _isLiked;
-  late int _likeCount;
-  bool _showSubComments = false;
+  bool _isLiked = false;
+  int _likeCount = 0;
+  // bool _showSubComments = false; // 默认展开，不再需要控制开关
   final Map<int, bool> _subCommentLikes = {};
   final Map<int, int> _subCommentLikeCounts = {};
 
@@ -134,22 +134,35 @@ class _CommentCardState extends State<CommentCard> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
-      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 12),
+      margin: const EdgeInsets.only(bottom: 0),
       decoration: BoxDecoration(
         color: context.surfaceColor,
-        borderRadius: BorderRadius.circular(8),
+        // borderRadius: BorderRadius.circular(8),
+        border: Border(bottom: BorderSide(color: context.dividerColor, width: 0.5)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildUserInfo(),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: _buildUserInfo(),
+          ),
           const SizedBox(height: 8),
-          _buildContent(),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: _buildContent(),
+          ),
           const SizedBox(height: 8),
-          _buildActionBar(),
-          if (_showSubComments && widget.comment.subComments.isNotEmpty)
-            _buildSubComments(),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: _buildActionBar(),
+          ),
+          if (widget.comment.subComments.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+              child: _buildSubComments(),
+            ),
         ],
       ),
     );
@@ -340,26 +353,7 @@ class _CommentCardState extends State<CommentCard> {
             ],
           ),
         ),
-        // 查看回复
-        if (widget.comment.subComments.isNotEmpty) ...[
-          const SizedBox(width: 16),
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                _showSubComments = !_showSubComments;
-              });
-            },
-            child: Text(
-              _showSubComments
-                  ? '收起回复'
-                  : '查看${widget.comment.subComments.length}条回复',
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppColors.primary,
-              ),
-            ),
-          ),
-        ],
+        // 查看回复 - 已移除，默认全部展开
         // 删除（自己的评论）
         if (_isOwnComment) ...[
           const SizedBox(width: 16),
@@ -407,7 +401,9 @@ class _CommentCardState extends State<CommentCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // 头像
               GestureDetector(
                 onTap: () {
                   if (widget.onUserTap != null) {
@@ -464,61 +460,72 @@ class _CommentCardState extends State<CommentCard> {
                   ),
                 ),
               ),
-              const SizedBox(width: 6),
-              GestureDetector(
-                onTap: () {
-                  if (widget.onUserTap != null) {
-                    widget.onUserTap!(subComment.authorId, subComment.authorName, subComment.authorAvatar);
-                  }
-                },
-                child: Text(
-                  subComment.authorName.isNotEmpty
-                      ? subComment.authorName
-                      : '匿名用户',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: context.textPrimaryColor,
-                  ),
-                ),
-              ),
-              if (subComment.authorScore >= 0) ...[
-                const SizedBox(width: 3),
-                Text(
-                  LevelUtils.getLevelName(subComment.authorScore),
-                  style: TextStyle(
-                    fontSize: 8,
-                    fontWeight: FontWeight.bold,
-                    color: LevelUtils.getLevelColor(subComment.authorScore),
-                  ),
-                ),
-              ],
-              // 显示回复对象
-              const SizedBox(width: 4),
-              Text(
-                '回复',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: context.textSecondaryColor,
-                ),
-              ),
-              const SizedBox(width: 4),
-              Text(
-                subComment.targetUserName.isNotEmpty
-                    ? subComment.targetUserName
-                    : '层主',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: context.textPrimaryColor,
-                ),
-              ),
-              const Spacer(),
-              Text(
-                TimeUtils.formatRelativeTime(subComment.commentTime),
-                style: TextStyle(
-                  fontSize: 11,
-                  color: context.textSecondaryColor,
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                         GestureDetector(
+                          onTap: () {
+                            if (widget.onUserTap != null) {
+                              widget.onUserTap!(subComment.authorId, subComment.authorName, subComment.authorAvatar);
+                            }
+                          },
+                          child: Text(
+                            subComment.authorName.isNotEmpty
+                                ? subComment.authorName
+                                : '匿名用户',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: context.textPrimaryColor,
+                            ),
+                          ),
+                        ),
+                        if (subComment.authorScore >= 0) ...[
+                          const SizedBox(width: 3),
+                          Text(
+                            LevelUtils.getLevelName(subComment.authorScore),
+                            style: TextStyle(
+                              fontSize: 8,
+                              fontWeight: FontWeight.bold,
+                              color: LevelUtils.getLevelColor(subComment.authorScore),
+                            ),
+                          ),
+                        ],
+                        // 显示回复对象
+                        const SizedBox(width: 4),
+                        Text(
+                          '回复',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: context.textSecondaryColor,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          subComment.targetUserName.isNotEmpty
+                              ? subComment.targetUserName
+                              : '层主',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: context.textPrimaryColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      TimeUtils.formatRelativeTime(subComment.commentTime),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: context.textSecondaryColor,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],

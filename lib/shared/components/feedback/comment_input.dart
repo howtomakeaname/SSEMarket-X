@@ -15,6 +15,7 @@ class CommentInput extends StatefulWidget {
   final ApiService apiService;
   final Future<bool> Function(String content) onSend;
   final String placeholder;
+  final bool autoFocus;
 
   const CommentInput({
     super.key,
@@ -22,6 +23,7 @@ class CommentInput extends StatefulWidget {
     required this.apiService,
     required this.onSend,
     this.placeholder = '支持Markdown语法',
+    this.autoFocus = false,
   });
 
   @override
@@ -565,6 +567,7 @@ class _CommentInputState extends State<CommentInput> {
   Widget _buildEditor() {
     return TextField(
       controller: _controller,
+      autofocus: widget.autoFocus,
       maxLines: 6,
       minLines: 3,
       onChanged: (value) {

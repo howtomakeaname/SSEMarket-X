@@ -776,7 +776,7 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
               ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 0), // 移除左右内边距，使评论卡片占满
                 itemCount: _comments.length,
                 itemBuilder: (context, index) {
                   final comment = _comments[index];
@@ -855,22 +855,58 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
 
   /// 显示回复弹窗
   void _showReplyModal(String replyToName, int? parentCommentId, {int? targetCommentId, String? targetUserName}) {
-    showDialog(
-      context: context,
-      builder: (context) => ReplyModal(
-        postId: widget.postId,
-        apiService: widget.apiService,
-        replyToName: replyToName,
-        parentCommentId: parentCommentId,
-        targetCommentId: targetCommentId,
-        targetUserName: targetUserName,
-      ),
-    ).then((result) {
-      if (result == true) {
-        // 回复成功，刷新评论列表
-        _loadComments();
-      }
-    });
+    final isDesktop = MediaQuery.of(context).size.width >= 600;
+    
+    if (isDesktop) {
+      // 桌面端/平板：居中弹窗
+      showDialog(
+        context: context,
+        builder: (context) => Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.all(24),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: ReplyModal(
+              postId: widget.postId,
+              apiService: widget.apiService,
+              replyToName: replyToName,
+              parentCommentId: parentCommentId,
+              targetCommentId: targetCommentId,
+              targetUserName: targetUserName,
+              isDialog: true, // 标记为弹窗模式
+            ),
+          ),
+        ),
+      ).then((result) {
+        if (result == true) {
+          _loadComments();
+        }
+      });
+    } else {
+      // 移动端：底部弹窗
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true, // 允许全屏高度
+        backgroundColor: Colors.transparent,
+        builder: (context) => Padding(
+          // 确保输入框被键盘顶起
+          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          child: ReplyModal(
+            postId: widget.postId,
+            apiService: widget.apiService,
+            replyToName: replyToName,
+            parentCommentId: parentCommentId,
+            targetCommentId: targetCommentId,
+            targetUserName: targetUserName,
+          ),
+        ),
+      ).then((result) {
+        if (result == true) {
+          // 回复成功，刷新评论列表
+          _loadComments();
+        }
+      });
+    }
   }
 
   /// 详情页骨架屏
