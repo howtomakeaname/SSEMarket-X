@@ -329,6 +329,12 @@ class _PostDetailPageState extends State<PostDetailPage> with SingleTickerProvid
   }
 
   void _onBack() {
+    // 检查是否可以返回，如果不能（如深层链接直接打开），则跳转到首页
+    if (!Navigator.of(context).canPop()) {
+      context.go('/');
+      return;
+    }
+
     // 返回变化的数据：是否删除、点赞状态、点赞数
     if (_hasChanges) {
       Navigator.of(context).pop({
