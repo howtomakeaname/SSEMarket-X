@@ -178,30 +178,35 @@ class _NoticePageState extends State<NoticePage>
 
   Widget _buildTabs() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      height: 36,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       color: context.surfaceColor,
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           _buildTabButton('私信', 0, badgeCount: _chatUnreadCount),
-          const SizedBox(width: 8),
+          const SizedBox(width: 24),
           _buildTabButton('未读通知', 1, badgeCount: _unreadNotices.length),
-          const SizedBox(width: 8),
+          const SizedBox(width: 24),
           _buildTabButton('已读通知', 2),
           const Spacer(),
           if (_currentIndex == 1 && _unreadNotices.isNotEmpty)
-            GestureDetector(
-              onTap: _markAllAsRead,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                decoration: BoxDecoration(
-                  color: context.backgroundColor,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Text(
-                  '一键已读',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.primary,
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: GestureDetector(
+                onTap: _markAllAsRead,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: context.backgroundColor,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Text(
+                    '一键已读',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.primary,
+                    ),
                   ),
                 ),
               ),
@@ -218,47 +223,60 @@ class _NoticePageState extends State<NoticePage>
         // 点击 Tab 时直接切换到目标页，避免动画滚动经过中间页造成不必要的渲染
         _pageController.jumpToPage(index);
       },
-      child: Stack(
-        clipBehavior: Clip.none,
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            decoration: BoxDecoration(
-              color: isSelected ? AppColors.primary : context.backgroundColor,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Text(
-              text,
-              style: TextStyle(
-                fontSize: 14,
-                color: isSelected ? Colors.white : context.textPrimaryColor,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-              ),
-            ),
-          ),
-          if (badgeCount > 0)
-            Positioned(
-              right: -6,
-              top: -4,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                decoration: BoxDecoration(
-                  color: AppColors.error,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                constraints: const BoxConstraints(minWidth: 16, minHeight: 14),
-                child: Center(
-                  child: Text(
-                    badgeCount > 99 ? '99+' : '$badgeCount',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 9,
-                      fontWeight: FontWeight.bold,
-                    ),
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Text(
+                  text,
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: isSelected ? AppColors.primary : context.textSecondaryColor,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
               ),
+              if (badgeCount > 0)
+                Positioned(
+                  right: -10,
+                  top: -2,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: AppColors.error,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    constraints: const BoxConstraints(minWidth: 16, minHeight: 14),
+                    child: Center(
+                      child: Text(
+                        badgeCount > 99 ? '99+' : '$badgeCount',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          height: 1.1,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            height: 3,
+            width: isSelected ? 20 : 0,
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(1.5),
             ),
+            margin: const EdgeInsets.only(bottom: 1),
+          ),
         ],
       ),
     );
