@@ -15,7 +15,8 @@ class CommentCard extends StatefulWidget {
   final String currentUserPhone;
   final Future<bool> Function()? onLikeTap;
   final VoidCallback? onReplyTap;
-  final Function(String authorName, int commentId, {int? targetCommentId, String? targetUserName})? onSubReplyTap;
+  final Function(String authorName, int commentId,
+      {int? targetCommentId, String? targetUserName})? onSubReplyTap;
   final Function(int subCommentId)? onSubLikeTap;
   final VoidCallback? onDeleteTap;
   final Function(int subCommentId)? onSubDeleteTap;
@@ -51,7 +52,7 @@ class _CommentCardState extends State<CommentCard> {
     super.initState();
     _isLiked = widget.comment.isLiked;
     _likeCount = widget.comment.likeCount;
-    
+
     // 初始化子评论点赞状态
     for (final subComment in widget.comment.subComments) {
       _subCommentLikes[subComment.id] = subComment.isLiked;
@@ -65,7 +66,7 @@ class _CommentCardState extends State<CommentCard> {
     if (oldWidget.comment.id != widget.comment.id) {
       _isLiked = widget.comment.isLiked;
       _likeCount = widget.comment.likeCount;
-      
+
       // 更新子评论点赞状态
       _subCommentLikes.clear();
       _subCommentLikeCounts.clear();
@@ -84,7 +85,8 @@ class _CommentCardState extends State<CommentCard> {
 
     setState(() {
       _isLiked = !_isLiked;
-      _likeCount = _isLiked ? _likeCount + 1 : (_likeCount - 1).clamp(0, 999999);
+      _likeCount =
+          _isLiked ? _likeCount + 1 : (_likeCount - 1).clamp(0, 999999);
     });
 
     try {
@@ -105,7 +107,8 @@ class _CommentCardState extends State<CommentCard> {
     }
   }
 
-  bool get _isOwnComment => widget.currentUserPhone == widget.comment.authorPhone;
+  bool get _isOwnComment =>
+      widget.currentUserPhone == widget.comment.authorPhone;
 
   /// 处理子评论点赞
   Future<void> _handleSubCommentLike(int subCommentId) async {
@@ -116,7 +119,8 @@ class _CommentCardState extends State<CommentCard> {
 
     setState(() {
       _subCommentLikes[subCommentId] = !wasLiked;
-      _subCommentLikeCounts[subCommentId] = wasLiked ? (oldCount - 1).clamp(0, 999999) : oldCount + 1;
+      _subCommentLikeCounts[subCommentId] =
+          wasLiked ? (oldCount - 1).clamp(0, 999999) : oldCount + 1;
     });
 
     try {
@@ -134,162 +138,163 @@ class _CommentCardState extends State<CommentCard> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 12),
-      margin: const EdgeInsets.only(bottom: 0),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: context.surfaceColor,
         // borderRadius: BorderRadius.circular(8),
-        border: Border(bottom: BorderSide(color: context.dividerColor, width: 0.5)),
+        border:
+            Border(bottom: BorderSide(color: context.dividerColor, width: 0.5)),
       ),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: _buildUserInfo(),
-          ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: _buildContent(),
-          ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: _buildActionBar(),
-          ),
-          if (widget.comment.subComments.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-              child: _buildSubComments(),
+          _buildAvatar(),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildAuthorSection(),
+                const SizedBox(height: 8),
+                _buildContent(),
+                const SizedBox(height: 12),
+                _buildFooter(),
+                if (widget.comment.subComments.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  _buildSubComments(),
+                ],
+              ],
             ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildUserInfo() {
-    return Row(
-      children: [
-        // 头像
-        GestureDetector(
-          onTap: () {
-            if (widget.onUserTap != null) {
-              widget.onUserTap!(widget.comment.authorId, widget.comment.authorName, widget.comment.authorAvatar);
-            }
-          },
-          child: SizedBox(
-            width: 32,
-            height: 32,
-            child: Stack(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: context.backgroundColor,
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: widget.comment.authorAvatar.isNotEmpty
-                    ? CachedImage(
-                        imageUrl: widget.comment.authorAvatar,
-                        width: 36,
-                        height: 36,
-                        fit: BoxFit.cover,
-                        category: CacheCategory.avatar,
-                        errorWidget: SvgPicture.asset(
-                          'assets/icons/default_avatar.svg',
-                          fit: BoxFit.cover,
-                        ),
-                      )
-                    : SvgPicture.asset(
+  Widget _buildAvatar() {
+    return GestureDetector(
+      onTap: () {
+        if (widget.onUserTap != null) {
+          widget.onUserTap!(
+            widget.comment.authorId,
+            widget.comment.authorName,
+            widget.comment.authorAvatar,
+          );
+        }
+      },
+      child: SizedBox(
+        width: 32,
+        height: 32,
+        child: Stack(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: context.backgroundColor,
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: widget.comment.authorAvatar.isNotEmpty
+                  ? CachedImage(
+                      imageUrl: widget.comment.authorAvatar,
+                      width: 36,
+                      height: 36,
+                      fit: BoxFit.cover,
+                      category: CacheCategory.avatar,
+                      errorWidget: SvgPicture.asset(
                         'assets/icons/default_avatar.svg',
                         fit: BoxFit.cover,
                       ),
-              ),
-              if (widget.comment.authorIdentity == 'teacher' ||
-                  widget.comment.authorIdentity == 'organization')
-                Positioned(
-                  right: 0,
-                  bottom: 0,
-                  child: Container(
-                    width: 12,
-                    height: 12,
-                    decoration: BoxDecoration(
-                      color: LevelUtils.getIdentityBackgroundColor(
-                          widget.comment.authorIdentity),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 1),
+                    )
+                  : SvgPicture.asset(
+                      'assets/icons/default_avatar.svg',
+                      fit: BoxFit.cover,
                     ),
+            ),
+            if (widget.comment.authorIdentity == 'teacher' ||
+                widget.comment.authorIdentity == 'organization')
+              Positioned(
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: LevelUtils.getIdentityBackgroundColor(
+                      widget.comment.authorIdentity,
+                    ),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 1),
                   ),
                 ),
-            ],
-          ),
-        ),),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      if (widget.onUserTap != null) {
-                        widget.onUserTap!(widget.comment.authorId, widget.comment.authorName, widget.comment.authorAvatar);
-                      }
-                    },
-                    child: Text(
-                      widget.comment.authorName.isNotEmpty
-                          ? widget.comment.authorName
-                          : '匿名用户',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: context.textPrimaryColor,
-                      ),
-                    ),
-                  ),
-                  if (widget.comment.authorScore >= 0) ...[
-                    const SizedBox(width: 4),
-                    Text(
-                      LevelUtils.getLevelName(widget.comment.authorScore),
-                      style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
-                        color: LevelUtils.getLevelColor(widget.comment.authorScore),
-                      ),
-                    ),
-                  ],
-                  if (widget.comment.postRating != null && widget.comment.postRating! > 0) ...[
-                    const SizedBox(width: 8),
-                    Row(
-                      children: List.generate(5, (index) {
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 2),
-                          child: Icon(
-                            index < widget.comment.postRating! ? Icons.star_rounded : Icons.star_border_rounded,
-                            size: 14,
-                            color: index < widget.comment.postRating! ? AppColors.ratingStar : context.textTertiaryColor,
-                          ),
-                        );
-                      }),
-                    ),
-                  ],
-                ],
               ),
-              const SizedBox(height: 2),
-              Text(
-                TimeUtils.formatRelativeTime(widget.comment.commentTime),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: context.textSecondaryColor,
-                ),
-              ),
-            ],
-          ),
+          ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildAuthorSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            GestureDetector(
+              onTap: () {
+                if (widget.onUserTap != null) {
+                  widget.onUserTap!(
+                    widget.comment.authorId,
+                    widget.comment.authorName,
+                    widget.comment.authorAvatar,
+                  );
+                }
+              },
+              child: Text(
+                widget.comment.authorName.isNotEmpty
+                    ? widget.comment.authorName
+                    : '匿名用户',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: context.textPrimaryColor,
+                ),
+              ),
+            ),
+            if (widget.comment.authorScore >= 0) ...[
+              const SizedBox(width: 4),
+              Text(
+                LevelUtils.getLevelName(widget.comment.authorScore),
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                  color: LevelUtils.getLevelColor(widget.comment.authorScore),
+                ),
+              ),
+            ],
+          ],
+        ),
+        if (widget.comment.postRating != null && widget.comment.postRating! > 0)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Row(
+              children: List.generate(5, (index) {
+                return Padding(
+                  padding: const EdgeInsets.only(right: 2),
+                  child: Icon(
+                    index < widget.comment.postRating!
+                        ? Icons.star_rounded
+                        : Icons.star_border_rounded,
+                    size: 14,
+                    color: index < widget.comment.postRating!
+                        ? AppColors.ratingStar
+                        : context.textTertiaryColor,
+                  ),
+                );
+              }),
+            ),
+          ),
       ],
     );
   }
@@ -303,10 +308,28 @@ class _CommentCardState extends State<CommentCard> {
     );
   }
 
-  Widget _buildActionBar() {
+  Widget _buildFooter() {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // 点赞
+        Expanded(
+          child: Text(
+            TimeUtils.formatRelativeTime(widget.comment.commentTime),
+            style: TextStyle(
+              fontSize: 12,
+              color: context.textSecondaryColor,
+            ),
+          ),
+        ),
+        _buildActionButtons(),
+      ],
+    );
+  }
+
+  Widget _buildActionButtons() {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
         GestureDetector(
           onTap: _handleLikeTap,
           child: Row(
@@ -335,7 +358,6 @@ class _CommentCardState extends State<CommentCard> {
           ),
         ),
         const SizedBox(width: 16),
-        // 回复
         GestureDetector(
           onTap: widget.onReplyTap,
           child: Row(
@@ -353,8 +375,6 @@ class _CommentCardState extends State<CommentCard> {
             ],
           ),
         ),
-        // 查看回复 - 已移除，默认全部展开
-        // 删除（自己的评论）
         if (_isOwnComment) ...[
           const SizedBox(width: 16),
           GestureDetector(
@@ -378,7 +398,6 @@ class _CommentCardState extends State<CommentCard> {
 
   Widget _buildSubComments() {
     return Container(
-      margin: const EdgeInsets.only(top: 12),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: context.backgroundColor,
@@ -397,226 +416,251 @@ class _CommentCardState extends State<CommentCard> {
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 头像
-              GestureDetector(
-                onTap: () {
-                  if (widget.onUserTap != null) {
-                    widget.onUserTap!(subComment.authorId, subComment.authorName, subComment.authorAvatar);
-                  }
-                },
-                child: SizedBox(
-                  width: 28,
-                  height: 28,
-                  child: Stack(
-                    children: [
-                      Container(
-                        width: 28,
-                        height: 28,
+          GestureDetector(
+            onTap: () {
+              if (widget.onUserTap != null) {
+                widget.onUserTap!(
+                  subComment.authorId,
+                  subComment.authorName,
+                  subComment.authorAvatar,
+                );
+              }
+            },
+            child: SizedBox(
+              width: 28,
+              height: 28,
+              child: Stack(
+                children: [
+                  Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: context.surfaceColor,
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: subComment.authorAvatar.isNotEmpty
+                        ? CachedImage(
+                            imageUrl: subComment.authorAvatar,
+                            width: 28,
+                            height: 28,
+                            fit: BoxFit.cover,
+                            category: CacheCategory.avatar,
+                            errorWidget: SvgPicture.asset(
+                              'assets/icons/default_avatar.svg',
+                              fit: BoxFit.cover,
+                            ),
+                          )
+                        : SvgPicture.asset(
+                            'assets/icons/default_avatar.svg',
+                            fit: BoxFit.cover,
+                          ),
+                  ),
+                  if (subComment.authorIdentity == 'teacher' ||
+                      subComment.authorIdentity == 'organization')
+                    Positioned(
+                      right: 0,
+                      bottom: 0,
+                      child: Container(
+                        width: 10,
+                        height: 10,
                         decoration: BoxDecoration(
+                          color: LevelUtils.getIdentityBackgroundColor(
+                            subComment.authorIdentity,
+                          ),
                           shape: BoxShape.circle,
-                          color: context.surfaceColor,
+                          border: Border.all(color: Colors.white, width: 1),
                         ),
-                        clipBehavior: Clip.antiAlias,
-                        child: subComment.authorAvatar.isNotEmpty
-                            ? CachedImage(
-                                imageUrl: subComment.authorAvatar,
-                                width: 28,
-                                height: 28,
-                                fit: BoxFit.cover,
-                                category: CacheCategory.avatar,
-                                errorWidget: SvgPicture.asset(
-                                  'assets/icons/default_avatar.svg',
-                                  fit: BoxFit.cover,
-                                ),
-                              )
-                            : SvgPicture.asset(
-                                'assets/icons/default_avatar.svg',
-                                fit: BoxFit.cover,
-                              ),
-                      ),
-                      if (subComment.authorIdentity == 'teacher' ||
-                          subComment.authorIdentity == 'organization')
-                        Positioned(
-                          right: 0,
-                          bottom: 0,
-                          child: Container(
-                            width: 10,
-                            height: 10,
-                            decoration: BoxDecoration(
-                              color: LevelUtils.getIdentityBackgroundColor(
-                                  subComment.authorIdentity),
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 1),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                         GestureDetector(
-                          onTap: () {
-                            if (widget.onUserTap != null) {
-                              widget.onUserTap!(subComment.authorId, subComment.authorName, subComment.authorAvatar);
-                            }
-                          },
-                          child: Text(
-                            subComment.authorName.isNotEmpty
-                                ? subComment.authorName
-                                : '匿名用户',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: context.textPrimaryColor,
-                            ),
-                          ),
-                        ),
-                        if (subComment.authorScore >= 0) ...[
-                          const SizedBox(width: 3),
-                          Text(
-                            LevelUtils.getLevelName(subComment.authorScore),
-                            style: TextStyle(
-                              fontSize: 8,
-                              fontWeight: FontWeight.bold,
-                              color: LevelUtils.getLevelColor(subComment.authorScore),
-                            ),
-                          ),
-                        ],
-                        // 显示回复对象
-                        const SizedBox(width: 4),
-                        Text(
-                          '回复',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: context.textSecondaryColor,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          subComment.targetUserName.isNotEmpty
-                              ? subComment.targetUserName
-                              : '层主',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: context.textPrimaryColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      TimeUtils.formatRelativeTime(subComment.commentTime),
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: context.textSecondaryColor,
                       ),
                     ),
-                  ],
-                ),
+                ],
               ),
-            ],
+            ),
           ),
-          const SizedBox(height: 4),
-          LatexMarkdown(
-            data: subComment.content,
-            fontSize: 13, // 子评论使用更小字体
-            shrinkWrap: true, // 紧凑模式
-            selectable: true, // 支持长按选择文字
-          ),
-          const SizedBox(height: 6),
-          // 子评论操作栏
-          Row(
-            children: [
-              // 点赞
-              GestureDetector(
-                onTap: () => _handleSubCommentLike(subComment.id),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      (_subCommentLikes[subComment.id] ?? false) ? Icons.favorite : Icons.favorite_border,
-                      size: 14,
-                      color: (_subCommentLikes[subComment.id] ?? false) ? Colors.red : context.textSecondaryColor,
-                    ),
-                    const SizedBox(width: 2),
-                    Text(
-                      '${_subCommentLikeCounts[subComment.id] ?? 0}',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: (_subCommentLikes[subComment.id] ?? false) ? Colors.red : context.textSecondaryColor,
-                      ),
-                    ),
-                  ],
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildSubCommentHeader(subComment),
+                const SizedBox(height: 6),
+                LatexMarkdown(
+                  data: subComment.content,
+                  fontSize: 13,
+                  shrinkWrap: true,
+                  selectable: true,
                 ),
-              ),
-              const SizedBox(width: 12),
-              // 回复
-              GestureDetector(
-                onTap: () {
-                  if (widget.onSubReplyTap != null) {
-                    widget.onSubReplyTap!(
-                      subComment.authorName,
-                      widget.comment.id,
-                      targetCommentId: subComment.id,
-                      targetUserName: subComment.authorName,
-                    );
-                  }
-                },
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.reply, size: 14, color: context.textSecondaryColor),
-                    const SizedBox(width: 2),
-                    Text(
-                      '回复',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: context.textSecondaryColor,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // 删除（自己的子评论）
-              if (isOwnSubComment) ...[
-                const SizedBox(width: 12),
-                GestureDetector(
-                  onTap: () {
-                    if (widget.onSubDeleteTap != null) {
-                      widget.onSubDeleteTap!(subComment.id);
-                    }
-                  },
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.delete_outline, size: 14, color: Colors.red),
-                      SizedBox(width: 2),
-                      Text(
-                        '删除',
-                        style: TextStyle(fontSize: 11, color: Colors.red),
-                      ),
-                    ],
-                  ),
-                ),
+                const SizedBox(height: 10),
+                _buildSubCommentFooter(subComment, isOwnSubComment),
               ],
-            ],
+            ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSubCommentHeader(SubCommentModel subComment) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: 4,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            GestureDetector(
+              onTap: () {
+                if (widget.onUserTap != null) {
+                  widget.onUserTap!(
+                    subComment.authorId,
+                    subComment.authorName,
+                    subComment.authorAvatar,
+                  );
+                }
+              },
+              child: Text(
+                subComment.authorName.isNotEmpty
+                    ? subComment.authorName
+                    : '匿名用户',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: context.textPrimaryColor,
+                ),
+              ),
+            ),
+            if (subComment.authorScore >= 0)
+              Text(
+                LevelUtils.getLevelName(subComment.authorScore),
+                style: TextStyle(
+                  fontSize: 8,
+                  fontWeight: FontWeight.bold,
+                  color: LevelUtils.getLevelColor(subComment.authorScore),
+                ),
+              ),
+            Text(
+              '回复',
+              style: TextStyle(
+                fontSize: 12,
+                color: context.textSecondaryColor,
+              ),
+            ),
+            Text(
+              subComment.targetUserName.isNotEmpty
+                  ? subComment.targetUserName
+                  : '层主',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: context.textPrimaryColor,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSubCommentFooter(
+    SubCommentModel subComment,
+    bool isOwnSubComment,
+  ) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            TimeUtils.formatRelativeTime(subComment.commentTime),
+            style: TextStyle(
+              fontSize: 11,
+              color: context.textSecondaryColor,
+            ),
+          ),
+        ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            GestureDetector(
+              onTap: () => _handleSubCommentLike(subComment.id),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    (_subCommentLikes[subComment.id] ?? false)
+                        ? Icons.favorite
+                        : Icons.favorite_border,
+                    size: 14,
+                    color: (_subCommentLikes[subComment.id] ?? false)
+                        ? Colors.red
+                        : context.textSecondaryColor,
+                  ),
+                  const SizedBox(width: 3),
+                  Text(
+                    '${_subCommentLikeCounts[subComment.id] ?? 0}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: (_subCommentLikes[subComment.id] ?? false)
+                          ? Colors.red
+                          : context.textSecondaryColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 16),
+            GestureDetector(
+              onTap: () {
+                if (widget.onSubReplyTap != null) {
+                  widget.onSubReplyTap!(
+                    subComment.authorName,
+                    widget.comment.id,
+                    targetCommentId: subComment.id,
+                    targetUserName: subComment.authorName,
+                  );
+                }
+              },
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.reply,
+                      size: 14, color: context.textSecondaryColor),
+                  const SizedBox(width: 3),
+                  Text(
+                    '回复',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: context.textSecondaryColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (isOwnSubComment) ...[
+              const SizedBox(width: 16),
+              GestureDetector(
+                onTap: () {
+                  if (widget.onSubDeleteTap != null) {
+                    widget.onSubDeleteTap!(subComment.id);
+                  }
+                },
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.delete_outline, size: 14, color: Colors.red),
+                    SizedBox(width: 3),
+                    Text(
+                      '删除',
+                      style: TextStyle(fontSize: 11, color: Colors.red),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ],
     );
   }
 }
