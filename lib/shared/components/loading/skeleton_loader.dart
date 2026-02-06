@@ -331,7 +331,7 @@ class CommentSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: context.surfaceColor,
         border: Border(
@@ -341,26 +341,6 @@ class CommentSkeleton extends StatelessWidget {
           ),
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildHeader(context),
-          const SizedBox(height: 8),
-          _buildContent(context),
-          const SizedBox(height: 8),
-          _buildActionBar(context),
-          if (showSubReplies) ...[
-            const SizedBox(height: 12),
-            _buildSubReplies(context),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -369,32 +349,20 @@ class CommentSkeleton extends StatelessWidget {
             height: 32,
             borderRadius: BorderRadius.circular(16),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    SkeletonLoader(
-                      width: 90,
-                      height: 14,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    const SizedBox(width: 6),
-                    SkeletonLoader(
-                      width: 36,
-                      height: 10,
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 2),
-                SkeletonLoader(
-                  width: 80,
-                  height: 12,
-                  borderRadius: BorderRadius.circular(4),
-                ),
+                _buildHeader(context),
+                const SizedBox(height: 8),
+                _buildContent(context),
+                const SizedBox(height: 12),
+                _buildFooter(context),
+                if (showSubReplies) ...[
+                  const SizedBox(height: 12),
+                  _buildSubReplies(context),
+                ],
               ],
             ),
           ),
@@ -403,90 +371,123 @@ class CommentSkeleton extends StatelessWidget {
     );
   }
 
-  Widget _buildContent(BuildContext context) {
-    final contentWidth = (MediaQuery.of(context).size.width - 32)
-        .clamp(120.0, double.infinity)
-        .toDouble();
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SkeletonLoader(
-            width: contentWidth,
-            height: 14,
-            borderRadius: BorderRadius.circular(4),
-          ),
-          const SizedBox(height: 6),
-          SkeletonLoader(
-            width: contentWidth * 0.85,
-            height: 14,
-            borderRadius: BorderRadius.circular(4),
-          ),
-          const SizedBox(height: 6),
-          SkeletonLoader(
-            width: contentWidth * 0.6,
-            height: 14,
-            borderRadius: BorderRadius.circular(4),
-          ),
-        ],
-      ),
+  Widget _buildHeader(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            SkeletonLoader(
+              width: 90,
+              height: 14,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            const SizedBox(width: 6),
+            SkeletonLoader(
+              width: 36,
+              height: 10,
+              borderRadius: BorderRadius.circular(3),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        SkeletonLoader(
+          width: 80,
+          height: 12,
+          borderRadius: BorderRadius.circular(4),
+        ),
+      ],
     );
   }
 
-  Widget _buildActionBar(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          SkeletonLoader(
-            width: 46,
-            height: 12,
-            borderRadius: BorderRadius.circular(4),
-          ),
-          const SizedBox(width: 16),
-          SkeletonLoader(
-            width: 52,
-            height: 12,
-            borderRadius: BorderRadius.circular(4),
-          ),
-          if (showSubReplies) ...[
-            const SizedBox(width: 16),
-            SkeletonLoader(
-              width: 48,
+  Widget _buildContent(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final contentWidth = (screenWidth - (16 * 2 + 32 + 12))
+        .clamp(120.0, double.infinity)
+        .toDouble();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SkeletonLoader(
+          width: contentWidth,
+          height: 14,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        const SizedBox(height: 6),
+        SkeletonLoader(
+          width: contentWidth * 0.85,
+          height: 14,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        const SizedBox(height: 6),
+        SkeletonLoader(
+          width: contentWidth * 0.6,
+          height: 14,
+          borderRadius: BorderRadius.circular(4),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFooter(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: SkeletonLoader(
+              width: 80,
               height: 12,
               borderRadius: BorderRadius.circular(4),
             ),
-          ],
+          ),
+        ),
+        const SizedBox(width: 16),
+        SkeletonLoader(
+          width: 46,
+          height: 12,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        const SizedBox(width: 16),
+        SkeletonLoader(
+          width: 52,
+          height: 12,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        if (showSubReplies) ...[
+          const SizedBox(width: 16),
+          SkeletonLoader(
+            width: 48,
+            height: 12,
+            borderRadius: BorderRadius.circular(4),
+          ),
         ],
-      ),
+      ],
     );
   }
 
   Widget _buildSubReplies(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: context.backgroundColor,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Column(
-          children: [
-            _buildSubReplyItem(context, widthFactor: 1.0),
-            const SizedBox(height: 12),
-            _buildSubReplyItem(context, widthFactor: 0.8),
-          ],
-        ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: context.backgroundColor,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        children: [
+          _buildSubReplyItem(context, widthFactor: 1.0),
+          const SizedBox(height: 12),
+          _buildSubReplyItem(context, widthFactor: 0.8),
+        ],
       ),
     );
   }
 
   Widget _buildSubReplyItem(BuildContext context,
       {required double widthFactor}) {
-    final baseWidth = (MediaQuery.of(context).size.width - 56)
+    final screenWidth = MediaQuery.of(context).size.width;
+    final baseWidth = (screenWidth - (16 * 2 + 32 + 12 + 12))
         .clamp(100.0, double.infinity)
         .toDouble();
 
@@ -509,7 +510,7 @@ class CommentSkeleton extends StatelessWidget {
                   Row(
                     children: [
                       SkeletonLoader(
-                        width: 70 * widthFactor,
+                        width: (70 * widthFactor).clamp(40.0, 120.0),
                         height: 12,
                         borderRadius: BorderRadius.circular(4),
                       ),
@@ -541,17 +542,36 @@ class CommentSkeleton extends StatelessWidget {
         const SizedBox(height: 6),
         Row(
           children: [
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: SkeletonLoader(
+                  width: 60,
+                  height: 10,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
             SkeletonLoader(
               width: 36,
               height: 10,
               borderRadius: BorderRadius.circular(4),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 16),
             SkeletonLoader(
               width: 44,
               height: 10,
               borderRadius: BorderRadius.circular(4),
             ),
+            if (showSubReplies) ...[
+              const SizedBox(width: 16),
+              SkeletonLoader(
+                width: 40,
+                height: 10,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ],
           ],
         ),
       ],
