@@ -16,6 +16,8 @@ class CommentInput extends StatefulWidget {
   final Future<bool> Function(String content) onSend;
   final String placeholder;
   final bool autoFocus;
+  /// 当输入框失去焦点时回调，参数为当前文本（已 trim），可用于弹窗在键盘收起且内容为空时关闭
+  final void Function(String currentText)? onUnfocus;
 
   const CommentInput({
     super.key,
@@ -24,6 +26,7 @@ class CommentInput extends StatefulWidget {
     required this.onSend,
     this.placeholder = '支持Markdown语法',
     this.autoFocus = false,
+    this.onUnfocus,
   });
 
   @override
@@ -32,6 +35,7 @@ class CommentInput extends StatefulWidget {
 
 class _CommentInputState extends State<CommentInput> {
   final TextEditingController _controller = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
   final GlobalKey _kaomojiButtonKey = GlobalKey();
   final ImagePicker _picker = ImagePicker();
   bool _isSending = false;
@@ -39,6 +43,18 @@ class _CommentInputState extends State<CommentInput> {
   bool _isUploading = false;
   String _activeTab = 'happy';
   OverlayEntry? _kaomojiOverlay;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(_onFocusChange);
+  }
+
+  void _onFocusChange() {
+    if (!_focusNode.hasFocus && widget.onUnfocus != null) {
+      widget.onUnfocus!(_controller.text.trim());
+    }
+  }
 
   // 颜文字和表情数据
   final Map<String, List<String>> _kaomojis = {
@@ -105,6 +121,8 @@ class _CommentInputState extends State<CommentInput> {
 
   @override
   void dispose() {
+    _focusNode.removeListener(_onFocusChange);
+    _focusNode.dispose();
     _hideKaomojiOverlay();
     _controller.dispose();
     super.dispose();
@@ -567,6 +585,7 @@ class _CommentInputState extends State<CommentInput> {
   Widget _buildEditor() {
     return TextField(
       controller: _controller,
+      focusNode: _focusNode,
       autofocus: widget.autoFocus,
       maxLines: 6,
       minLines: 3,

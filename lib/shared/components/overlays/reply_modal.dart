@@ -30,6 +30,8 @@ class ReplyModal extends StatefulWidget {
 }
 
 class _ReplyModalState extends State<ReplyModal> {
+  bool _closedBySend = false;
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -79,12 +81,17 @@ class _ReplyModalState extends State<ReplyModal> {
               ],
             ),
           ),
-          // 回复输入区域
+          // 回复输入区域：键盘收起且输入为空时自动关闭弹窗
           CommentInput(
             postId: widget.postId,
             apiService: widget.apiService,
             placeholder: '回复 ${widget.replyToName}...',
             autoFocus: true, // 弹窗中自动聚焦
+            onUnfocus: (currentText) {
+              if (currentText.isEmpty && mounted && !_closedBySend) {
+                Navigator.of(context).pop();
+              }
+            },
             onSend: (content) async {
               return await _handleReply(content);
             },
@@ -121,6 +128,7 @@ class _ReplyModalState extends State<ReplyModal> {
       }
 
       if (success && mounted) {
+        _closedBySend = true;
         Navigator.of(context).pop(true); // 返回成功标识
       }
       
