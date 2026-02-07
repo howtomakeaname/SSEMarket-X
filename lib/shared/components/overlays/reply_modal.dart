@@ -34,6 +34,12 @@ class _ReplyModalState extends State<ReplyModal> {
 
   @override
   Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    // 底部弹窗且键盘收起时预留底部安全区
+    final bottomSafe = widget.isDialog
+        ? 0.0
+        : (mediaQuery.viewInsets.bottom > 0 ? 0.0 : mediaQuery.padding.bottom);
+
     return Container(
       decoration: BoxDecoration(
         color: context.surfaceColor,
@@ -96,6 +102,7 @@ class _ReplyModalState extends State<ReplyModal> {
               return await _handleReply(content);
             },
           ),
+          if (bottomSafe > 0) SizedBox(height: bottomSafe),
         ],
       ),
     );
