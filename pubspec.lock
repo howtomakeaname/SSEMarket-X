@@ -710,6 +710,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "0.28.0"
+  saver_gallery:
+    dependency: "direct main"
+    description:
+      name: saver_gallery
+      sha256: "1d942bd7f4fedc162d9a751e156ebac592e4b81fc2e757af82de9077f3437003"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "4.1.0"
   scroll_to_index:
     dependency: transitive
     description:

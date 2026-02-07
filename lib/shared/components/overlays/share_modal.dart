@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:saver_gallery/saver_gallery.dart';
 import 'package:sse_market_x/shared/components/inputs/segmented_control.dart';
 import 'package:sse_market_x/shared/components/overlays/share_image_widget.dart';
 import 'package:sse_market_x/shared/components/utils/snackbar_helper.dart';
@@ -87,15 +88,22 @@ class _ShareModalState extends State<ShareModal> {
           await image.toByteData(format: ui.ImageByteFormat.png);
 
       if (byteData != null && mounted) {
-        // 复制图片数据到剪贴板（某些平台可能不支持，但先尝试）
-        // 注意：Flutter的Clipboard目前不支持直接复制图片
-        // 这里我们提示用户图片已准备好，实际保存需要平台特定实现
-        SnackBarHelper.show(context, '分享图片已生成（请使用系统分享功能）');
-        
-        // TODO: 可以在这里添加保存到相册的功能，需要添加image_gallery_saver包
-        // 或者使用share_plus包来分享图片
-        
-        Navigator.of(context).pop();
+        // 保存到相册
+        final result = await SaverGallery.saveImage(
+          byteData.buffer.asUint8List(),
+          quality: 100,
+          fileName: 'sse_market_share_${DateTime.now().millisecondsSinceEpoch}.png',
+          skipIfExists: false,
+        );
+
+        if (mounted) {
+          if (result.isSuccess) {
+            SnackBarHelper.show(context, '图片已保存到相册');
+            Navigator.of(context).pop();
+          } else {
+            SnackBarHelper.show(context, '保存失败: ${result.errorMessage}');
+          }
+        }
       } else if (mounted) {
         SnackBarHelper.show(context, '生成图片失败');
       }
@@ -116,62 +124,41 @@ class _ShareModalState extends State<ShareModal> {
   @override
   Widget build(BuildContext context) {
     final shareText = _generateShareText();
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     Widget content = Container(
       decoration: BoxDecoration(
-        color: context.surfaceColor,
-        // 如果是 Dialog 模式，四周圆角；否则只有顶部圆角
+        // iOS 风格模态背景
+        color: isDark ? const Color(0xFF1C1C1E) : const Color(0xFFF2F2F7),
         borderRadius: widget.isDialog
             ? BorderRadius.circular(16)
-            : const BorderRadius.vertical(top: Radius.circular(16)),
+            : const BorderRadius.vertical(top: Radius.circular(20)), // 加大圆角
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 标题栏
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                  color: context.dividerColor,
-                  width: 0.5,
+          // Handle Indicator (拖动条)
+          if (!widget.isDialog)
+            Center(
+              child: Container(
+                margin: const EdgeInsets.only(top: 8, bottom: 4),
+                width: 36,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: isDark 
+                      ? Colors.white.withOpacity(0.2) 
+                      : Colors.black.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(2.5),
                 ),
               ),
             ),
+
+          // 胶囊按钮区域
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Row(
               children: [
-                Text(
-                  '分享帖子',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: context.textPrimaryColor,
-                  ),
-                ),
-                const Spacer(),
-                GestureDetector(
-                  onTap: () => Navigator.of(context).pop(),
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    child: Icon(
-                      Icons.close,
-                      size: 20,
-                      color: context.textSecondaryColor,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // 分享内容区域
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 胶囊按钮切换
-                Center(
+                Expanded(
                   child: SegmentedControl<ShareType>(
                     segments: const [ShareType.text, ShareType.image],
                     selectedSegment: _selectedShareType,
@@ -185,57 +172,97 @@ class _ShareModalState extends State<ShareModal> {
                     },
                   ),
                 ),
-                const SizedBox(height: 20),
+                // 关闭按钮（可选，右上角小叉号，或者省略）
+                if (widget.isDialog) ...[
+                  const SizedBox(width: 12),
+                  GestureDetector(
+                    onTap: () => Navigator.of(context).pop(),
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: isDark 
+                            ? Colors.white.withOpacity(0.1) 
+                            : Colors.black.withOpacity(0.05),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.close,
+                        size: 20,
+                        color: context.textSecondaryColor,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+
+          // 分享内容区域
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 // 根据选择的类型显示不同内容
                 if (_selectedShareType == ShareType.text) ...[
-                  Text(
-                    '分享内容：',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: context.textSecondaryColor,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: context.backgroundColor,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: context.dividerColor.withOpacity(0.5),
-                        width: 1,
-                      ),
+                      color: context.surfaceColor, // 卡片背景
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.02),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                    child: SelectableText(
-                      shareText,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: context.textPrimaryColor,
-                        height: 1.5,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '分享文案',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: context.textSecondaryColor,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        SelectableText(
+                          shareText,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: context.textPrimaryColor,
+                            height: 1.5,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  // 复制按钮
+                  const SizedBox(height: 24),
+                  
+                  // 复制按钮 (iOS Filled Button Style)
                   SizedBox(
                     width: double.infinity,
+                    height: 52,
                     child: ElevatedButton(
                       onPressed: _copyToClipboard,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        elevation: 0,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(16), // 大圆角
                         ),
                       ),
                       child: const Text(
-                        '复制分享内容',
+                        '复制',
                         style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
@@ -246,18 +273,21 @@ class _ShareModalState extends State<ShareModal> {
                     key: _imagePreviewKey,
                     child: Container(
                       width: double.infinity,
-                      constraints: const BoxConstraints(maxHeight: 400),
+                      constraints: const BoxConstraints(maxHeight: 440),
                       decoration: BoxDecoration(
-                        color: context.backgroundColor,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: context.dividerColor.withOpacity(0.5),
-                          width: 1,
-                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.08),
+                            blurRadius: 16,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(16),
                         child: SingleChildScrollView(
+                          physics: const BouncingScrollPhysics(),
                           child: ShareImageWidget(
                             appLogoPath: 'assets/images/logo.png',
                             postTitle: widget.postTitle,
@@ -271,34 +301,37 @@ class _ShareModalState extends State<ShareModal> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  // 生成并保存按钮
+                  const SizedBox(height: 24),
+                  
+                  // 生成并保存按钮 (iOS Filled Button Style)
                   SizedBox(
                     width: double.infinity,
+                    height: 52,
                     child: ElevatedButton(
                       onPressed: _isGeneratingImage ? null : _saveShareImage,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        elevation: 0,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(16),
                         ),
+                        disabledBackgroundColor: AppColors.primary.withOpacity(0.5),
                       ),
                       child: _isGeneratingImage
                           ? const SizedBox(
-                              width: 20,
-                              height: 20,
+                              width: 24,
+                              height: 24,
                               child: CircularProgressIndicator(
-                                strokeWidth: 2,
+                                strokeWidth: 2.5,
                                 valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                               ),
                             )
                           : const Text(
-                              '生成并保存图片',
+                              '生成图片', // 简化文案
                               style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
+                                fontSize: 17,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                     ),
@@ -323,6 +356,7 @@ class _ShareModalState extends State<ShareModal> {
   }
 }
 
+// ... showShareModal 函数保持不变，直接复用文件末尾部分 ...
 /// 显示分享弹窗
 /// 移动端从底部弹出，宽屏幕设备在中间弹出
 Future<void> showShareModal({
