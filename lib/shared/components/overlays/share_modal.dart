@@ -42,12 +42,242 @@ class ShareModal extends StatefulWidget {
 
 class _ShareModalState extends State<ShareModal> {
   ShareType _selectedShareType = ShareType.text;
+  late PageController _pageController;
   final GlobalKey _imagePreviewKey = GlobalKey();
   bool _isGeneratingImage = false;
+
+  /// 初始给足够高以便两页都能完成布局并测高
+  static const double _initialContentHeight = 520.0;
+  double _contentHeight = _initialContentHeight;
+  final List<double?> _pageHeights = [null, null];
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(
+      initialPage: _selectedShareType == ShareType.text ? 0 : 1,
+    );
+    _pageController.addListener(_onPageOffsetChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _measureHeights());
+    // 第二页可能稍后才构建，再测一次以便滑动时能正确插值
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _measureHeights());
+    });
+  }
+
+  @override
+  void dispose() {
+    _pageController.removeListener(_onPageOffsetChanged);
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _onPageOffsetChanged() {
+    if (_pageHeights[0] == null || _pageHeights[1] == null) return;
+    final page = _pageController.page ?? _pageController.initialPage.toDouble();
+    final t = page.clamp(0.0, 1.0);
+    if (mounted) {
+      setState(() {
+        _contentHeight = _pageHeights[0]! * (1 - t) + _pageHeights[1]! * t;
+      });
+    }
+  }
+
+  void _measureHeights() {
+    if (!mounted) return;
+    double? h0;
+    double? h1;
+    final box0 = _keyPage0.currentContext?.findRenderObject() as RenderBox?;
+    if (box0 != null && box0.hasSize) h0 = box0.size.height;
+    final box1 = _keyPage1.currentContext?.findRenderObject() as RenderBox?;
+    if (box1 != null && box1.hasSize) h1 = box1.size.height;
+    final bool changed = (h0 != null && _pageHeights[0] != h0) || (h1 != null && _pageHeights[1] != h1);
+    if (h0 != null) _pageHeights[0] = h0;
+    if (h1 != null) _pageHeights[1] = h1;
+    if (!changed && h0 == null && h1 == null) return;
+    final page = _pageController.page ?? _pageController.initialPage.toDouble();
+    final t = page.clamp(0.0, 1.0);
+    double newHeight;
+    if (_pageHeights[0] != null && _pageHeights[1] != null) {
+      newHeight = _pageHeights[0]! * (1 - t) + _pageHeights[1]! * t;
+    } else if (_pageHeights[0] != null) {
+      newHeight = _pageHeights[0]!;
+    } else if (_pageHeights[1] != null) {
+      newHeight = _pageHeights[1]!;
+    } else {
+      return;
+    }
+    if (mounted) setState(() => _contentHeight = newHeight);
+  }
+
+  final GlobalKey _keyPage0 = GlobalKey();
+  final GlobalKey _keyPage1 = GlobalKey();
+
+  void _goToPage(ShareType type) {
+    if (_selectedShareType == type) return;
+    final index = type == ShareType.text ? 0 : 1;
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 280),
+      curve: Curves.easeInOut,
+    );
+  }
 
   /// 生成分享文本
   String _generateShareText() {
     return '打开集市APP，在搜索栏输入【${widget.postId}】以访问帖子【${widget.postTitle} - ${widget.authorName}】';
+  }
+
+  Widget _buildTextShareContent(BuildContext context, String shareText, {Key? contentKey}) {
+    final column = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: context.surfaceColor,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.02),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '分享文案',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: context.textSecondaryColor,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SelectableText(
+                  shareText,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: context.textPrimaryColor,
+                    height: 1.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: ElevatedButton(
+              onPressed: _copyToClipboard,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              child: const Text(
+                '复制',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ],
+    );
+    return contentKey != null
+        ? SingleChildScrollView(
+            physics: const ClampingScrollPhysics(),
+            child: KeyedSubtree(key: contentKey, child: column),
+          )
+        : column;
+  }
+
+  Widget _buildImageShareContent(BuildContext context, {Key? contentKey}) {
+    final column = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: double.infinity,
+            constraints: const BoxConstraints(maxHeight: 440),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: RepaintBoundary(
+                key: _imagePreviewKey,
+                child: ShareImageWidget(
+                  appLogoPath: 'assets/images/logo.png',
+                  postTitle: widget.postTitle,
+                  postContent: widget.postContent,
+                  authorName: widget.authorName,
+                  authorAvatar: widget.authorAvatar,
+                  createdAt: widget.createdAt,
+                  postId: widget.postId,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: ElevatedButton(
+              onPressed: _isGeneratingImage ? null : _saveShareImage,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                disabledBackgroundColor: AppColors.primary.withOpacity(0.5),
+              ),
+              child: _isGeneratingImage
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Text(
+                      '生成图片',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+            ),
+          ),
+        ],
+    );
+    return contentKey != null
+        ? SingleChildScrollView(
+            physics: const ClampingScrollPhysics(),
+            child: KeyedSubtree(key: contentKey, child: column),
+          )
+        : column;
   }
 
   /// 复制分享文本到剪贴板
@@ -162,11 +392,7 @@ class _ShareModalState extends State<ShareModal> {
                   child: SegmentedControl<ShareType>(
                     segments: const [ShareType.text, ShareType.image],
                     selectedSegment: _selectedShareType,
-                    onSegmentChanged: (type) {
-                      setState(() {
-                        _selectedShareType = type;
-                      });
-                    },
+                    onSegmentChanged: _goToPage,
                     labelBuilder: (type) {
                       return type == ShareType.text ? '文本' : '图片';
                     },
@@ -197,154 +423,31 @@ class _ShareModalState extends State<ShareModal> {
             ),
           ),
 
-          // 分享内容区域
+          // 分享内容区域：PageView 左右滑动，高度在滑动过程中随 page 偏移插值变化
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 根据选择的类型显示不同内容
-                if (_selectedShareType == ShareType.text) ...[
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: context.surfaceColor, // 卡片背景
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.02),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '分享文案',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: context.textSecondaryColor,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        SelectableText(
-                          shareText,
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: context.textPrimaryColor,
-                            height: 1.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  
-                  // 复制按钮 (iOS Filled Button Style)
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: ElevatedButton(
-                      onPressed: _copyToClipboard,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16), // 大圆角
-                        ),
-                      ),
-                      child: const Text(
-                        '复制',
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ] else ...[
-                  // 图片预览
-                  Container(
-                    width: double.infinity,
-                    constraints: const BoxConstraints(maxHeight: 440),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
-                          blurRadius: 16,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: SingleChildScrollView(
-                        physics: const BouncingScrollPhysics(),
-                        child: RepaintBoundary(
-                          key: _imagePreviewKey,
-                          child: ShareImageWidget(
-                            appLogoPath: 'assets/images/logo.png',
-                            postTitle: widget.postTitle,
-                            postContent: widget.postContent,
-                            authorName: widget.authorName,
-                            authorAvatar: widget.authorAvatar,
-                            createdAt: widget.createdAt,
-                            postId: widget.postId,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  
-                  // 生成并保存按钮 (iOS Filled Button Style)
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: ElevatedButton(
-                      onPressed: _isGeneratingImage ? null : _saveShareImage,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        disabledBackgroundColor: AppColors.primary.withOpacity(0.5),
-                      ),
-                      child: _isGeneratingImage
-                          ? const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.5,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            )
-                          : const Text(
-                              '生成图片', // 简化文案
-                              style: TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                    ),
-                  ),
+            child: SizedBox(
+              height: _contentHeight,
+              child: PageView(
+                controller: _pageController,
+                onPageChanged: (index) {
+                  setState(() {
+                    _selectedShareType = index == 0 ? ShareType.text : ShareType.image;
+                  });
+                  WidgetsBinding.instance.addPostFrameCallback((_) => _measureHeights());
+                },
+                children: [
+                  _buildTextShareContent(context, shareText, contentKey: _keyPage0),
+                  _buildImageShareContent(context, contentKey: _keyPage1),
                 ],
-              ],
+              ),
             ),
           ),
         ],
       ),
     );
 
-    // 移动端底部弹出时，添加底部安全区（背景色与弹窗保持一致，保持顶部圆角）
+    // 移动端底部弹出时添加底部安全区
     if (!widget.isDialog) {
       final bool isDark = Theme.of(context).brightness == Brightness.dark;
       final backgroundColor = isDark ? const Color(0xFF1C1C1E) : const Color(0xFFF2F2F7);
