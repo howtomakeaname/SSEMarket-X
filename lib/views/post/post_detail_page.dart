@@ -465,7 +465,10 @@ class _PostDetailPageState extends State<PostDetailPage>
       context: context,
       postId: _post.id,
       postTitle: _post.title,
+      postContent: _post.content,
       authorName: authorName,
+      authorAvatar: _post.authorAvatar,
+      createdAt: _post.createdAt,
     );
   }
 
