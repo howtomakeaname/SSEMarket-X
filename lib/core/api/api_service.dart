@@ -45,6 +45,13 @@ class GetPostsParams {
       };
 }
 
+class LoginResult {
+  final String token;
+  final String refreshToken;
+
+  LoginResult({required this.token, this.refreshToken = ''});
+}
+
 /// API 服务
 class ApiService {
   static const String _baseUrl = 'https://ssemarket.cn/api';
@@ -55,7 +62,7 @@ class ApiService {
     StorageService().setToken(token);
   }
 
-  Future<String> login(String email, String password) async {
+  Future<LoginResult?> login(String email, String password) async {
     final encryptedPassword = _encryptPassword(password, '16bit secret key');
 
     final uri = Uri.parse('$_baseUrl/auth/login');
@@ -73,18 +80,20 @@ class ApiService {
     );
 
     if (response.statusCode != 200) {
-      return '';
+      return null;
     }
 
     final Map<String, dynamic> json = jsonDecode(response.body) as Map<String, dynamic>;
     final data = json['data'];
     if (data is Map<String, dynamic> && data['token'] is String) {
       final token = data['token'] as String;
-      // Token is now managed by StorageService
-      return token;
+      final refreshToken = data['refresh_token'] is String
+          ? data['refresh_token'] as String
+          : '';
+      return LoginResult(token: token, refreshToken: refreshToken);
     }
 
-    return '';
+    return null;
   }
 
   String _encryptPassword(String data, String key) {
