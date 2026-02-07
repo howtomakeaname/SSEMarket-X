@@ -235,6 +235,23 @@ class _SearchPageState extends State<SearchPage> {
     final keyword = _searchController.text.trim();
     if (keyword.isEmpty) return;
     _focusNode.unfocus();
+
+    // 如果是纯数字，直接跳转到帖子详情
+    if (RegExp(r'^\d+$').hasMatch(keyword)) {
+      final postId = int.parse(keyword);
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => PostDetailPage(
+            postId: postId,
+            apiService: widget.apiService,
+          ),
+        ),
+      );
+      // 可选：添加搜索记录
+      _addToHistory(keyword);
+      return;
+    }
+
     _addToHistory(keyword);
     setState(() => _hasSearched = true);
     _loadPosts(refresh: true);

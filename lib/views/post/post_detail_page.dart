@@ -65,6 +65,7 @@ class _PostDetailPageState extends State<PostDetailPage>
   bool _hasChanges = false; // 标记是否有变化需要刷新上一页
   bool _isInWatchLater = false; // 是否已添加到稍后再看
   bool _isWatchLaterEnabled = false; // 稍后再看功能是否启用
+  bool _hasError = false; // 加载失败标记
   final GlobalKey _commentSectionKey = GlobalKey();
 
   // 滚动监听相关
@@ -360,6 +361,15 @@ class _PostDetailPageState extends State<PostDetailPage>
 
       if (!mounted) return;
 
+      // 检查是否获取到有效的帖子数据
+      if (post.id == 0) {
+        setState(() {
+          _isLoading = false;
+          _hasError = true;
+        });
+        return;
+      }
+
       // 检查稍后再看功能是否启用
       final isWatchLaterEnabled = await _watchLaterService.isEnabled();
 
@@ -386,6 +396,7 @@ class _PostDetailPageState extends State<PostDetailPage>
       if (!mounted) return;
       setState(() {
         _isLoading = false;
+        _hasError = true;
       });
     }
   }
@@ -720,8 +731,29 @@ class _PostDetailPageState extends State<PostDetailPage>
         ),
         body: _isLoading
             ? _buildDetailSkeleton(topPadding)
-            : RefreshIndicator(
-                onRefresh: _loadPostDetail,
+            : _hasError
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.error_outline,
+                            size: 64, color: context.textSecondaryColor),
+                        const SizedBox(height: 16),
+                        Text(
+                          '加载失败，帖子可能已被删除',
+                          style: TextStyle(
+                              fontSize: 16, color: context.textSecondaryColor),
+                        ),
+                        const SizedBox(height: 24),
+                        FilledButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text('返回'),
+                        ),
+                      ],
+                    ),
+                  )
+                : RefreshIndicator(
+                    onRefresh: _loadPostDetail,
                 edgeOffset: topPadding,
                 color: AppColors.primary,
                 backgroundColor: context.surfaceColor,
