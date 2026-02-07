@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sse_market_x/core/utils/time_utils.dart';
 import 'package:sse_market_x/shared/components/media/cached_image.dart';
 import 'package:sse_market_x/core/services/media_cache_service.dart';
@@ -56,173 +57,172 @@ class ShareImageWidget extends StatelessWidget {
       width: 600,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        // 圆角稍微加大，增加圆润感
+        borderRadius: BorderRadius.circular(24),
       ),
+      padding: const EdgeInsets.all(32),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 顶部：Logo和标题区域
-          Container(
-            padding: const EdgeInsets.fromLTRB(32, 32, 32, 24),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppColors.primary.withOpacity(0.1),
-                  AppColors.primary.withOpacity(0.05),
+          // 顶部：Logo
+          Row(
+            children: [
+              Image.asset(
+                appLogoPath,
+                width: 64, // 适当大小
+                height: 64,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(16), // 圆角
+                    ),
+                    child: Icon(
+                      Icons.apps,
+                      color: AppColors.primary,
+                      size: 32,
+                    ),
+                  );
+                },
+              ),
+              const Spacer(),
+              // 可选：添加应用名称或 slogan
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    'SSE Market',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF1A1A1A).withOpacity(0.8),
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  Text(
+                    '软工集市',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: const Color(0xFF1A1A1A).withOpacity(0.4),
+                    ),
+                  ),
                 ],
               ),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(16),
-                topRight: Radius.circular(16),
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Logo
-                Image.asset(
-                  appLogoPath,
-                  width: 72,
-                  height: 72,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      width: 72,
-                      height: 72,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        Icons.apps,
-                        color: AppColors.primary,
-                        size: 40,
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 24),
-                // 帖子标题
-                Text(
-                  postTitle.isNotEmpty ? postTitle : '无标题',
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1A1A1A),
-                    height: 1.3,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
+            ],
           ),
-          // 中间：帖子内容
-          if (previewContent.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(32, 24, 32, 24),
-              child: Text(
-                previewContent,
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: Color(0xFF4A4A4A),
-                  height: 1.6,
+          
+          const SizedBox(height: 32),
+          
+          // 标题
+          Text(
+            postTitle.isNotEmpty ? postTitle : '无标题',
+            style: const TextStyle(
+              fontSize: 28, // 加大标题字号
+              fontWeight: FontWeight.w800, // 更粗的字体
+              color: Color(0xFF1A1A1A),
+              height: 1.2,
+              letterSpacing: -0.5,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          
+          if (previewContent.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            // 内容预览
+            Text(
+              previewContent,
+              style: const TextStyle(
+                fontSize: 17, // 适中正文字号
+                color: Color(0xFF4A4A4A),
+                height: 1.6,
+              ),
+              maxLines: 6,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+          
+          const SizedBox(height: 32),
+          
+          // 分割线
+          Divider(color: Colors.black.withOpacity(0.06), height: 1),
+          
+          const SizedBox(height: 24),
+          
+          // 底部信息
+          Row(
+            children: [
+              // 头像
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFFF2F2F7), // iOS 风格灰色背景
                 ),
-                maxLines: 6,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          // 底部：发帖人信息和POST ID
-          Container(
-            padding: const EdgeInsets.fromLTRB(32, 20, 32, 32),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8F9FA),
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(16),
-                bottomRight: Radius.circular(16),
-              ),
-            ),
-            child: Row(
-              children: [
-                // 头像
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: const Color(0xFFE0E0E0),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: authorAvatar.isNotEmpty
-                      ? CachedImage(
-                          imageUrl: authorAvatar,
-                          width: 48,
-                          height: 48,
+                clipBehavior: Clip.antiAlias,
+                child: authorAvatar.isNotEmpty
+                    ? CachedImage(
+                        imageUrl: authorAvatar,
+                        width: 44,
+                        height: 44,
+                        fit: BoxFit.cover,
+                        category: CacheCategory.avatar,
+                        errorWidget: SvgPicture.asset(
+                          'assets/icons/default_avatar.svg',
                           fit: BoxFit.cover,
-                          category: CacheCategory.avatar,
-                          errorWidget: const Icon(
-                            Icons.person,
-                            size: 24,
-                            color: Color(0xFF999999),
-                          ),
-                        )
-                      : const Icon(
-                          Icons.person,
-                          size: 24,
-                          color: Color(0xFF999999),
                         ),
+                      )
+                    : SvgPicture.asset(
+                        'assets/icons/default_avatar.svg',
+                        fit: BoxFit.cover,
+                      ),
+              ),
+              const SizedBox(width: 12),
+              // 发帖人信息
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      authorDisplayName,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1A1A1A),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      formattedTime,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: const Color(0xFF1A1A1A).withOpacity(0.5),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 12),
-                // 发帖人信息
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        authorDisplayName,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF1A1A1A),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Text(
-                            formattedTime,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFF999999),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            width: 2,
-                            height: 2,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF999999),
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'POST #$postId',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+              ),
+              // POST ID 标签
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(100),
+                ),
+                child: Text(
+                  'POST #$postId',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),
