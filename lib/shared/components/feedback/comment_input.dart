@@ -7,7 +7,7 @@ import 'package:sse_market_x/shared/components/markdown/latex_markdown.dart';
 import 'package:sse_market_x/shared/components/media/image_editor.dart';
 import 'package:sse_market_x/shared/components/utils/snackbar_helper.dart';
 import 'package:sse_market_x/shared/components/inputs/toolbar_icon_button.dart';
-import 'package:sse_market_x/shared/components/inputs/segmented_control.dart';
+import 'package:sse_market_x/shared/components/inputs/emoji_picker.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 
 /// 评论输入组件
@@ -42,10 +42,6 @@ class _CommentInputState extends State<CommentInput> {
   bool _isSending = false;
   bool _showPreview = false;
   bool _isUploading = false;
-  /// 表情大类：颜文字 | Emoji
-  String _emojiMainCategory = 'kaomoji';
-  /// 颜文字小类（仅当 _emojiMainCategory == 'kaomoji' 时有效）
-  String _kaomojiSubCategory = 'happy';
   OverlayEntry? _kaomojiOverlay;
 
   @override
@@ -59,69 +55,6 @@ class _CommentInputState extends State<CommentInput> {
       widget.onUnfocus!(_controller.text.trim());
     }
   }
-
-  // 颜文字和表情数据
-  final Map<String, List<String>> _kaomojis = {
-    'happy': [
-      '(´∀｀)', '(￣▽￣)', '(´▽｀)', '(￣ω￣)', '(´ω｀)', '(￣∀￣)',
-      '(๑´ㅂ`๑)', '(｡♥‿♥｡)', '(◕‿◕)', '(*´▽`*)', '(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧',
-      '(＾◡＾)', '(◠‿◠)', '(´꒳`)', '(◡ ω ◡)', '(´｡• ᵕ •｡`)', '(◕ᴗ◕✿)',
-      '(ﾉ◕ヮ◕)ﾉ', '(≧∇≦)', '(＾▽＾)', '(◉‿◉)', '(´∇｀)', '(◕‿◕)♡'
-    ],
-    'sad': [
-      '(´；ω；｀)', '(｡•́︿•̀｡)', '(╥_╥)', '(T_T)', '(;_;)', '(ಥ﹏ಥ)',
-      '(இ﹏இ`｡)', '(┳Д┳)', '(个_个)', '(´-ω-`)', '(｡•́ - •̀｡)',
-      '(╯︵╰)', '(｡╯︵╰｡)', '(´°̥̥̥̥̥̥̥̥ω°̥̥̥̥̥̥̥̥｀)', '(｡•́︿•̀｡)', '(◞‸◟)',
-      '(╥﹏╥)', '(ಥ_ಥ)', '(´；д；`)', '(｡•́︿•̀｡)', '(╯_╰)', '(´Д｀)'
-    ],
-    'angry': [
-      '(╬ಠ益ಠ)', '(ಠ_ಠ)', '(¬_¬)', '(►_►)', '(҂◡_◡)', '(ꐦ°᷄д°᷅)',
-      '(╯°□°）╯︵ ┻━┻', '(ノಠ益ಠ)ノ', '(눈_눈)', '(⋋▂⋌)', '(-_-メ)',
-      '(｀皿´＃)', '(╯‵□′)╯︵┻━┻', '(ﾉ｀Д´)ﾉ彡┻━┻', '(ಠ益ಠ)', '(◣_◢)',
-      '(╬⁽⁽ ⁰ ⁾⁾ Д ⁽⁽ ⁰ ⁾⁾)', '(ﾉ°益°)ﾉ', '(｀ε´)', '(ﾉ｀⌒´)ﾉ┫：・┻┻', '(ﾒ｀ﾛ´)/', '(ﾉ｀□´)ﾉ⌒┻━┻'
-    ],
-    'love': [
-      '(｡♥‿♥｡)', '(´∀｀)♡', '(◍•ᴗ•◍)❤', '(｡・//ε//・｡)', '(๑˃̵ᴗ˂̵)و',
-      '(✿◠‿◠)', '(⺣◡⺣)♡*', '(灬º‿º灬)♡', '(ღ˘⌣˘ღ)', '(♥ω♥*)', '(´ε｀ )',
-      '(´∀｀)♡', '(◕‿◕)♡', '(｡♥‿♥｡)', '(◍•ᴗ•◍)♡', '(´｡• ω •｡`) ♡',
-      '(◡ ‿ ◡)♡', '(´∀｀)♡', '(◕ᴗ◕)♡', '(◍•ᴗ•◍)❤', '(´♡‿♡`)', '(◕‿◕)♡'
-    ],
-    'surprise': [
-      '(゜o゜;)', '(O_O)', '(⊙_⊙)', '(°ロ°)', '(◎_◎;)', '(✪ω✪)',
-      '(⊙ω⊙)', '(◉_◉)', '(°△°|||)', '(☉_☉)', '(ʘᗩʘ)',
-      '(⊙０⊙)', '(◉０◉)', '(°o°)', '(⊙.⊙)', '(◎０◎)', '(°□°)',
-      '(⊙▽⊙)', '(◉‿◉)', '(°▽°)', '(⊙ω⊙)', '(◎_◎)', '(°０°)'
-    ],
-    'emoji': [
-      '😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '🙃', '😉', '😊',
-      '😇', '🥰', '😍', '🤩', '😘', '😗', '☺️', '😚', '😙', '🥲', '😋', '😛',
-      '😜', '🤪', '😝', '🤑', '🤗', '🤭', '🤫', '🤔', '🤐', '🤨', '😐', '😑',
-      '😶', '😏', '😒', '🙄', '😬', '🤥', '😔', '😪', '🤤', '😴', '😷', '🤒'
-    ],
-    'cute': [
-      '(◕‿◕)', '(◡ ω ◡)', '(´｡• ᵕ •｡`)', '(◕ᴗ◕✿)', '(´꒳`)', '(◠‿◠)',
-      '(｡◕‿◕｡)', '(◕‿◕)♡', '(◍•ᴗ•◍)', '(´∀｀)', '(◡‿◡)', '(◕ω◕)',
-      '(◉‿◉)', '(◕‿◕)✿', '(◍•ᴗ•◍)✧*', '(◕‿◕)♪', '(◡ ‿ ◡)', '(◕‿◕)☆',
-      '(◍•ᴗ•◍)♡', '(◕‿◕)♫', '(◡ ω ◡)♡', '(◕‿◕)✨', '(◍•ᴗ•◍)♪', '(◕‿◕)♬'
-    ],
-    'cool': [
-      '(⌐■_■)', '(▀̿Ĺ̯▀̿ ̿)', '(◣_◢)', '(¬‿¬)', '(ಠ_ಠ)', '(¬_¬)',
-      '(►_►)', '(◉_◉)', '(⊙_⊙)', '(◎_◎)', '(°_°)', '(-_-)',
-      '(¯\\_(ツ)_/¯)', '(╯°□°）╯', '(ಠ益ಠ)', '(◣_◢)', '(⌐■_■)',
-      '(▀̿Ĺ̯▀̿ ̿)', '(¬‿¬)', '(ಠ_ಠ)', '(¬_¬)', '(►_►)', '(◉_◉)', '(⊙_⊙)'
-    ],
-  };
-
-  final Map<String, String> _tabLabels = {
-    'happy': '开心',
-    'sad': '难过',
-    'angry': '愤怒',
-    'love': '爱心',
-    'surprise': '惊讶',
-    'cute': '可爱',
-    'cool': '酷炫',
-    'emoji': 'Emoji',
-  };
 
   @override
   void dispose() {
@@ -394,94 +327,11 @@ class _CommentInputState extends State<CommentInput> {
     );
   }
 
-  /// 颜文字小类 key 列表（用于 SegmentedControl）
-  static const List<String> _kaomojiSubKeys = [
-    'happy', 'sad', 'angry', 'love', 'surprise', 'cute', 'cool',
-  ];
-
   Widget _buildKaomojiSelector() {
-    return StatefulBuilder(
-      builder: (context, setLocalState) {
-        final isEmoji = _emojiMainCategory == 'emoji';
-        final currentList = isEmoji
-            ? _kaomojis['emoji']!
-            : (_kaomojis[_kaomojiSubCategory] ?? _kaomojis['happy']!);
-
-        return Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: context.surfaceColor,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // 第一级：颜文字 | Emoji（iOS 18 风格 SegmentedControl，紧凑尺寸）
-              SegmentedControl<String>(
-                segments: const ['kaomoji', 'emoji'],
-                selectedSegment: _emojiMainCategory,
-                onSegmentChanged: (v) {
-                  setState(() => _emojiMainCategory = v);
-                  _kaomojiOverlay?.markNeedsBuild();
-                },
-                labelBuilder: (v) => v == 'kaomoji' ? '颜文字' : 'Emoji',
-                height: 28,
-                fontSize: 12,
-              ),
-              const SizedBox(height: 10),
-              // 第二级：仅颜文字时显示小类 SegmentedControl
-              if (!isEmoji) ...[
-                SegmentedControl<String>(
-                  segments: _kaomojiSubKeys,
-                  selectedSegment: _kaomojiSubCategory,
-                  onSegmentChanged: (v) {
-                    setState(() => _kaomojiSubCategory = v);
-                    _kaomojiOverlay?.markNeedsBuild();
-                  },
-                  labelBuilder: (k) => _tabLabels[k]!,
-                  height: 26,
-                  fontSize: 11,
-                ),
-                const SizedBox(height: 8),
-              ],
-              // 表情网格：颜文字一行 3 个，Emoji 保持 6 列
-              SizedBox(
-                height: 160,
-                child: GridView.builder(
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: isEmoji ? 6 : 3,
-                    childAspectRatio: isEmoji ? 1.0 : 2.0,
-                    crossAxisSpacing: 4,
-                    mainAxisSpacing: 4,
-                  ),
-                  itemCount: currentList.length,
-                  itemBuilder: (context, index) {
-                    final item = currentList[index];
-                    return GestureDetector(
-                      onTap: () {
-                        _insertKaomoji(item);
-                        _hideKaomojiOverlay();
-                      },
-                      child: Container(
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: context.backgroundColor,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          item,
-                          style: TextStyle(fontSize: isEmoji ? 20 : 14),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        );
+    return EmojiSelectorPanel(
+      onEmojiSelected: (emoji) {
+        _insertKaomoji(emoji);
+        _hideKaomojiOverlay();
       },
     );
   }
