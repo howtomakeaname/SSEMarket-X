@@ -5,6 +5,7 @@ import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/user_model.dart';
 import 'package:sse_market_x/core/services/media_cache_service.dart';
 import 'package:sse_market_x/core/services/storage_service.dart';
+import 'package:sse_market_x/core/utils/annual_report_config.dart';
 import 'package:sse_market_x/core/services/watch_later_service.dart';
 import 'package:sse_market_x/core/services/blur_effect_service.dart';
 import 'package:sse_market_x/core/utils/level_utils.dart';
@@ -18,6 +19,7 @@ import 'package:sse_market_x/views/profile/feedback_page.dart';
 import 'package:sse_market_x/views/profile/post_history_page.dart';
 import 'package:sse_market_x/views/profile/settings_page.dart';
 import 'package:sse_market_x/views/profile/watch_later_page.dart';
+import 'package:sse_market_x/views/home/annual_report_page.dart';
 
 class MyPage extends StatefulWidget {
   const MyPage({super.key, required this.apiService});
@@ -122,6 +124,7 @@ class _MyPageState extends State<MyPage> {
             child: Column(
               children: [
                 _buildUserInfoCard(context),
+                _buildAnnualReportSection(context),
                 _buildMainMenu(context),
                 _buildOtherOptions(context),
               ],
@@ -350,8 +353,32 @@ class _MyPageState extends State<MyPage> {
     );
   }
 
+  /// 年度报告入口：独立成一组，仅在 newSSE router 规定的活动时间内展示
+  Widget _buildAnnualReportSection(BuildContext context) {
+    if (!AnnualReportConfig.isWithinAccessPeriod) return const SizedBox.shrink();
+    return SettingsListGroup(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      children: [
+        SettingsListItem(
+          title: '年度报告',
+          subtitle: '查看你的2025集市年度报告',
+          leadingIcon: 'assets/icons/ic_document.svg',
+          type: SettingsListItemType.navigation,
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => const AnnualReportPage(),
+              ),
+            );
+          },
+          isFirst: true,
+          isLast: true,
+        ),
+      ],
+    );
+  }
+
   Widget _buildMainMenu(BuildContext context) {
-    // 构建菜单项列表
     final menuItems = <Widget>[
       SettingsListItem(
         title: '浏览历史',
@@ -389,11 +416,10 @@ class _MyPageState extends State<MyPage> {
             ),
           );
         },
-        isLast: !_isWatchLaterEnabled, // 如果稍后再看未启用，这是最后一项
+        isLast: !_isWatchLaterEnabled,
       ),
     ];
 
-    // 如果启用了稍后再看，添加该菜单项
     if (_isWatchLaterEnabled) {
       menuItems.add(
         SettingsListItem(

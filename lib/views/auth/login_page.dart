@@ -83,16 +83,21 @@ class _LoginFormState extends State<LoginForm> {
 
     setState(() => _isLoading = true);
     try {
-      final token = await _apiService.login(email, password);
+      final result = await _apiService.login(email, password);
       if (!mounted) return;
 
-      if (token.isNotEmpty) {
-        _apiService.setToken(token);
+      if (result != null && result.token.isNotEmpty) {
+        _apiService.setToken(result.token);
         final user = await _apiService.getUserInfo();
         if (!mounted) return;
 
         if (user.userId != 0) {
-          await StorageService().setUser(user, token, rememberMe: true);
+          await StorageService().setUser(
+            user,
+            result.token,
+            rememberMe: true,
+            refreshToken: result.refreshToken.isNotEmpty ? result.refreshToken : null,
+          );
           if (!mounted) return;
           SnackBarHelper.show(context, '登录成功');
           // Navigation is handled by GoRouter redirect due to StorageService change

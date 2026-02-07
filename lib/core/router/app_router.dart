@@ -5,6 +5,7 @@ import 'package:sse_market_x/core/services/storage_service.dart';
 import 'package:sse_market_x/views/auth/login_page.dart';
 import 'package:sse_market_x/views/index_page.dart';
 import 'package:sse_market_x/views/post/post_detail_page.dart';
+import 'package:sse_market_x/views/home/annual_report_page.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 
@@ -74,6 +75,12 @@ final GoRouter appRouter = GoRouter(
           postId: id,
           apiService: ApiService(),
         );
+      },
+    ),
+    GoRoute(
+      path: '/annual-report',
+      builder: (BuildContext context, GoRouterState state) {
+        return const AnnualReportPage();
       },
     ),
   ],
