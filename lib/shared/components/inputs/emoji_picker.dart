@@ -358,19 +358,9 @@ class _EmojiSelectorPanelState extends State<EmojiSelectorPanel> {
             segments: const ['kaomoji', 'emoji'],
             selectedSegment: _emojiMainCategory,
             onSegmentChanged: (v) {
-              if (v == 'emoji') {
-                _pageController.animateToPage(
-                  _emojiPageIndex,
-                  duration: const Duration(milliseconds: 280),
-                  curve: Curves.easeInOut,
-                );
-              } else {
-                _pageController.animateToPage(
-                  _currentPage < _emojiPageIndex ? _currentPage : 0,
-                  duration: const Duration(milliseconds: 280),
-                  curve: Curves.easeInOut,
-                );
-              }
+              final index = v == 'emoji' ? _emojiPageIndex : (_currentPage < _emojiPageIndex ? _currentPage : 0);
+              setState(() => _currentPage = index);
+              _pageController.jumpToPage(index);
             },
             labelBuilder: (v) => v == 'kaomoji' ? '颜文字' : 'Emoji',
             height: 28,
@@ -384,11 +374,8 @@ class _EmojiSelectorPanelState extends State<EmojiSelectorPanel> {
               onSegmentChanged: (v) {
                 final index = kKaomojiSubKeys.indexOf(v);
                 if (index >= 0) {
-                  _pageController.animateToPage(
-                    index,
-                    duration: const Duration(milliseconds: 280),
-                    curve: Curves.easeInOut,
-                  );
+                  setState(() => _currentPage = index);
+                  _pageController.jumpToPage(index);
                 }
               },
               labelBuilder: (k) => kEmojiTabLabels[k]!,

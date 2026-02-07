@@ -223,16 +223,19 @@ class _ShareModalState extends State<ShareModal> {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(16),
-              child: RepaintBoundary(
-                key: _imagePreviewKey,
-                child: ShareImageWidget(
-                  appLogoPath: 'assets/images/logo.png',
-                  postTitle: widget.postTitle,
-                  postContent: widget.postContent,
-                  authorName: widget.authorName,
-                  authorAvatar: widget.authorAvatar,
-                  createdAt: widget.createdAt,
-                  postId: widget.postId,
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: RepaintBoundary(
+                  key: _imagePreviewKey,
+                  child: ShareImageWidget(
+                    appLogoPath: 'assets/images/logo.png',
+                    postTitle: widget.postTitle,
+                    postContent: widget.postContent,
+                    authorName: widget.authorName,
+                    authorAvatar: widget.authorAvatar,
+                    createdAt: widget.createdAt,
+                    postId: widget.postId,
+                  ),
                 ),
               ),
             ),
