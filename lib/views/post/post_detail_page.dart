@@ -160,7 +160,7 @@ class _PostDetailPageState extends State<PostDetailPage>
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 0),
                 _buildBottomAction(
                   icon: SvgPicture.asset(
                     _isLiked
@@ -177,7 +177,7 @@ class _PostDetailPageState extends State<PostDetailPage>
                   textColor: _isLiked ? Colors.red : null,
                   onTap: _isLoading ? null : _onLikeTap,
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 0),
                 _buildBottomAction(
                   icon: Icon(
                     _isSaved ? Icons.bookmark : Icons.bookmark_border,
@@ -190,7 +190,7 @@ class _PostDetailPageState extends State<PostDetailPage>
                   textColor: _isSaved ? AppColors.primary : null,
                   onTap: _isLoading ? null : _onSavePost,
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 0),
                 _buildBottomAction(
                   icon: SvgPicture.asset(
                     'assets/icons/ic_comment.svg',
