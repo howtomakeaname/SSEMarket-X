@@ -6,6 +6,10 @@ class SegmentedControl<T> extends StatefulWidget {
   final T selectedSegment;
   final ValueChanged<T> onSegmentChanged;
   final String Function(T) labelBuilder;
+  /// 紧凑尺寸（如 28），不传则默认 36
+  final double? height;
+  /// 文字大小，不传则根据 height 推断（紧凑时 12，默认 14）
+  final double? fontSize;
 
   const SegmentedControl({
     super.key,
@@ -13,6 +17,8 @@ class SegmentedControl<T> extends StatefulWidget {
     required this.selectedSegment,
     required this.onSegmentChanged,
     required this.labelBuilder,
+    this.height,
+    this.fontSize,
   });
 
   @override
@@ -83,17 +89,22 @@ class _SegmentedControlState<T> extends State<SegmentedControl<T>>
   Widget build(BuildContext context) {
     if (widget.segments.isEmpty) return const SizedBox();
 
+    final double controlHeight = widget.height ?? 36;
+    final double fontSize = widget.fontSize ?? (controlHeight <= 30 ? 12 : 14);
+    final double padding = 2;
+    final double innerRadius = (controlHeight - padding * 2) / 2;
+
     final int selectedIndex = widget.segments.indexOf(widget.selectedSegment);
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // 背景色
-    final backgroundColor = isDark 
-        ? const Color(0xFF2C2C2E) 
+    // 背景色（与项目主题契合的 iOS 18 风格）
+    final backgroundColor = isDark
+        ? const Color(0xFF2C2C2E)
         : const Color(0xFFE5E5EA);
 
     // 滑块颜色
     final thumbColor = isDark
-        ? const Color(0xFF636366) 
+        ? const Color(0xFF636366)
         : Colors.white;
 
     // 文字颜色
@@ -101,40 +112,39 @@ class _SegmentedControlState<T> extends State<SegmentedControl<T>>
     final unselectedTextColor = isDark ? Colors.grey[400] : Colors.grey[600];
 
     return Container(
-      height: 36,
-      padding: const EdgeInsets.all(2),
+      height: controlHeight,
+      padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(controlHeight / 2),
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final double segmentWidth = (constraints.maxWidth - 4) / widget.segments.length;
-          
+          final double segmentWidth = constraints.maxWidth / widget.segments.length;
+
           return Stack(
             children: [
               // 1. 滑动的滑块层
               AnimatedAlign(
                 alignment: Alignment(
-                  widget.segments.length > 1 
+                  widget.segments.length > 1
                       ? -1.0 + (selectedIndex * 2 / (widget.segments.length - 1))
                       : 0.0,
                   0.0,
                 ),
                 duration: const Duration(milliseconds: 300),
-                curve: Curves.fastOutSlowIn, // 更有弹性的曲线
+                curve: Curves.fastOutSlowIn,
                 child: SizedBox(
                   width: segmentWidth,
                   height: double.infinity,
-                  // 仅对当前选中的滑块应用缩放效果（如果是按下的刚好是选中的）
                   child: ScaleTransition(
-                    scale: _pressedIndex == selectedIndex 
-                        ? _scaleAnimation 
+                    scale: _pressedIndex == selectedIndex
+                        ? _scaleAnimation
                         : const AlwaysStoppedAnimation(1.0),
                     child: Container(
                       decoration: BoxDecoration(
                         color: thumbColor,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(innerRadius - 1),
                         boxShadow: [
                           if (!isDark)
                             BoxShadow(
@@ -148,13 +158,12 @@ class _SegmentedControlState<T> extends State<SegmentedControl<T>>
                   ),
                 ),
               ),
-              
               // 2. 交互层
               Row(
                 children: List.generate(widget.segments.length, (index) {
                   final segment = widget.segments[index];
                   final isSelected = index == selectedIndex;
-                  
+
                   return Expanded(
                     child: GestureDetector(
                       onTapDown: (_) => _handleTapDown(index),
@@ -164,13 +173,13 @@ class _SegmentedControlState<T> extends State<SegmentedControl<T>>
                       child: Container(
                         alignment: Alignment.center,
                         child: ScaleTransition(
-                          scale: _pressedIndex == index 
-                              ? _scaleAnimation 
+                          scale: _pressedIndex == index
+                              ? _scaleAnimation
                               : const AlwaysStoppedAnimation(1.0),
                           child: AnimatedDefaultTextStyle(
                             duration: const Duration(milliseconds: 200),
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: fontSize,
                               fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                               color: isSelected ? selectedTextColor : unselectedTextColor,
                               fontFamily: '.SF Pro Text',
