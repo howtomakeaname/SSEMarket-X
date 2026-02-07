@@ -269,25 +269,25 @@ class _ShareModalState extends State<ShareModal> {
                   ),
                 ] else ...[
                   // 图片预览
-                  RepaintBoundary(
-                    key: _imagePreviewKey,
-                    child: Container(
-                      width: double.infinity,
-                      constraints: const BoxConstraints(maxHeight: 440),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
-                            blurRadius: 16,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: SingleChildScrollView(
-                          physics: const BouncingScrollPhysics(),
+                  Container(
+                    width: double.infinity,
+                    constraints: const BoxConstraints(maxHeight: 440),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.08),
+                          blurRadius: 16,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        child: RepaintBoundary(
+                          key: _imagePreviewKey,
                           child: ShareImageWidget(
                             appLogoPath: 'assets/images/logo.png',
                             postTitle: widget.postTitle,
@@ -344,11 +344,20 @@ class _ShareModalState extends State<ShareModal> {
       ),
     );
 
-    // 移动端底部弹出时，添加底部安全区
+    // 移动端底部弹出时，添加底部安全区（背景色与弹窗保持一致，保持顶部圆角）
     if (!widget.isDialog) {
-      content = SafeArea(
-        top: false,
-        child: content,
+      final bool isDark = Theme.of(context).brightness == Brightness.dark;
+      final backgroundColor = isDark ? const Color(0xFF1C1C1E) : const Color(0xFFF2F2F7);
+      
+      content = Container(
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: content,
+        ),
       );
     }
 
