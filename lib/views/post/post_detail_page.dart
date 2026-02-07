@@ -18,6 +18,7 @@ import 'package:sse_market_x/shared/components/markdown/latex_markdown.dart';
 import 'package:sse_market_x/shared/components/media/cached_image.dart';
 import 'package:sse_market_x/shared/components/overlays/custom_dialog.dart';
 import 'package:sse_market_x/shared/components/overlays/reply_modal.dart';
+import 'package:sse_market_x/shared/components/overlays/share_modal.dart';
 import 'package:sse_market_x/shared/components/utils/snackbar_helper.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 import 'package:sse_market_x/views/profile/user_profile_page.dart';
@@ -452,6 +453,22 @@ class _PostDetailPageState extends State<PostDetailPage>
     }
   }
 
+  /// 分享帖子
+  void _onSharePost() {
+    if (_isLoading) return;
+    
+    final authorName = _post.authorName.isNotEmpty 
+        ? _post.authorName 
+        : '匿名用户';
+    
+    showShareModal(
+      context: context,
+      postId: _post.id,
+      postTitle: _post.title,
+      authorName: authorName,
+    );
+  }
+
   /// 收藏/取消收藏
   Future<void> _onSavePost() async {
     try {
@@ -671,30 +688,29 @@ class _PostDetailPageState extends State<PostDetailPage>
                           color: AppColors.error),
                       onPressed: _onDeletePost,
                     ),
-                  // 打分帖子不显示收藏和稍后再看按钮
-                  if (widget.postType != 'rating') ...[
+                  // 分享按钮
+                  IconButton(
+                    icon: Icon(
+                      Icons.share_outlined,
+                      color: context.textPrimaryColor,
+                    ),
+                    onPressed: _onSharePost,
+                    tooltip: '分享',
+                  ),
+                  // 打分帖子不显示稍后再看按钮
+                  if (widget.postType != 'rating' && _isWatchLaterEnabled)
                     IconButton(
                       icon: Icon(
-                        _isSaved ? Icons.bookmark : Icons.bookmark_border,
-                        color: context.textPrimaryColor,
+                        _isInWatchLater
+                            ? Icons.watch_later
+                            : Icons.watch_later_outlined,
+                        color: _isInWatchLater
+                            ? AppColors.primary
+                            : context.textPrimaryColor,
                       ),
-                      onPressed: _onSavePost,
+                      onPressed: _onAddToWatchLater,
+                      tooltip: '稍后再看',
                     ),
-                    // 只在启用了稍后再看功能时显示按钮
-                    if (_isWatchLaterEnabled)
-                      IconButton(
-                        icon: Icon(
-                          _isInWatchLater
-                              ? Icons.watch_later
-                              : Icons.watch_later_outlined,
-                          color: _isInWatchLater
-                              ? AppColors.primary
-                              : context.textPrimaryColor,
-                        ),
-                        onPressed: _onAddToWatchLater,
-                        tooltip: '稍后再看',
-                      ),
-                  ],
                   const SizedBox(width: 8), // Add right padding
                 ]
               : null,
