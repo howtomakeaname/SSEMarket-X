@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 
 /// 优化：
 /// 1. 只对新页面做动画，旧页面保持不动（减少一半的动画计算）
