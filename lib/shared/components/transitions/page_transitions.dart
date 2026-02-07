@@ -117,15 +117,25 @@ class SlideUpPageRoute<T> extends PageRouteBuilder<T> {
 
 /// 页面切换主题配置
 class AppPageTransitionsTheme {
-  static PageTransitionsTheme get theme => const PageTransitionsTheme(
-        builders: {
-          TargetPlatform.android: CustomPageTransitionsBuilder(),
-          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-          TargetPlatform.macOS: CustomPageTransitionsBuilder(),
-          TargetPlatform.windows: CustomPageTransitionsBuilder(),
-          TargetPlatform.linux: CustomPageTransitionsBuilder(),
-          TargetPlatform.fuchsia: CustomPageTransitionsBuilder(),
-          TargetPlatform.ohos: CustomPageTransitionsBuilder(),
-        },
-      );
+  static PageTransitionsTheme get theme {
+    final builders = <TargetPlatform, PageTransitionsBuilder>{
+      TargetPlatform.android: CustomPageTransitionsBuilder(),
+      TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+      TargetPlatform.macOS: CustomPageTransitionsBuilder(),
+      TargetPlatform.windows: CustomPageTransitionsBuilder(),
+      TargetPlatform.linux: CustomPageTransitionsBuilder(),
+      TargetPlatform.fuchsia: CustomPageTransitionsBuilder(),
+    };
+    // 兼容本地 ohos 分支，官方SDK无ohos枚举时不会报错
+    if (defaultTargetPlatform.toString().contains('ohos')) {
+      try {
+        final ohosEnum = TargetPlatform.values.firstWhere(
+          (e) => e.toString().contains('ohos'),
+          orElse: () => TargetPlatform.android,
+        );
+        builders[ohosEnum] = CustomPageTransitionsBuilder();
+      } catch (_) {}
+    }
+    return PageTransitionsTheme(builders: builders);
+  }
 }
