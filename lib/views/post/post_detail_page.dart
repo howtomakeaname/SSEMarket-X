@@ -622,36 +622,46 @@ class _PostDetailPageState extends State<PostDetailPage>
                     color: context.textPrimaryColor,
                   ),
                 )
-              : Stack(
-                  alignment: Alignment.centerLeft,
-                  children: [
-                    AnimatedOpacity(
-                      opacity: _showPostTitle ? 0.0 : 1.0,
-                      duration: const Duration(milliseconds: 200),
-                      child: Text(
-                        '详情',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: context.textPrimaryColor,
+              : GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onDoubleTap: () {
+                    _scrollController.animateTo(
+                      0,
+                      duration: const Duration(milliseconds: 350),
+                      curve: Curves.ease,
+                    );
+                  },
+                  child: Stack(
+                    alignment: Alignment.centerLeft,
+                    children: [
+                      AnimatedOpacity(
+                        opacity: _showPostTitle ? 0.0 : 1.0,
+                        duration: const Duration(milliseconds: 200),
+                        child: Text(
+                          '详情',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: context.textPrimaryColor,
+                          ),
                         ),
                       ),
-                    ),
-                    AnimatedOpacity(
-                      opacity: _showPostTitle ? 1.0 : 0.0,
-                      duration: const Duration(milliseconds: 200),
-                      child: Text(
-                        _post.title,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: context.textPrimaryColor,
+                      AnimatedOpacity(
+                        opacity: _showPostTitle ? 1.0 : 0.0,
+                        duration: const Duration(milliseconds: 200),
+                        child: Text(
+                          _post.title,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: context.textPrimaryColor,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
           actions: widget.previewPost == null
               ? [
