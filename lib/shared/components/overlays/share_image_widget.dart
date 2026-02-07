@@ -55,10 +55,9 @@ class ShareImageWidget extends StatelessWidget {
 
     return Container(
       width: 600,
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: Colors.white,
-        // 圆角稍微加大，增加圆润感
-        borderRadius: BorderRadius.circular(24),
+        // 生成图片时使用方角，预览时通过外层 ClipRRect 添加圆角
       ),
       padding: const EdgeInsets.all(32),
       child: Column(
