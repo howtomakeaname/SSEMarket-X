@@ -8,7 +8,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 /// 年度报告 WebView 页面
-/// 统一使用 webview_flutter；与 newSSE 一致：先注入 localStorage 并 reload 一次，reload 完成后再显示界面，避免用户看到刷新闪烁
 class AnnualReportPage extends StatefulWidget {
   const AnnualReportPage({super.key});
 
