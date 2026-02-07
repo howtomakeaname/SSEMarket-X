@@ -116,6 +116,10 @@ class HomeHeader extends StatelessWidget {
                           'assets/icons/ic_search.svg',
                           width: 16,
                           height: 16,
+                          colorFilter: ColorFilter.mode(
+                            context.textSecondaryColor,
+                            BlendMode.srcIn,
+                          ),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
