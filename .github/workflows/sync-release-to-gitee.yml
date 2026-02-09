@@ -1,0 +1,21 @@
+name: Sync Release to Gitee
+
+on:
+  release:
+    types: [published]
+    workflow_dispatch: # 允许手动触发
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sync GitHub Release to Gitee
+        uses: trustedinster/sync-release-gitee@v1.3
+        with:
+          gitee_owner: ${{ secrets.GITEE_OWNER }}
+          gitee_repo: ${{ secrets.GITEE_REPO }}
+          gitee_token: ${{ secrets.GITEE_TOKEN }}
+          github_owner: ${{ github.repository_owner }}
+          github_repo: ${{ github.event.repository.name }}
+          gitee_upload_retry_times: 3
+          debug: false
