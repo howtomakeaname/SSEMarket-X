@@ -1,5 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
-  <circle cx="50" cy="50" r="40" fill="#ccc"/>
-  <path d="M30 40c0-10 10-20 20-20s20 10 20 20-10 20-20 20S30 50 30 40z" fill="#fff"/>
-  <path d="M50 60c-15 0-25 5-25 15v5h50v-5c0-10-10-15-25-15z" fill="#fff"/>
+  <!-- 背景圆形 - 使用项目的浅灰背景色 -->
+  <circle cx="50" cy="50" r="50" fill="#E8EAED"/>
+  <!-- 头部 - 使用柔和的灰色 -->
+  <circle cx="50" cy="38" r="18" fill="#B0B8C1"/>
+  <!-- 身体 - 使用相同的灰色，圆润的肩膀 -->
+  <path d="M50 60c-20 0-32 10-32 24v16h64v-16c0-14-12-24-32-24z" fill="#B0B8C1"/>
 </svg>

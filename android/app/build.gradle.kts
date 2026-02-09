@@ -35,8 +35,10 @@ android {
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
+        versionCode =
+            if (project.hasProperty("flutter.versionCode")) project.property("flutter.versionCode").toString().toInt() else 1
+        versionName =
+            if (project.hasProperty("flutter.versionName")) project.property("flutter.versionName").toString() else "1.0.0"
     }
 
     signingConfigs {

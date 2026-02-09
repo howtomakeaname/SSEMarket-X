@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
@@ -6,31 +7,37 @@ import 'package:sse_market_x/core/models/post_model.dart';
 import 'package:sse_market_x/core/models/user_model.dart';
 import 'package:sse_market_x/core/services/storage_service.dart';
 import 'package:sse_market_x/core/services/browse_history_service.dart';
+import 'package:sse_market_x/core/services/blur_effect_service.dart';
 import 'package:sse_market_x/shared/components/cards/post_card.dart';
 import 'package:sse_market_x/shared/components/inputs/teacher_dropdown.dart';
 import 'package:sse_market_x/shared/components/loading/loading_indicator.dart';
 import 'package:sse_market_x/shared/components/loading/skeleton_loader.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 import 'package:sse_market_x/views/post/post_detail_page.dart';
+import 'package:sse_market_x/views/profile/user_profile_page.dart';
 
 /// 教师分区页面
 class TeacherPage extends StatefulWidget {
   final ApiService apiService;
   final Function(int postId)? onPostTap;
+  final EdgeInsetsGeometry? contentPadding;
 
   const TeacherPage({
     super.key,
     required this.apiService,
     this.onPostTap,
+    this.contentPadding,
   });
 
   @override
   State<TeacherPage> createState() => _TeacherPageState();
 }
 
-class _TeacherPageState extends State<TeacherPage> {
+class _TeacherPageState extends State<TeacherPage>
+    with AutomaticKeepAliveClientMixin {
   static const int _pageSize = 10;
   static const String _cacheKey = 'posts_cache_teacher';
+  static const String _teachersCacheKey = 'teachers_cache';
 
   List<Map<String, dynamic>> _teachers = [];
   String? _selectedTeacher;
@@ -41,6 +48,9 @@ class _TeacherPageState extends State<TeacherPage> {
   bool _isLoadingTeachers = true;
   bool _hasLoadedOnce = false;
   UserModel _user = UserModel.empty();
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -55,21 +65,11 @@ class _TeacherPageState extends State<TeacherPage> {
       _user = storageService.user!;
     }
 
-    // 加载教师列表
-    setState(() => _isLoadingTeachers = true);
-    try {
-      final teachers = await widget.apiService.getTeachers();
-      if (mounted) {
-        setState(() {
-          _teachers = teachers;
-          _isLoadingTeachers = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isLoadingTeachers = false);
-      }
-    }
+    // 先尝试从缓存加载教师列表
+    await _loadCachedTeachers();
+
+    // 后台刷新教师列表
+    _fetchTeachers();
 
     // 尝试从缓存加载帖子
     await _loadCachedPosts();
@@ -79,6 +79,59 @@ class _TeacherPageState extends State<TeacherPage> {
       _fetchPosts(refresh: true, silent: true);
     } else {
       _fetchPosts(refresh: true);
+    }
+  }
+
+  /// 从缓存加载教师列表
+  Future<void> _loadCachedTeachers() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cachedJson = prefs.getString(_teachersCacheKey);
+
+      if (cachedJson != null && cachedJson.isNotEmpty) {
+        final List<dynamic> jsonList = jsonDecode(cachedJson);
+        final cachedTeachers = jsonList
+            .map((json) => Map<String, dynamic>.from(json as Map))
+            .toList();
+
+        if (cachedTeachers.isNotEmpty && mounted) {
+          setState(() {
+            _teachers = cachedTeachers;
+            _isLoadingTeachers = false;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('加载教师列表缓存失败: $e');
+    }
+  }
+
+  /// 保存教师列表到缓存
+  Future<void> _saveCachedTeachers(List<Map<String, dynamic>> teachers) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_teachersCacheKey, jsonEncode(teachers));
+    } catch (e) {
+      debugPrint('保存教师列表缓存失败: $e');
+    }
+  }
+
+  /// 从 API 获取教师列表
+  Future<void> _fetchTeachers() async {
+    try {
+      final teachers = await widget.apiService.getTeachers();
+      if (mounted) {
+        setState(() {
+          _teachers = teachers;
+          _isLoadingTeachers = false;
+        });
+        // 保存到缓存
+        _saveCachedTeachers(teachers);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingTeachers = false);
+      }
     }
   }
 
@@ -186,6 +239,7 @@ class _TeacherPageState extends State<TeacherPage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // 必须调用 super.build
     return Column(
       children: [
         _buildHeader(context),
@@ -195,6 +249,9 @@ class _TeacherPageState extends State<TeacherPage> {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final padding = widget.contentPadding ?? EdgeInsets.zero;
+    final topPadding = padding.resolve(TextDirection.ltr).top;
+    final blurService = BlurEffectService();
     final options = [
       const TeacherOption(value: null, label: '全部教师'),
       ..._teachers.map((t) => TeacherOption(
@@ -204,58 +261,104 @@ class _TeacherPageState extends State<TeacherPage> {
           )),
     ];
 
-    return Container(
-      color: context.surfaceColor,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: Row(
-        children: [
-          Text(
-            '筛选',
-            style: TextStyle(
-              fontSize: 13,
-              color: context.textTertiaryColor,
-            ),
-          ),
-          const SizedBox(width: 8),
-          if (_isLoadingTeachers)
-            SizedBox(
-              width: 14,
-              height: 14,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: context.textTertiaryColor,
+    // 只有在没有教师数据且正在加载时才显示 loading
+    final showLoading = _teachers.isEmpty && _isLoadingTeachers;
+
+    return Padding(
+      padding: EdgeInsets.only(top: topPadding),
+      child: ValueListenableBuilder<bool>(
+        valueListenable: blurService.enabledNotifier,
+        builder: (context, isBlurEnabled, child) {
+          final filterContent = Container(
+            decoration: BoxDecoration(
+              color: isBlurEnabled
+                  ? context.blurBackgroundColor.withOpacity(0.82)
+                  : context.surfaceColor,
+              border: Border(
+                bottom: BorderSide(
+                  color: context.dividerColor.withOpacity(0.3),
+                  width: 0.5,
+                ),
               ),
-            )
-          else
-            TeacherDropdown(
-              options: options,
-              value: _selectedTeacher,
-              hint: '全部教师',
-              onChanged: _onTeacherChanged,
             ),
-        ],
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(
+              children: [
+                Text(
+                  '筛选',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: context.textTertiaryColor,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                if (showLoading)
+                  SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: context.textTertiaryColor,
+                    ),
+                  )
+                else
+                  TeacherDropdown(
+                    options: options,
+                    value: _selectedTeacher,
+                    hint: '全部教师',
+                    onChanged: _onTeacherChanged,
+                  ),
+              ],
+            ),
+          );
+
+          if (isBlurEnabled) {
+            return ClipRect(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                child: filterContent,
+              ),
+            );
+          }
+
+          return filterContent;
+        },
       ),
     );
   }
 
   Widget _buildPostList() {
-    // 首次加载且无缓存时显示骨架屏
-    if (!_hasLoadedOnce && _isLoading && _posts.isEmpty) {
-      return const PostListSkeleton(itemCount: 5, isDense: false);
+    final padding = widget.contentPadding ?? EdgeInsets.zero;
+    final resolvedPadding = padding.resolve(TextDirection.ltr);
+    final listBasePadding = resolvedPadding.copyWith(top: 0);
+
+    // 显示骨架屏的条件：
+    // 1. 正在加载中且列表为空
+    // 2. 还没加载过且列表为空（首次进入）
+    // 3. 正在加载教师列表（说明刚进入页面）
+    if (_posts.isEmpty &&
+        (_isLoading || !_hasLoadedOnce || _isLoadingTeachers)) {
+      return Padding(
+        padding: padding.add(const EdgeInsets.only(top: 8)),
+        child: const PostListSkeleton(itemCount: 5, isDense: false),
+      );
     }
 
-    if (_posts.isEmpty && !_isLoading) {
+    // 只有在加载完成后且列表为空时才显示空状态
+    if (_posts.isEmpty && !_isLoading && _hasLoadedOnce) {
       return _buildEmptyState();
     }
 
     return Container(
       color: context.backgroundColor,
       child: RefreshIndicator(
+        edgeOffset: 0,
         onRefresh: () => _fetchPosts(refresh: true),
         color: AppColors.primary,
         backgroundColor: context.surfaceColor,
         child: ListView.builder(
-          padding: const EdgeInsets.only(top: 8, bottom: 16),
+          padding:
+              listBasePadding.add(const EdgeInsets.only(top: 8, bottom: 16)),
           physics: const AlwaysScrollableScrollPhysics(),
           itemCount: _posts.length + 1,
           itemBuilder: (context, index) {
@@ -289,6 +392,17 @@ class _TeacherPageState extends State<TeacherPage> {
             final post = _posts[index];
             return PostCard(
               post: post,
+              onAvatarTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => UserProfilePage(
+                      apiService: widget.apiService,
+                      userId: 0,
+                      userPhone: post.authorPhone,
+                    ),
+                  ),
+                );
+              },
               onTap: () => _navigateToPostDetail(post),
               onLikeTap: () async {
                 return await widget.apiService.likePost(post.id, _user.phone);

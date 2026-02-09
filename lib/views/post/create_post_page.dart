@@ -5,7 +5,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/user_model.dart';
+import 'package:sse_market_x/core/services/storage_service.dart';
 import 'package:sse_market_x/views/post/markdown_help_page.dart';
+import 'package:sse_market_x/shared/components/cards/post_preview_card.dart';
 import 'package:sse_market_x/shared/components/markdown/latex_markdown.dart';
 import 'package:sse_market_x/shared/components/media/image_editor.dart';
 import 'package:sse_market_x/shared/components/utils/snackbar_helper.dart';
@@ -131,11 +133,26 @@ class _CreatePostPageState extends State<CreatePostPage> {
   }
 
   Future<void> _loadUser() async {
+    // 优先使用缓存的用户信息（立即可用）
+    final cachedUser = StorageService().user;
+    if (cachedUser != null && mounted) {
+      setState(() {
+        _user = cachedUser;
+      });
+    }
+    
+    // 然后从 API 获取最新信息（包括详细的 score）
     try {
-      final user = await widget.apiService.getUserInfo();
+      final basic = await widget.apiService.getUserInfo();
+      UserModel detailed = basic;
+      // 获取详细信息（包含 score 和 intro）
+      if (basic.phone.isNotEmpty) {
+        final d = await widget.apiService.getDetailedUserInfo(basic.phone);
+        detailed = basic.copyWith(score: d.score, intro: d.intro);
+      }
       if (mounted) {
         setState(() {
-          _user = user;
+          _user = detailed;
         });
       }
     } catch (e) {
@@ -398,7 +415,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
-          '新建帖子',
+          _showPreview ? '预览' : '新建帖子',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -408,6 +425,32 @@ class _CreatePostPageState extends State<CreatePostPage> {
         centerTitle: false,
         titleSpacing: 0,
         actions: [
+          // Markdown 帮助
+          IconButton(
+            icon: Icon(Icons.help_outline, color: context.textSecondaryColor),
+            tooltip: 'Markdown帮助',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const MarkdownHelpPage(),
+                ),
+              );
+            },
+          ),
+          // 预览按钮
+          if (widget.onPreviewUpdate == null)
+            IconButton(
+              icon: Icon(
+                _showPreview ? Icons.edit : Icons.visibility,
+                color: _showPreview ? AppColors.primary : context.textSecondaryColor,
+              ),
+              tooltip: _showPreview ? '编辑' : '预览',
+              onPressed: () {
+                setState(() {
+                  _showPreview = !_showPreview;
+                });
+              },
+            ),
           TextButton(
             onPressed: _isSubmitting ? null : _onSubmit,
             child: Text(
@@ -418,7 +461,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
               ),
             ),
           ),
-          const SizedBox(width: 8), // Add right padding
+          const SizedBox(width: 8),
         ],
       ),
       body: Column(
@@ -440,6 +483,32 @@ class _CreatePostPageState extends State<CreatePostPage> {
                       ),
                     ),
                   ),
+                  // Markdown 帮助
+                  IconButton(
+                    icon: Icon(Icons.help_outline, color: context.textSecondaryColor),
+                    tooltip: 'Markdown帮助',
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const MarkdownHelpPage(),
+                        ),
+                      );
+                    },
+                  ),
+                  // 预览按钮
+                  if (widget.onPreviewUpdate == null)
+                    IconButton(
+                      icon: Icon(
+                        _showPreview ? Icons.edit : Icons.visibility,
+                        color: _showPreview ? AppColors.primary : context.textSecondaryColor,
+                      ),
+                      tooltip: _showPreview ? '编辑' : '预览',
+                      onPressed: () {
+                        setState(() {
+                          _showPreview = !_showPreview;
+                        });
+                      },
+                    ),
                   TextButton(
                     onPressed: _isSubmitting ? null : _onSubmit,
                     child: Text(
@@ -456,7 +525,6 @@ class _CreatePostPageState extends State<CreatePostPage> {
           // Main content - 邮件编写风格
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
               child: _buildUnifiedComposer(),
             ),
           ),
@@ -467,11 +535,14 @@ class _CreatePostPageState extends State<CreatePostPage> {
 
   /// 统一的编写器（邮件风格）
   Widget _buildUnifiedComposer() {
+    // 预览模式：显示类似帖子详情的预览效果
+    if (_showPreview) {
+      return _buildFullPreview();
+    }
+    
+    // 编辑模式：显示输入表单
     return Container(
-      decoration: BoxDecoration(
-        color: context.surfaceColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
+      color: context.surfaceColor,
       child: Column(
         children: [
           // 标题输入
@@ -607,69 +678,52 @@ class _CreatePostPageState extends State<CreatePostPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Markdown 工具按钮
-          if (!_showPreview) ...[
+          // 左侧：Markdown 格式按钮
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (!_showPreview) ...[
+                ToolbarIconButton(
+                  icon: Icons.title,
+                  tooltip: '标题：## 二级标题',
+                  onPressed: () => _insertMarkdown('\n## ', '\n', placeholder: '二级标题'),
+                ),
+                ToolbarIconButton(
+                  icon: Icons.format_bold,
+                  tooltip: '粗体：**粗体文字**',
+                  onPressed: () => _insertMarkdown('**', '**', placeholder: '粗体文字'),
+                ),
+                ToolbarIconButton(
+                  icon: Icons.format_italic,
+                  tooltip: '斜体：*斜体文字*',
+                  onPressed: () => _insertMarkdown('*', '*', placeholder: '斜体文字'),
+                ),
+                ToolbarIconButton(
+                  icon: Icons.format_list_bulleted,
+                  tooltip: '无序列表：- 列表项',
+                  onPressed: () => _insertMarkdown('\n- ', '\n', placeholder: '列表项'),
+                ),
+                ToolbarIconButton(
+                  icon: Icons.code,
+                  tooltip: '代码：`代码`',
+                  onPressed: () => _insertMarkdown('`', '`', placeholder: '代码'),
+                ),
+                ToolbarIconButton(
+                  icon: Icons.format_quote,
+                  tooltip: '引用：> 引用内容',
+                  onPressed: () => _insertMarkdown('\n> ', '\n', placeholder: '引用内容'),
+                ),
+              ],
+            ],
+          ),
+          // 右侧：上传图片按钮
+          if (!_showPreview)
             ToolbarIconButton(
-              icon: Icons.title,
-              tooltip: '标题：## 二级标题',
-              onPressed: () => _insertMarkdown('\n## ', '\n', placeholder: '二级标题'),
-            ),
-            ToolbarIconButton(
-              icon: Icons.format_bold,
-              tooltip: '粗体：**粗体文字**',
-              onPressed: () => _insertMarkdown('**', '**', placeholder: '粗体文字'),
-            ),
-            ToolbarIconButton(
-              icon: Icons.format_italic,
-              tooltip: '斜体：*斜体文字*',
-              onPressed: () => _insertMarkdown('*', '*', placeholder: '斜体文字'),
-            ),
-            ToolbarIconButton(
-              icon: Icons.format_list_bulleted,
-              tooltip: '无序列表：- 列表项',
-              onPressed: () => _insertMarkdown('\n- ', '\n', placeholder: '列表项'),
-            ),
-            ToolbarIconButton(
-              icon: Icons.code,
-              tooltip: '代码：`代码`',
-              onPressed: () => _insertMarkdown('`', '`', placeholder: '代码'),
-            ),
-            ToolbarIconButton(
-              icon: Icons.format_quote,
-              tooltip: '引用：> 引用内容',
-              onPressed: () => _insertMarkdown('\n> ', '\n', placeholder: '引用内容'),
-            ),
-            ToolbarIconButton(
-              icon: Icons.image,
+              icon: _isUploading ? Icons.hourglass_empty : Icons.image,
               tooltip: '上传图片',
               onPressed: _isUploading ? null : _pickAndUploadImage,
-            ),
-          ],
-          const Spacer(),
-          // Markdown 帮助
-          ToolbarIconButton(
-            icon: Icons.help_outline,
-            tooltip: 'Markdown帮助',
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const MarkdownHelpPage(),
-                ),
-              );
-            },
-          ),
-          // 预览按钮（与评论输入区统一为 icon 按钮样式）
-          if (widget.onPreviewUpdate == null)
-            ToolbarIconButton(
-              icon: _showPreview ? Icons.edit : Icons.visibility,
-              tooltip: _showPreview ? '编辑' : '预览',
-              isActive: _showPreview,
-              onPressed: () {
-                setState(() {
-                  _showPreview = !_showPreview;
-                });
-              },
             ),
         ],
       ),
@@ -699,11 +753,11 @@ class _CreatePostPageState extends State<CreatePostPage> {
     );
   }
 
-  /// 预览
+  /// 预览（仅内容部分，用于内容输入区）
   Widget _buildPreview() {
     return Container(
       width: double.infinity,
-      constraints: const BoxConstraints(minHeight: 400), // 增加预览最小高度
+      constraints: const BoxConstraints(minHeight: 400),
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       child: _contentController.text.trim().isEmpty
           ? Center(
@@ -718,6 +772,15 @@ class _CreatePostPageState extends State<CreatePostPage> {
           : LatexMarkdown(
               data: _contentController.text,
             ),
+    );
+  }
+
+  /// 完整预览（类似帖子详情页的效果）
+  Widget _buildFullPreview() {
+    return PostPreviewCard(
+      title: _titleController.text.trim(),
+      content: _contentController.text.trim(),
+      user: _user,
     );
   }
 }

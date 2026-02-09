@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/user_model.dart';
 import 'package:sse_market_x/core/services/storage_service.dart';
@@ -11,21 +12,28 @@ import 'package:sse_market_x/shared/theme/app_colors.dart';
 class ChatListPage extends StatefulWidget {
   final ApiService apiService;
   final Function(UserModel user) onUserTap;
+  final EdgeInsetsGeometry? contentPadding;
 
   const ChatListPage({
     super.key,
     required this.apiService,
     required this.onUserTap,
+    this.contentPadding,
   });
 
   @override
   State<ChatListPage> createState() => _ChatListPageState();
 }
 
-class _ChatListPageState extends State<ChatListPage> {
+class _ChatListPageState extends State<ChatListPage>
+    with AutomaticKeepAliveClientMixin {
   bool _isLoading = true;
+  bool _hasLoadedOnce = false;
   final List<ChatContact> _contacts = [];
   StreamSubscription<List<ChatContact>>? _contactsSubscription;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -47,24 +55,32 @@ class _ChatListPageState extends State<ChatListPage> {
       }
 
       // 使用已有的联系人数据
-      if (ws.currentContacts.isNotEmpty) {
+      if (ws.currentContacts.isNotEmpty && !_hasLoadedOnce) {
         _contacts.clear();
         _contacts.addAll(ws.currentContacts);
         _loadLatestMessages();
+      } else if (_hasLoadedOnce) {
+        // 已经加载过，只更新数据不重新排序
+        _updateContactsWithoutReorder(ws.currentContacts);
       }
 
       // 监听联系人更新
       _contactsSubscription = ws.contacts.listen((contacts) {
         if (mounted) {
-          _contacts.clear();
-          _contacts.addAll(contacts);
-          _loadLatestMessages();
+          if (!_hasLoadedOnce) {
+            _contacts.clear();
+            _contacts.addAll(contacts);
+            _loadLatestMessages();
+          } else {
+            // 已经加载过，只更新数据不重新排序
+            _updateContactsWithoutReorder(contacts);
+          }
         }
       });
     } catch (e) {
       debugPrint('ChatListPage WebSocket init error: $e');
     }
-    
+
     // Fallback: if no contacts after some time, show empty or stop loading
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted && _isLoading) {
@@ -73,6 +89,27 @@ class _ChatListPageState extends State<ChatListPage> {
         });
       }
     });
+  }
+
+  /// 更新联系人数据但不重新排序
+  void _updateContactsWithoutReorder(List<ChatContact> newContacts) {
+    // 更新现有联系人的数据（未读数等）
+    for (final newContact in newContacts) {
+      final index = _contacts.indexWhere((c) => c.userId == newContact.userId);
+      if (index != -1) {
+        _contacts[index].unreadCount = newContact.unreadCount;
+        _contacts[index].lastMessage = newContact.lastMessage ?? _contacts[index].lastMessage;
+        if (newContact.lastMessageTime != null) {
+          _contacts[index].lastMessageTime = newContact.lastMessageTime;
+        }
+      } else {
+        // 新联系人，添加到列表开头
+        _contacts.insert(0, newContact);
+      }
+    }
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   /// 为每个联系人加载最新消息
@@ -104,13 +141,16 @@ class _ChatListPageState extends State<ChatListPage> {
       }
     }));
 
-    // 按最新消息时间排序（最新的在前）
-    _contacts.sort((a, b) {
-      if (a.lastMessageTime == null && b.lastMessageTime == null) return 0;
-      if (a.lastMessageTime == null) return 1;
-      if (b.lastMessageTime == null) return -1;
-      return b.lastMessageTime!.compareTo(a.lastMessageTime!);
-    });
+    // 只在首次加载时排序
+    if (!_hasLoadedOnce) {
+      _contacts.sort((a, b) {
+        if (a.lastMessageTime == null && b.lastMessageTime == null) return 0;
+        if (a.lastMessageTime == null) return 1;
+        if (b.lastMessageTime == null) return -1;
+        return b.lastMessageTime!.compareTo(a.lastMessageTime!);
+      });
+      _hasLoadedOnce = true;
+    }
 
     if (mounted) {
       setState(() => _isLoading = false);
@@ -157,18 +197,27 @@ class _ChatListPageState extends State<ChatListPage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // 必须调用 super.build
+    
+    // Default padding if not provided. Default includes bottom 60 for tabbar
+    final padding = widget.contentPadding ?? const EdgeInsets.fromLTRB(16, 12, 16, 60);
+
     // 直接显示内容，不显示 loading 状态
     // 如果正在加载且没有联系人，显示空状态
     return _contacts.isEmpty
-        ? _buildEmptyState(context)
+        ? Padding(
+             padding: EdgeInsets.only(top: padding.resolve(TextDirection.ltr).top), 
+             child: _buildEmptyState(context)
+          )
         : RefreshIndicator(
-                onRefresh: () async {
+             edgeOffset: padding.resolve(TextDirection.ltr).top,
+             onRefresh: () async {
                   _initWebSocket();
                   await Future.delayed(const Duration(seconds: 1));
                 },
                 color: AppColors.primary,
                 child: ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 60),
+                  padding: padding,
                   itemCount: _contacts.length,
                   itemBuilder: (context, index) {
                     final contact = _contacts[index];
@@ -202,45 +251,50 @@ class _ChatListPageState extends State<ChatListPage> {
                 Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: context.backgroundColor,
-                        border: Border.all(color: context.dividerColor, width: 0.5),
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: contact.avatarUrl.isNotEmpty 
-                          ? CachedImage(
-                              imageUrl: contact.avatarUrl,
-                              width: 48,
-                              height: 48,
-                              fit: BoxFit.cover,
-                              category: CacheCategory.avatar,
-                              errorWidget: Icon(Icons.person, size: 24, color: context.textSecondaryColor),
-                            )
-                          : Icon(Icons.person, size: 24, color: context.textSecondaryColor),
-                    ),
+                    Builder(builder: (context) {
+                      final defaultAvatar = SvgPicture.asset(
+                        'assets/icons/default_avatar.svg',
+                        fit: BoxFit.cover,
+                      );
+                      return Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: context.backgroundColor,
+                          border: Border.all(color: context.dividerColor, width: 0.5),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: contact.avatarUrl.isNotEmpty
+                            ? CachedImage(
+                                imageUrl: contact.avatarUrl,
+                                width: 48,
+                                height: 48,
+                                fit: BoxFit.cover,
+                                category: CacheCategory.avatar,
+                                errorWidget: defaultAvatar,
+                              )
+                            : defaultAvatar,
+                      );
+                    }),
                     // 未读红点
                     if (hasUnread)
                       Positioned(
-                        right: -2,
-                        top: -2,
+                        right: -6,
+                        top: -4,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                           decoration: BoxDecoration(
                             color: AppColors.error,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: context.surfaceColor, width: 1.5),
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                          constraints: const BoxConstraints(minWidth: 18, minHeight: 16),
+                          constraints: const BoxConstraints(minWidth: 16, minHeight: 14),
                           child: Center(
                             child: Text(
                               contact.unreadCount > 99 ? '99+' : '${contact.unreadCount}',
                               style: const TextStyle(
                                 color: Colors.white,
-                                fontSize: 10,
+                                fontSize: 9,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),

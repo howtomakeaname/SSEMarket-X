@@ -256,11 +256,12 @@ class _UserProfilePageState extends State<UserProfilePage> {
         const SizedBox(height: 4),
         Text(
           _user!.intro.isNotEmpty ? _user!.intro : '暂无简介',
-          maxLines: 2,
+          maxLines: 3,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
             fontSize: 13,
             color: context.textSecondaryColor,
+            height: 1.4,
           ),
         ),
         const SizedBox(height: 12),

@@ -1,8 +1,10 @@
 import 'dart:convert';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/product_model.dart';
+import 'package:sse_market_x/core/services/blur_effect_service.dart';
 import 'package:sse_market_x/views/shop/product_detail_page.dart';
 import 'package:sse_market_x/views/shop/create_product_page.dart';
 import 'package:sse_market_x/shared/components/loading/skeleton_loader.dart';
@@ -163,8 +165,17 @@ class _ShopPageState extends State<ShopPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Calculate top padding for content (StatusBar + AppBar + TabBar)
+    final topPadding = MediaQuery.of(context).padding.top + kToolbarHeight + 36;
+    // Calculate bottom padding for content (NavBar + SafeArea)
+    // Note: In IndexPage, bottom nav is overlay, so we need to add its height.
+    // Standard bottom nav height is 56? IndexPage uses BottomNavigationBar (default height).
+    // Plus safe area bottom.
+    final bottomPadding = kBottomNavigationBarHeight + MediaQuery.of(context).padding.bottom;
+
     return Scaffold(
       backgroundColor: context.backgroundColor,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: Text(
           '闲置物品',
@@ -194,47 +205,75 @@ class _ShopPageState extends State<ShopPage> {
             ),
           ),
         ],
-        backgroundColor: context.surfaceColor,
+        backgroundColor: Colors.transparent, // Important: Transparency for blur
+        flexibleSpace: ValueListenableBuilder<bool>(
+          valueListenable: BlurEffectService().enabledNotifier,
+          builder: (context, isBlurEnabled, _) {
+            Widget content = Container(
+              decoration: BoxDecoration(
+                color: isBlurEnabled 
+                    ? context.blurBackgroundColor.withOpacity(0.82)
+                    : context.surfaceColor,
+                border: Border(
+                  bottom: BorderSide(
+                    color: context.dividerColor.withOpacity(0.3),
+                    width: 0.5,
+                  ),
+                ),
+              ),
+            );
+            
+            if (isBlurEnabled) {
+              return ClipRect(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                  child: content,
+                ),
+              );
+            } else {
+              return content;
+            }
+          },
+        ),
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
         automaticallyImplyLeading: false,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(36),
+          child: _buildTabs(context, transparent: true), // Pass transparent flag
+        ),
       ),
-      body: Column(
-        children: [
-          // Tab 切换
-          _buildTabs(context),
-          // 商品列表 - 支持左右滑动
-          Expanded(
-            child: !_hasLoadedOnce && _isLoading && !_isRefreshing
-                ? const ProductGridSkeleton(itemCount: 6)
-                : PageView(
-                    controller: _pageController,
-                    onPageChanged: (index) {
-                      setState(() {
-                        _currentIndex = index;
-                      });
-                    },
-                    children: [
-                      _buildProductGrid(0),
-                      _buildProductGrid(1),
-                    ],
-                  ),
-          ),
-        ],
-      ),
+      body: !_hasLoadedOnce && _isLoading && !_isRefreshing
+          ? Padding(
+              padding: EdgeInsets.only(top: topPadding, bottom: bottomPadding),
+              child: const ProductGridSkeleton(itemCount: 6),
+            )
+          : PageView(
+              controller: _pageController,
+              onPageChanged: (index) {
+                setState(() {
+                  _currentIndex = index;
+                });
+              },
+              children: [
+                _buildProductGrid(0, topPadding, bottomPadding),
+                _buildProductGrid(1, topPadding, bottomPadding),
+              ],
+            ),
     );
   }
 
-  Widget _buildTabs(BuildContext context) {
+  Widget _buildTabs(BuildContext context, {bool transparent = false}) {
     return Container(
-      height: 48,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: context.surfaceColor,
+      height: 36,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      color: transparent ? Colors.transparent : context.surfaceColor, // Handle transparency
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           _buildTabButton(context, '广场', 0),
-          const SizedBox(width: 8),
+          const SizedBox(width: 24),
           _buildTabButton(context, '我的发布', 1),
         ],
       ),
@@ -247,55 +286,76 @@ class _ShopPageState extends State<ShopPage> {
       onTap: () {
         _pageController.jumpToPage(index);
       },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : context.backgroundColor,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            color: isSelected ? Colors.white : context.textPrimaryColor,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 15,
+                color: isSelected ? AppColors.primary : context.textSecondaryColor,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
           ),
-        ),
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            height: 3,
+            width: isSelected ? 20 : 0,
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(1.5),
+            ),
+            margin: const EdgeInsets.only(bottom: 1),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildProductGrid(int index) {
+  Widget _buildProductGrid(int index, double topPadding, double bottomPadding) {
     final products = _getProductsForIndex(index);
     
     if (products.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.inventory_2_outlined,
-              size: 64,
-              color: context.textSecondaryColor.withOpacity(0.5),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              index == 0 ? '暂无热门商品' : '暂无我的商品',
-              style: TextStyle(
-                fontSize: 16,
-                color: context.textSecondaryColor,
+      return Padding(
+        padding: EdgeInsets.only(top: topPadding, bottom: bottomPadding),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.inventory_2_outlined,
+                size: 64,
+                color: context.textSecondaryColor.withOpacity(0.5),
               ),
-            ),
-          ],
+              const SizedBox(height: 16),
+              Text(
+                index == 0 ? '暂无热门商品' : '暂无我的商品',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: context.textSecondaryColor,
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
 
     return RefreshIndicator(
+      edgeOffset: topPadding, // Ensure RefreshIndicator appears below header
       onRefresh: _onRefresh,
       color: AppColors.primary,
       child: GridView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.only(
+          left: 16,
+          right: 16,
+          top: topPadding + 16,
+          bottom: bottomPadding + 16,
+        ),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
           crossAxisSpacing: 12,

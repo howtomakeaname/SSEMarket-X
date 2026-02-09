@@ -12,6 +12,7 @@ class ReplyModal extends StatefulWidget {
   final int? parentCommentId; // 主评论ID
   final int? targetCommentId; // 目标评论ID（子评论回复时使用）
   final String? targetUserName; // 目标用户名（子评论回复时使用）
+  final bool isDialog; // 是否为 Dialog 模式（桌面端）
 
   const ReplyModal({
     super.key,
@@ -21,6 +22,7 @@ class ReplyModal extends StatefulWidget {
     this.parentCommentId,
     this.targetCommentId,
     this.targetUserName,
+    this.isDialog = false,
   });
 
   @override
@@ -28,71 +30,80 @@ class ReplyModal extends StatefulWidget {
 }
 
 class _ReplyModalState extends State<ReplyModal> {
+  bool _closedBySend = false;
+
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(
-          maxWidth: 600, // 限制最大宽度，适合多栏视图
-        ),
-        child: Container(
-          decoration: BoxDecoration(
-            color: context.surfaceColor,
-            borderRadius: BorderRadius.circular(16),
-          ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // 标题栏
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: context.dividerColor,
-                    width: 0.5,
-                  ),
+    final mediaQuery = MediaQuery.of(context);
+    // 底部弹窗且键盘收起时预留底部安全区
+    final bottomSafe = widget.isDialog
+        ? 0.0
+        : (mediaQuery.viewInsets.bottom > 0 ? 0.0 : mediaQuery.padding.bottom);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: context.surfaceColor,
+        // 如果是 Dialog 模式，四周圆角；否则只有顶部圆角
+        borderRadius: widget.isDialog 
+            ? BorderRadius.circular(16)
+            : const BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 标题栏
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: context.dividerColor,
+                  width: 0.5,
                 ),
               ),
-              child: Row(
-                children: [
-                  Text(
-                    '回复 ${widget.replyToName}',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: context.textPrimaryColor,
+            ),
+            child: Row(
+              children: [
+                Text(
+                  '回复 ${widget.replyToName}',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: context.textPrimaryColor,
+                  ),
+                ),
+                const Spacer(),
+                GestureDetector(
+                  onTap: () => Navigator.of(context).pop(),
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    child: Icon(
+                      Icons.close,
+                      size: 20,
+                      color: context.textSecondaryColor,
                     ),
                   ),
-                  const Spacer(),
-                  GestureDetector(
-                    onTap: () => Navigator.of(context).pop(),
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      child: Icon(
-                        Icons.close,
-                        size: 20,
-                        color: context.textSecondaryColor,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-            // 回复输入区域
-            CommentInput(
-              postId: widget.postId,
-              apiService: widget.apiService,
-              placeholder: '回复 ${widget.replyToName}...',
-              onSend: (content) async {
-                return await _handleReply(content);
-              },
-            ),
-          ],
-        ),
-        ),
+          ),
+          // 回复输入区域：键盘收起且输入为空时自动关闭弹窗
+          CommentInput(
+            postId: widget.postId,
+            apiService: widget.apiService,
+            placeholder: '回复 ${widget.replyToName}...',
+            autoFocus: true, // 弹窗中自动聚焦
+            onUnfocus: (currentText) {
+              if (currentText.isEmpty && mounted && !_closedBySend) {
+                Navigator.of(context).pop();
+              }
+            },
+            onSend: (content) async {
+              return await _handleReply(content);
+            },
+          ),
+          if (bottomSafe > 0) SizedBox(height: bottomSafe),
+        ],
       ),
     );
   }
@@ -124,6 +135,7 @@ class _ReplyModalState extends State<ReplyModal> {
       }
 
       if (success && mounted) {
+        _closedBySend = true;
         Navigator.of(context).pop(true); // 返回成功标识
       }
       

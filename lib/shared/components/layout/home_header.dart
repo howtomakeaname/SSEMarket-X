@@ -1,7 +1,9 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sse_market_x/core/models/user_model.dart';
 import 'package:sse_market_x/core/services/media_cache_service.dart';
+import 'package:sse_market_x/core/services/blur_effect_service.dart';
 import 'package:sse_market_x/shared/components/media/cached_image.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 
@@ -41,13 +43,36 @@ class HomeHeader extends StatelessWidget {
     final verticalPaddingTop = showAvatar && showAddButton ? 4.0 : 8.0;
     final verticalPaddingBottom = showAvatar && showAddButton ? 4.0 : 8.0;
     
-    return Column(
-      children: [
-        Container(
-          color: context.surfaceColor,
-          padding: EdgeInsets.fromLTRB(horizontalPadding, verticalPaddingTop, horizontalPadding, verticalPaddingBottom),
-          child: Row(
+    final blurService = BlurEffectService();
+    
+    return ValueListenableBuilder<bool>(
+      valueListenable: blurService.enabledNotifier,
+      builder: (context, isBlurEnabled, child) {
+        Widget content = Container(
+          decoration: BoxDecoration(
+            color: isBlurEnabled 
+                ? context.blurBackgroundColor.withOpacity(0.82)
+                : context.surfaceColor,
+            border: Border(
+              bottom: BorderSide(
+                color: context.dividerColor.withOpacity(0.3),
+                width: 0.5,
+              ),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
+              Container(
+                // Remove solid color, use transparency from parent
+                padding: EdgeInsets.fromLTRB(
+                  horizontalPadding, 
+                  verticalPaddingTop + MediaQuery.of(context).padding.top, // Add SafeArea top padding
+                  horizontalPadding, 
+                  verticalPaddingBottom
+                ),
+                child: Row(
+                  children: [
               if (showAvatar) ...[
                 GestureDetector(
                   onTap: onAvatarTap,
@@ -91,6 +116,10 @@ class HomeHeader extends StatelessWidget {
                           'assets/icons/ic_search.svg',
                           width: 16,
                           height: 16,
+                          colorFilter: ColorFilter.mode(
+                            context.textSecondaryColor,
+                            BlendMode.srcIn,
+                          ),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
@@ -128,46 +157,53 @@ class HomeHeader extends StatelessWidget {
                   onPressed: onAddPostTap,
                 ),
               ],
-            ],
-          ),
-        ),
-        Container(
-          height: 40,
-          color: context.surfaceColor,
-          padding: EdgeInsets.fromLTRB(horizontalPadding, 0, horizontalPadding, 4),
-          child: SingleChildScrollView(
+            ])),
+          // Tabs Container
+          Container(
+            height: 36,
+            // Remove solid color
+            padding: EdgeInsets.fromLTRB(horizontalPadding - 4, 0, horizontalPadding - 4, 0), // Adjust padding for underline style
+            child: SingleChildScrollView(
             controller: tabScrollController,
             scrollDirection: Axis.horizontal,
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: displayPartitions.asMap().entries.map((entry) {
                 final index = entry.key;
                 final p = entry.value;
                 final selected = p == currentPartition;
-                return Padding(
-                  padding: EdgeInsets.only(
-                      right: index < displayPartitions.length - 1 ? 4 : 0),
-                  child: GestureDetector(
-                    key: tabKeys[p],
-                    onTap: () => onPartitionTap(p),
-                    child: Container(
-                      height: 32,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 6),
-                      decoration: BoxDecoration(
-                        color:
-                            selected ? AppColors.primary : context.backgroundColor,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Text(
-                        p,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color:
-                              selected ? Colors.white : context.textPrimaryColor,
-                          fontWeight:
-                              selected ? FontWeight.w600 : FontWeight.normal,
+                return GestureDetector(
+                  key: tabKeys[p],
+                  onTap: () => onPartitionTap(p),
+                  behavior: HitTestBehavior.opaque,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Text(
+                            p,
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: selected ? AppColors.primary : context.textSecondaryColor,
+                              fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                            ),
+                          ),
                         ),
-                      ),
+                        // Indicator
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          height: 3,
+                          width: selected ? 20 : 0,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(1.5),
+                          ),
+                          margin: const EdgeInsets.only(bottom: 1),
+                        ),
+                      ],
                     ),
                   ),
                 );
@@ -175,7 +211,20 @@ class HomeHeader extends StatelessWidget {
             ),
           ),
         ),
-      ],
+      ]),
+    );
+        
+        if (isBlurEnabled) {
+          return ClipRect(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+              child: content,
+            ),
+          );
+        } else {
+          return content;
+        }
+      },
     );
   }
 }

@@ -7,6 +7,7 @@ import 'package:sse_market_x/shared/components/markdown/latex_markdown.dart';
 import 'package:sse_market_x/shared/components/media/image_editor.dart';
 import 'package:sse_market_x/shared/components/utils/snackbar_helper.dart';
 import 'package:sse_market_x/shared/components/inputs/toolbar_icon_button.dart';
+import 'package:sse_market_x/shared/components/inputs/emoji_picker.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 
 /// 评论输入组件
@@ -15,6 +16,9 @@ class CommentInput extends StatefulWidget {
   final ApiService apiService;
   final Future<bool> Function(String content) onSend;
   final String placeholder;
+  final bool autoFocus;
+  /// 当输入框失去焦点时回调，参数为当前文本（已 trim），可用于弹窗在键盘收起且内容为空时关闭
+  final void Function(String currentText)? onUnfocus;
 
   const CommentInput({
     super.key,
@@ -22,6 +26,8 @@ class CommentInput extends StatefulWidget {
     required this.apiService,
     required this.onSend,
     this.placeholder = '支持Markdown语法',
+    this.autoFocus = false,
+    this.onUnfocus,
   });
 
   @override
@@ -30,79 +36,30 @@ class CommentInput extends StatefulWidget {
 
 class _CommentInputState extends State<CommentInput> {
   final TextEditingController _controller = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
   final GlobalKey _kaomojiButtonKey = GlobalKey();
   final ImagePicker _picker = ImagePicker();
   bool _isSending = false;
   bool _showPreview = false;
   bool _isUploading = false;
-  String _activeTab = 'happy';
   OverlayEntry? _kaomojiOverlay;
 
-  // 颜文字和表情数据
-  final Map<String, List<String>> _kaomojis = {
-    'happy': [
-      '(´∀｀)', '(￣▽￣)', '(´▽｀)', '(￣ω￣)', '(´ω｀)', '(￣∀￣)',
-      '(๑´ㅂ`๑)', '(｡♥‿♥｡)', '(◕‿◕)', '(*´▽`*)', '(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧',
-      '(＾◡＾)', '(◠‿◠)', '(´꒳`)', '(◡ ω ◡)', '(´｡• ᵕ •｡`)', '(◕ᴗ◕✿)',
-      '(ﾉ◕ヮ◕)ﾉ', '(≧∇≦)', '(＾▽＾)', '(◉‿◉)', '(´∇｀)', '(◕‿◕)♡'
-    ],
-    'sad': [
-      '(´；ω；｀)', '(｡•́︿•̀｡)', '(╥_╥)', '(T_T)', '(;_;)', '(ಥ﹏ಥ)',
-      '(இ﹏இ`｡)', '(┳Д┳)', '(个_个)', '(´-ω-`)', '(｡•́ - •̀｡)',
-      '(╯︵╰)', '(｡╯︵╰｡)', '(´°̥̥̥̥̥̥̥̥ω°̥̥̥̥̥̥̥̥｀)', '(｡•́︿•̀｡)', '(◞‸◟)',
-      '(╥﹏╥)', '(ಥ_ಥ)', '(´；д；`)', '(｡•́︿•̀｡)', '(╯_╰)', '(´Д｀)'
-    ],
-    'angry': [
-      '(╬ಠ益ಠ)', '(ಠ_ಠ)', '(¬_¬)', '(►_►)', '(҂◡_◡)', '(ꐦ°᷄д°᷅)',
-      '(╯°□°）╯︵ ┻━┻', '(ノಠ益ಠ)ノ', '(눈_눈)', '(⋋▂⋌)', '(-_-メ)',
-      '(｀皿´＃)', '(╯‵□′)╯︵┻━┻', '(ﾉ｀Д´)ﾉ彡┻━┻', '(ಠ益ಠ)', '(◣_◢)',
-      '(╬⁽⁽ ⁰ ⁾⁾ Д ⁽⁽ ⁰ ⁾⁾)', '(ﾉ°益°)ﾉ', '(｀ε´)', '(ﾉ｀⌒´)ﾉ┫：・┻┻', '(ﾒ｀ﾛ´)/', '(ﾉ｀□´)ﾉ⌒┻━┻'
-    ],
-    'love': [
-      '(｡♥‿♥｡)', '(´∀｀)♡', '(◍•ᴗ•◍)❤', '(｡・//ε//・｡)', '(๑˃̵ᴗ˂̵)و',
-      '(✿◠‿◠)', '(⺣◡⺣)♡*', '(灬º‿º灬)♡', '(ღ˘⌣˘ღ)', '(♥ω♥*)', '(´ε｀ )',
-      '(´∀｀)♡', '(◕‿◕)♡', '(｡♥‿♥｡)', '(◍•ᴗ•◍)♡', '(´｡• ω •｡`) ♡',
-      '(◡ ‿ ◡)♡', '(´∀｀)♡', '(◕ᴗ◕)♡', '(◍•ᴗ•◍)❤', '(´♡‿♡`)', '(◕‿◕)♡'
-    ],
-    'surprise': [
-      '(゜o゜;)', '(O_O)', '(⊙_⊙)', '(°ロ°)', '(◎_◎;)', '(✪ω✪)',
-      '(⊙ω⊙)', '(◉_◉)', '(°△°|||)', '(☉_☉)', '(ʘᗩʘ)',
-      '(⊙０⊙)', '(◉０◉)', '(°o°)', '(⊙.⊙)', '(◎０◎)', '(°□°)',
-      '(⊙▽⊙)', '(◉‿◉)', '(°▽°)', '(⊙ω⊙)', '(◎_◎)', '(°０°)'
-    ],
-    'emoji': [
-      '😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '🙃', '😉', '😊',
-      '😇', '🥰', '😍', '🤩', '😘', '😗', '☺️', '😚', '😙', '🥲', '😋', '😛',
-      '😜', '🤪', '😝', '🤑', '🤗', '🤭', '🤫', '🤔', '🤐', '🤨', '😐', '😑',
-      '😶', '😏', '😒', '🙄', '😬', '🤥', '😔', '😪', '🤤', '😴', '😷', '🤒'
-    ],
-    'cute': [
-      '(◕‿◕)', '(◡ ω ◡)', '(´｡• ᵕ •｡`)', '(◕ᴗ◕✿)', '(´꒳`)', '(◠‿◠)',
-      '(｡◕‿◕｡)', '(◕‿◕)♡', '(◍•ᴗ•◍)', '(´∀｀)', '(◡‿◡)', '(◕ω◕)',
-      '(◉‿◉)', '(◕‿◕)✿', '(◍•ᴗ•◍)✧*', '(◕‿◕)♪', '(◡ ‿ ◡)', '(◕‿◕)☆',
-      '(◍•ᴗ•◍)♡', '(◕‿◕)♫', '(◡ ω ◡)♡', '(◕‿◕)✨', '(◍•ᴗ•◍)♪', '(◕‿◕)♬'
-    ],
-    'cool': [
-      '(⌐■_■)', '(▀̿Ĺ̯▀̿ ̿)', '(◣_◢)', '(¬‿¬)', '(ಠ_ಠ)', '(¬_¬)',
-      '(►_►)', '(◉_◉)', '(⊙_⊙)', '(◎_◎)', '(°_°)', '(-_-)',
-      '(¯\\_(ツ)_/¯)', '(╯°□°）╯', '(ಠ益ಠ)', '(◣_◢)', '(⌐■_■)',
-      '(▀̿Ĺ̯▀̿ ̿)', '(¬‿¬)', '(ಠ_ಠ)', '(¬_¬)', '(►_►)', '(◉_◉)', '(⊙_⊙)'
-    ],
-  };
+  @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(_onFocusChange);
+  }
 
-  final Map<String, String> _tabLabels = {
-    'happy': '开心',
-    'sad': '难过',
-    'angry': '愤怒',
-    'love': '爱心',
-    'surprise': '惊讶',
-    'cute': '可爱',
-    'cool': '酷炫',
-    'emoji': 'Emoji',
-  };
+  void _onFocusChange() {
+    if (!_focusNode.hasFocus && widget.onUnfocus != null) {
+      widget.onUnfocus!(_controller.text.trim());
+    }
+  }
 
   @override
   void dispose() {
+    _focusNode.removeListener(_onFocusChange);
+    _focusNode.dispose();
     _hideKaomojiOverlay();
     _controller.dispose();
     super.dispose();
@@ -255,79 +212,115 @@ class _CommentInputState extends State<CommentInput> {
           else
             _buildEditor(),
           const SizedBox(height: 6),
-          // 悬浮按钮组
-          if (!_showPreview)
-            Align(
-              alignment: Alignment.centerRight,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 颜文字按钮
-                  Container(
-                    key: _kaomojiButtonKey,
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: context.surfaceColor,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: context.dividerColor,
-                        width: 0.5,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withAlpha(15),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
+          // 底部按钮组
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // 左侧：帮助和预览按钮
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Markdown帮助按钮
+                    _buildBottomIconButton(
+                    icon: Icons.help_outline,
+                    tooltip: 'Markdown帮助',
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const MarkdownHelpPage(),
                         ),
-                      ],
-                    ),
-                    child: IconButton(
-                      onPressed: _toggleKaomoji,
-                      icon: const Icon(Icons.emoji_emotions_outlined, size: 16),
-                      color: _kaomojiOverlay != null ? AppColors.primary : context.textSecondaryColor,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
+                      );
+                    },
                   ),
                   const SizedBox(width: 8),
-                  // 发送按钮
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: _controller.text.trim().isEmpty 
-                          ? context.textSecondaryColor.withAlpha(100)
-                          : AppColors.primary,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withAlpha(15),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: IconButton(
-                      onPressed: (_isSending || _controller.text.trim().isEmpty) ? null : _handleSend,
-                      icon: _isSending 
-                          ? const SizedBox(
-                              width: 12,
-                              height: 12,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 1.5,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Icon(Icons.send, size: 14),
-                      color: Colors.white,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
+                  // 预览按钮
+                  _buildBottomIconButton(
+                    icon: _showPreview ? Icons.edit : Icons.visibility,
+                    tooltip: _showPreview ? '编辑' : '预览',
+                    onPressed: () {
+                      setState(() {
+                        _showPreview = !_showPreview;
+                      });
+                    },
+                    isActive: _showPreview,
                   ),
                 ],
               ),
+              // 右侧：颜文字和发送按钮
+              if (!_showPreview)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // 颜文字按钮
+                    Container(
+                      key: _kaomojiButtonKey,
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: context.surfaceColor,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: context.dividerColor,
+                          width: 0.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withAlpha(15),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: IconButton(
+                        onPressed: _toggleKaomoji,
+                        icon: const Icon(Icons.emoji_emotions_outlined, size: 16),
+                        color: _kaomojiOverlay != null ? AppColors.primary : context.textSecondaryColor,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // 发送按钮
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: _controller.text.trim().isEmpty 
+                            ? context.textSecondaryColor.withAlpha(100)
+                            : AppColors.primary,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withAlpha(15),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: IconButton(
+                        onPressed: (_isSending || _controller.text.trim().isEmpty) ? null : _handleSend,
+                        icon: _isSending 
+                            ? const SizedBox(
+                                width: 12,
+                                height: 12,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 1.5,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.send, size: 14),
+                        color: Colors.white,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
+          ),
           const SizedBox(height: 4),
         ],
       ),
@@ -335,87 +328,10 @@ class _CommentInputState extends State<CommentInput> {
   }
 
   Widget _buildKaomojiSelector() {
-    return StatefulBuilder(
-      builder: (context, setLocalState) {
-        return Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: context.surfaceColor,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 标签页
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: _tabLabels.entries.map((entry) {
-                    final isActive = _activeTab == entry.key;
-                    return GestureDetector(
-                      onTap: () {
-                        setLocalState(() {
-                          _activeTab = entry.key;
-                        });
-                      },
-                      child: Container(
-                        margin: const EdgeInsets.only(right: 8),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: isActive ? context.backgroundColor : Colors.transparent,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          entry.value,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: isActive ? AppColors.primary : context.textSecondaryColor,
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-              const SizedBox(height: 8),
-              // 颜文字网格
-              SizedBox(
-                height: 160,
-                child: GridView.builder(
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: _activeTab == 'emoji' ? 6 : 4,
-                    childAspectRatio: _activeTab == 'emoji' ? 1.0 : 2.0,
-                    crossAxisSpacing: 4,
-                    mainAxisSpacing: 4,
-                  ),
-                  itemCount: _kaomojis[_activeTab]?.length ?? 0,
-                  itemBuilder: (context, index) {
-                    final kaomoji = _kaomojis[_activeTab]![index];
-                    final isEmoji = _activeTab == 'emoji';
-                    return GestureDetector(
-                      onTap: () {
-                        _insertKaomoji(kaomoji);
-                        _hideKaomojiOverlay();
-                      },
-                      child: Container(
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: context.backgroundColor,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          kaomoji,
-                          style: TextStyle(fontSize: isEmoji ? 20 : 14),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        );
+    return EmojiSelectorPanel(
+      onEmojiSelected: (emoji) {
+        _insertKaomoji(emoji);
+        _hideKaomojiOverlay();
       },
     );
   }
@@ -425,68 +341,48 @@ class _CommentInputState extends State<CommentInput> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Markdown 工具按钮
-          if (!_showPreview) ...[
-            _buildToolButton(
-              icon: Icons.format_bold,
-              tooltip: '粗体：**粗体文字**',
-              onPressed: () => _insertMarkdown('**', '**', placeholder: '粗体文字'),
-            ),
-            _buildToolButton(
-              icon: Icons.format_italic,
-              tooltip: '斜体：*斜体文字*',
-              onPressed: () => _insertMarkdown('*', '*', placeholder: '斜体文字'),
-            ),
-            _buildToolButton(
-              icon: Icons.format_list_bulleted,
-              tooltip: '列表：- 列表项',
-              onPressed: () => _insertMarkdown('\n- ', '\n', placeholder: '列表项'),
-            ),
-            _buildToolButton(
-              icon: Icons.code,
-              tooltip: '代码：`代码`',
-              onPressed: () => _insertMarkdown('`', '`', placeholder: '代码'),
-            ),
-            _buildToolButton(
-              icon: Icons.format_quote,
-              tooltip: '引用：> 引用内容',
-              onPressed: () => _insertMarkdown('\n> ', '\n', placeholder: '引用内容'),
-            ),
-            _buildToolButton(
-              icon: Icons.image,
-              tooltip: '上传图片',
-              onPressed: _isUploading 
-                  ? () {} // 空函数而不是 null
-                  : () {
-                      _pickAndUploadImage();
-                    },
-            ),
-          ],
-          const Spacer(),
-          // Markdown帮助
-          _buildToolButton(
-            icon: Icons.help_outline,
-            tooltip: 'Markdown帮助',
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const MarkdownHelpPage(),
+          // 左侧：Markdown 格式按钮
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (!_showPreview) ...[
+                _buildToolButton(
+                  icon: Icons.format_bold,
+                  tooltip: '粗体：**粗体文字**',
+                  onPressed: () => _insertMarkdown('**', '**', placeholder: '粗体文字'),
                 ),
-              );
-            },
+                _buildToolButton(
+                  icon: Icons.format_italic,
+                  tooltip: '斜体：*斜体文字*',
+                  onPressed: () => _insertMarkdown('*', '*', placeholder: '斜体文字'),
+                ),
+                _buildToolButton(
+                  icon: Icons.format_list_bulleted,
+                  tooltip: '列表：- 列表项',
+                  onPressed: () => _insertMarkdown('\n- ', '\n', placeholder: '列表项'),
+                ),
+                _buildToolButton(
+                  icon: Icons.code,
+                  tooltip: '代码：`代码`',
+                  onPressed: () => _insertMarkdown('`', '`', placeholder: '代码'),
+                ),
+                _buildToolButton(
+                  icon: Icons.format_quote,
+                  tooltip: '引用：> 引用内容',
+                  onPressed: () => _insertMarkdown('\n> ', '\n', placeholder: '引用内容'),
+                ),
+              ],
+            ],
           ),
-          // 预览按钮
-          _buildToolButton(
-            icon: _showPreview ? Icons.edit : Icons.visibility,
-            tooltip: _showPreview ? '编辑' : '预览',
-            onPressed: () {
-              setState(() {
-                _showPreview = !_showPreview;
-              });
-            },
-            isActive: _showPreview,
-          ),
+          // 右侧：上传图片按钮
+          if (!_showPreview)
+            _buildToolButton(
+              icon: _isUploading ? Icons.hourglass_empty : Icons.image,
+              tooltip: '上传图片',
+              onPressed: _isUploading ? () {} : _pickAndUploadImage,
+            ),
         ],
       ),
     );
@@ -507,10 +403,50 @@ class _CommentInputState extends State<CommentInput> {
     );
   }
 
+  /// 底部图标按钮（左下角帮助和预览按钮）
+  Widget _buildBottomIconButton({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback onPressed,
+    bool isActive = false,
+  }) {
+    return Container(
+      width: 32,
+      height: 32,
+      decoration: BoxDecoration(
+        color: context.surfaceColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: context.dividerColor,
+          width: 0.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(15),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Tooltip(
+        message: tooltip,
+        child: IconButton(
+          onPressed: onPressed,
+          icon: Icon(icon, size: 16),
+          color: isActive ? AppColors.primary : context.textSecondaryColor,
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(),
+        ),
+      ),
+    );
+  }
+
   /// 编辑器
   Widget _buildEditor() {
     return TextField(
       controller: _controller,
+      focusNode: _focusNode,
+      autofocus: widget.autoFocus,
       maxLines: 6,
       minLines: 3,
       onChanged: (value) {

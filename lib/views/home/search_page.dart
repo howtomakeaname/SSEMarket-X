@@ -9,6 +9,7 @@ import 'package:sse_market_x/shared/components/loading/loading_indicator.dart';
 import 'package:sse_market_x/shared/components/cards/post_card.dart';
 import 'package:sse_market_x/shared/components/overlays/custom_dialog.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
+import 'package:sse_market_x/views/profile/user_profile_page.dart';
 
 /// 搜索页面
 class SearchPage extends StatefulWidget {
@@ -234,6 +235,7 @@ class _SearchPageState extends State<SearchPage> {
     final keyword = _searchController.text.trim();
     if (keyword.isEmpty) return;
     _focusNode.unfocus();
+
     _addToHistory(keyword);
     setState(() => _hasSearched = true);
     _loadPosts(refresh: true);
@@ -284,6 +286,7 @@ class _SearchPageState extends State<SearchPage> {
           child: TextField(
             controller: _searchController,
             focusNode: _focusNode,
+            textAlignVertical: TextAlignVertical.center, // 确保文字垂直居中
             decoration: InputDecoration(
               hintText: '在$_displayPartition分区内搜索',
               hintStyle: TextStyle(
@@ -291,14 +294,15 @@ class _SearchPageState extends State<SearchPage> {
                 fontSize: 14,
               ),
               border: InputBorder.none,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
               isDense: true,
+              contentPadding: const EdgeInsets.only(left: 12), // 稍微增加左边距，替代原来的图标位置
               suffixIcon: ValueListenableBuilder<TextEditingValue>(
                 valueListenable: _searchController,
                 builder: (context, value, child) {
                   if (value.text.isEmpty) return const SizedBox.shrink();
                   return IconButton(
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
                     icon: Icon(Icons.clear,
                         size: 18, color: context.textSecondaryColor),
                     onPressed: () {
@@ -314,6 +318,7 @@ class _SearchPageState extends State<SearchPage> {
             ),
             style: TextStyle(fontSize: 14, color: context.textPrimaryColor),
             textInputAction: TextInputAction.search,
+            cursorColor: AppColors.primary,
             onSubmitted: (_) => _onSearch(),
           ),
         ),
@@ -340,73 +345,162 @@ class _SearchPageState extends State<SearchPage> {
       return _buildDiscoveryContent();
     }
 
-    if (_isLoading && _posts.isEmpty) {
-      return const PostListSkeleton(itemCount: 5, isDense: false);
-    }
+    // 检查是否为纯数字
+    final keyword = _searchController.text.trim();
+    final isNumeric = RegExp(r'^\d+$').hasMatch(keyword);
+    final postId = isNumeric ? int.parse(keyword) : null;
 
-    if (_posts.isEmpty && !_isLoading) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.search_off, size: 64, color: context.textSecondaryColor),
-            const SizedBox(height: 16),
-            Text(
-              '未找到相关内容',
-              style: TextStyle(fontSize: 14, color: context.textSecondaryColor),
-            ),
-          ],
-        ),
+    if (_isLoading && _posts.isEmpty) {
+      return Column(
+        children: [
+          if (postId != null) _buildIdJumpCard(postId),
+          const Expanded(child: PostListSkeleton(itemCount: 5, isDense: false)),
+        ],
       );
     }
 
-    return ListView.builder(
-      controller: _scrollController,
-      padding: const EdgeInsets.only(top: 8),
-      itemCount: _posts.length + (_hasMore ? 1 : 0),
-      itemBuilder: (context, index) {
-        if (index == _posts.length) {
-          return const LoadingRow();
-        }
-        final post = _posts[index];
-        return PostCard(
-          post: post,
-          onTap: () async {
-            final result =
-                await Navigator.of(context).push<Map<String, dynamic>?>(
-              MaterialPageRoute(
-                builder: (_) => PostDetailPage(
-                  postId: post.id,
-                  apiService: widget.apiService,
-                  initialPost: post, // 传递初始数据
+    if (_posts.isEmpty && !_isLoading) {
+      return Column(
+        children: [
+          if (postId != null) _buildIdJumpCard(postId),
+          Expanded(
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.search_off,
+                      size: 64, color: context.textSecondaryColor),
+                  const SizedBox(height: 16),
+                  Text(
+                    '未找到相关内容',
+                    style: TextStyle(
+                        fontSize: 14, color: context.textSecondaryColor),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      children: [
+        if (postId != null) _buildIdJumpCard(postId),
+        Expanded(
+          child: ListView.builder(
+            controller: _scrollController,
+            padding: const EdgeInsets.only(top: 8),
+            itemCount: _posts.length + (_hasMore ? 1 : 0),
+            itemBuilder: (context, index) {
+              if (index == _posts.length) {
+                return const LoadingRow();
+              }
+              final post = _posts[index];
+              return PostCard(
+                post: post,
+                onAvatarTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => UserProfilePage(
+                        apiService: widget.apiService,
+                        userId: 0,
+                        userPhone: post.authorPhone,
+                      ),
+                    ),
+                  );
+                },
+                onTap: () async {
+                  final result =
+                      await Navigator.of(context).push<Map<String, dynamic>?>(
+                    MaterialPageRoute(
+                      builder: (_) => PostDetailPage(
+                        postId: post.id,
+                        apiService: widget.apiService,
+                        initialPost: post, // 传递初始数据
+                      ),
+                    ),
+                  );
+                  if (result != null) {
+                    if (result['deleted'] == true) {
+                      setState(
+                          () => _posts.removeWhere((p) => p.id == post.id));
+                    } else {
+                      final newIsLiked = result['isLiked'] as bool?;
+                      final newLikeCount = result['likeCount'] as int?;
+                      if (newIsLiked != null && newLikeCount != null) {
+                        final idx = _posts.indexWhere((p) => p.id == post.id);
+                        if (idx != -1) {
+                          setState(() {
+                            _posts[idx] = _posts[idx].copyWithLike(
+                              isLiked: newIsLiked,
+                              likeCount: newLikeCount,
+                            );
+                          });
+                        }
+                      }
+                    }
+                  }
+                },
+                onLikeTap: () async {
+                  return widget.apiService.likePost(post.id, _user.phone);
+                },
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildIdJumpCard(int postId) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: context.surfaceColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => PostDetailPage(
+                postId: postId,
+                apiService: widget.apiService,
+              ),
+            ),
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '访问帖子 #$postId',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: context.textPrimaryColor,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            );
-            if (result != null) {
-              if (result['deleted'] == true) {
-                setState(() => _posts.removeWhere((p) => p.id == post.id));
-              } else {
-                final newIsLiked = result['isLiked'] as bool?;
-                final newLikeCount = result['likeCount'] as int?;
-                if (newIsLiked != null && newLikeCount != null) {
-                  final idx = _posts.indexWhere((p) => p.id == post.id);
-                  if (idx != -1) {
-                    setState(() {
-                      _posts[idx] = _posts[idx].copyWithLike(
-                        isLiked: newIsLiked,
-                        likeCount: newLikeCount,
-                      );
-                    });
-                  }
-                }
-              }
-            }
-          },
-          onLikeTap: () async {
-            return widget.apiService.likePost(post.id, _user.phone);
-          },
-        );
-      },
+              const SizedBox(width: 8),
+              Icon(
+                Icons.chevron_right,
+                color: context.textSecondaryColor,
+                size: 20,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

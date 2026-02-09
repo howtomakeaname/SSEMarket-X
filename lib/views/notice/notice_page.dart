@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/models/notice_model.dart';
 import 'package:sse_market_x/core/utils/time_utils.dart';
+import 'package:sse_market_x/core/services/blur_effect_service.dart';
 import 'package:sse_market_x/views/post/post_detail_page.dart';
 import 'package:sse_market_x/shared/components/loading/loading_indicator.dart';
 import 'package:sse_market_x/shared/theme/app_colors.dart';
 import 'package:sse_market_x/views/chat/chat_list_page.dart';
 import 'package:sse_market_x/views/chat/chat_detail_page.dart';
 import 'package:sse_market_x/core/services/websocket_service.dart';
+import 'package:sse_market_x/core/services/notice_service.dart';
 import 'package:sse_market_x/core/models/user_model.dart';
 import 'dart:async';
 
@@ -25,7 +29,8 @@ class NoticePage extends StatefulWidget {
   State<NoticePage> createState() => _NoticePageState();
 }
 
-class _NoticePageState extends State<NoticePage> {
+class _NoticePageState extends State<NoticePage>
+    with AutomaticKeepAliveClientMixin {
   final PageController _pageController = PageController();
   int _currentIndex = 0;
   List<Notice> _unreadNotices = [];
@@ -33,6 +38,9 @@ class _NoticePageState extends State<NoticePage> {
   bool _isLoading = true;
   int _chatUnreadCount = 0;
   StreamSubscription<int>? _chatUnreadSubscription;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -73,6 +81,9 @@ class _NoticePageState extends State<NoticePage> {
       _unreadNotices.clear();
     });
 
+    // 更新 NoticeService 中的未读数
+    NoticeService().clearUnreadCount();
+
     try {
       await Future.wait(noticesToMark.map((n) => widget.apiService.readNotice(n.noticeId)));
     } catch (e) {
@@ -103,95 +114,141 @@ class _NoticePageState extends State<NoticePage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // 必须调用 super.build
+    
+    // Calculate paddings
+    final topPadding = MediaQuery.of(context).padding.top + kToolbarHeight + 36;
+    final bottomPadding = kBottomNavigationBarHeight + MediaQuery.of(context).padding.bottom;
+
     return Scaffold(
       backgroundColor: context.backgroundColor,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: context.surfaceColor,
+        flexibleSpace: ValueListenableBuilder<bool>(
+          valueListenable: BlurEffectService().enabledNotifier,
+          builder: (context, isBlurEnabled, _) {
+            Widget content = Container(
+              decoration: BoxDecoration(
+                color: isBlurEnabled 
+                    ? context.blurBackgroundColor.withOpacity(0.82)
+                    : context.surfaceColor,
+                border: Border(
+                  bottom: BorderSide(
+                    color: context.dividerColor.withOpacity(0.3),
+                    width: 0.5,
+                  ),
+                ),
+              ),
+            );
+            
+            if (isBlurEnabled) {
+              return ClipRect(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                  child: content,
+                ),
+              );
+            } else {
+              return content;
+            }
+          },
+        ),
+        backgroundColor: Colors.transparent, // Important: Transparency for blur
         elevation: 0,
+        scrolledUnderElevation: 0,
         title: Text(
           '消息',
           style: TextStyle(
-            fontSize: 20,
+            fontSize: 18,
             fontWeight: FontWeight.bold,
             color: context.textPrimaryColor,
           ),
         ),
         centerTitle: false,
         titleSpacing: 16,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(36),
+          child: _buildTabs(transparent: true),
+        ),
       ),
-      body: Column(
+      body: PageView(
+        controller: _pageController,
+        onPageChanged: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
         children: [
-          _buildTabs(),
-          Expanded(
-            child: PageView(
-              controller: _pageController,
-              onPageChanged: (index) {
-                setState(() {
-                  _currentIndex = index;
-                });
-              },
-              children: [
-                // 私信列表
-                ChatListPage(
-                  apiService: widget.apiService,
-                  onUserTap: (user) {
-                    if (widget.onChatTap != null) {
-                      widget.onChatTap!(user);
-                    } else {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => ChatDetailPage(
-                            apiService: widget.apiService,
-                            targetUser: user,
-                            isEmbedded: false,
-                          ),
-                        ),
-                      );
-                    }
-                  },
-                ),
-                // 未读通知
-                _isLoading 
-                    ? const LoadingIndicator.center(message: '加载中...')
-                    : _buildNoticeList(_unreadNotices, isUnread: true),
-                // 已读通知
-                _isLoading
-                    ? const LoadingIndicator.center(message: '加载中...')
-                    : _buildNoticeList(_readNotices, isUnread: false),
-              ],
-            ),
+          // 私信列表
+          ChatListPage(
+            contentPadding: EdgeInsets.fromLTRB(16, topPadding + 16, 16, bottomPadding + 16),
+            apiService: widget.apiService,
+            onUserTap: (user) {
+              if (widget.onChatTap != null) {
+                widget.onChatTap!(user);
+              } else {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => ChatDetailPage(
+                      apiService: widget.apiService,
+                      targetUser: user, 
+                      isEmbedded: false,
+                    ),
+                  ),
+                );
+              }
+            },
           ),
+          // 未读通知
+          _isLoading 
+              ? Padding(
+                  padding: EdgeInsets.only(top: topPadding, bottom: bottomPadding),
+                  child: const LoadingIndicator.center(message: '加载中...'),
+                )
+              : _buildNoticeList(_unreadNotices, isUnread: true, topPadding: topPadding, bottomPadding: bottomPadding),
+          // 已读通知
+          _isLoading
+              ? Padding(
+                  padding: EdgeInsets.only(top: topPadding, bottom: bottomPadding),
+                  child: const LoadingIndicator.center(message: '加载中...'),
+                )
+              : _buildNoticeList(_readNotices, isUnread: false, topPadding: topPadding, bottomPadding: bottomPadding),
         ],
       ),
     );
   }
 
-  Widget _buildTabs() {
+  Widget _buildTabs({bool transparent = false}) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: context.surfaceColor,
+      height: 36,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      color: transparent ? Colors.transparent : context.surfaceColor,
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           _buildTabButton('私信', 0, badgeCount: _chatUnreadCount),
-          const SizedBox(width: 8),
+          const SizedBox(width: 24),
           _buildTabButton('未读通知', 1, badgeCount: _unreadNotices.length),
-          const SizedBox(width: 8),
+          const SizedBox(width: 24),
           _buildTabButton('已读通知', 2),
           const Spacer(),
           if (_currentIndex == 1 && _unreadNotices.isNotEmpty)
-            GestureDetector(
-              onTap: _markAllAsRead,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                decoration: BoxDecoration(
-                  color: context.backgroundColor,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Text(
-                  '一键已读',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.primary,
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: GestureDetector(
+                onTap: _markAllAsRead,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: context.backgroundColor,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Text(
+                    '一键已读',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.primary,
+                    ),
                   ),
                 ),
               ),
@@ -208,65 +265,81 @@ class _NoticePageState extends State<NoticePage> {
         // 点击 Tab 时直接切换到目标页，避免动画滚动经过中间页造成不必要的渲染
         _pageController.jumpToPage(index);
       },
-      child: Stack(
-        clipBehavior: Clip.none,
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            decoration: BoxDecoration(
-              color: isSelected ? AppColors.primary : context.backgroundColor,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Text(
-              text,
-              style: TextStyle(
-                fontSize: 14,
-                color: isSelected ? Colors.white : context.textPrimaryColor,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-              ),
-            ),
-          ),
-          if (badgeCount > 0)
-            Positioned(
-              right: -4,
-              top: -4,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFF4D4D),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: context.surfaceColor, width: 1),
-                ),
-                constraints: const BoxConstraints(minWidth: 16, minHeight: 14),
-                child: Center(
-                  child: Text(
-                    badgeCount > 99 ? '99+' : '$badgeCount',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 9,
-                      fontWeight: FontWeight.bold,
-                    ),
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Text(
+                  text,
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: isSelected ? AppColors.primary : context.textSecondaryColor,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
               ),
+              if (badgeCount > 0)
+                Positioned(
+                  right: -10,
+                  top: -2,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: AppColors.error,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    constraints: const BoxConstraints(minWidth: 16, minHeight: 14),
+                    child: Center(
+                      child: Text(
+                        badgeCount > 99 ? '99+' : '$badgeCount',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          height: 1.1,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            height: 3,
+            width: isSelected ? 20 : 0,
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(1.5),
             ),
+            margin: const EdgeInsets.only(bottom: 1),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildNoticeList(List<Notice> notices, {required bool isUnread}) {
+  Widget _buildNoticeList(List<Notice> notices, {required bool isUnread, required double topPadding, required double bottomPadding}) {
     if (notices.isEmpty) {
-      return Center(
-        child: Text(isUnread ? '暂无未读通知' : '暂无已读通知', style: TextStyle(fontSize: 16, color: context.textTertiaryColor)),
+      return Padding(
+        padding: EdgeInsets.only(top: topPadding, bottom: bottomPadding),
+        child: Center(
+          child: Text(isUnread ? '暂无未读通知' : '暂无已读通知', style: TextStyle(fontSize: 16, color: context.textTertiaryColor)),
+        ),
       );
     }
 
     return RefreshIndicator(
+      edgeOffset: topPadding,
       onRefresh: () => _loadNotices(refresh: true),
       color: AppColors.primary,
       child: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 60),
+        padding: EdgeInsets.fromLTRB(16, topPadding + 16, 16, bottomPadding + 16),
         itemCount: notices.length,
         itemBuilder: (context, index) {
           final notice = notices[index];
@@ -280,11 +353,29 @@ class _NoticePageState extends State<NoticePage> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor: context.backgroundColor,
-                  backgroundImage: notice.senderAvatar.isNotEmpty ? NetworkImage(notice.senderAvatar) : null,
-                  child: notice.senderAvatar.isEmpty ? Icon(Icons.person, color: context.textSecondaryColor) : null,
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: context.backgroundColor,
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: notice.senderAvatar.isNotEmpty
+                      ? Image.network(
+                          notice.senderAvatar,
+                          width: 40,
+                          height: 40,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => SvgPicture.asset(
+                            'assets/icons/default_avatar.svg',
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                      : SvgPicture.asset(
+                          'assets/icons/default_avatar.svg',
+                          fit: BoxFit.cover,
+                        ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -330,13 +421,19 @@ class _NoticePageState extends State<NoticePage> {
                             children: [
                               _buildActionButton('标记已读', () async {
                                 final success = await widget.apiService.readNotice(notice.noticeId);
-                                if (success) _loadNotices(refresh: true);
+                                if (success) {
+                                  // 更新 NoticeService 中的未读数
+                                  NoticeService().decreaseUnreadCount();
+                                  _loadNotices(refresh: true);
+                                }
                               }),
                               if (notice.postId > 0) const SizedBox(width: 8),
                               if (notice.postId > 0)
                                 _buildActionButton('查看原帖', () async {
                                   // 先标记已读
                                   await widget.apiService.readNotice(notice.noticeId);
+                                  // 更新 NoticeService 中的未读数
+                                  NoticeService().decreaseUnreadCount();
                                   if (!mounted) return;
                                   // 刷新列表（因为这条消息已读了）
                                   _loadNotices(refresh: true);

@@ -4,6 +4,8 @@ import 'package:sse_market_x/core/api/api_service.dart';
 import 'package:sse_market_x/core/services/media_cache_service.dart';
 import 'package:sse_market_x/core/services/storage_service.dart';
 import 'package:sse_market_x/core/services/watch_later_service.dart';
+import 'package:sse_market_x/core/services/blur_effect_service.dart';
+import 'package:sse_market_x/core/services/desktop_layout_preference_service.dart';
 import 'package:sse_market_x/shared/components/lists/settings_list_item.dart';
 import 'package:sse_market_x/shared/components/overlays/custom_dialog.dart';
 import 'package:sse_market_x/shared/components/utils/snackbar_helper.dart';
@@ -12,6 +14,7 @@ import 'package:sse_market_x/views/auth/login_page.dart';
 import 'package:sse_market_x/views/auth/reset_password_page.dart';
 import 'package:sse_market_x/views/profile/about_page.dart';
 import 'package:sse_market_x/views/profile/cache_management_page.dart';
+import 'package:sse_market_x/shared/components/layout/layout_config.dart';
 
 class SettingsPage extends StatefulWidget {
   final ApiService apiService;
@@ -32,9 +35,11 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _isEmailNotificationEnabled = false;
   // bool _isAutoPlay = true; // TODO: 自动播放功能待实现
   bool _isWatchLaterEnabled = false;
-  
+  bool _isBlurEffectEnabled = true;
+
   final MediaCacheService _cacheService = MediaCacheService();
   final WatchLaterService _watchLaterService = WatchLaterService();
+  final BlurEffectService _blurEffectService = BlurEffectService();
   String _cacheSize = '计算中...';
   bool _isLoadingCacheInfo = true;
 
@@ -47,6 +52,7 @@ class _SettingsPageState extends State<SettingsPage> {
     }
     _loadEmailPushStatus();
     _loadWatchLaterStatus();
+    _loadBlurEffectStatus();
   }
 
   Future<void> _loadWatchLaterStatus() async {
@@ -58,14 +64,20 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
+  void _loadBlurEffectStatus() {
+    setState(() {
+      _isBlurEffectEnabled = _blurEffectService.isEnabled;
+    });
+  }
+
   Future<void> _loadCacheInfo() async {
     setState(() {
       _isLoadingCacheInfo = true;
     });
-    
+
     try {
       final size = await _cacheService.getCacheSize();
-      
+
       if (mounted) {
         setState(() {
           _cacheSize = _cacheService.formatCacheSize(size);
@@ -84,6 +96,9 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final layoutConfig = LayoutConfig.of(context);
+    final isThreeColumn = layoutConfig?.isThreeColumn ?? false;
+
     return Scaffold(
       backgroundColor: context.backgroundColor,
       appBar: AppBar(
@@ -235,6 +250,26 @@ class _SettingsPageState extends State<SettingsPage> {
             SettingsListGroup(
               children: [
                 SettingsListItem(
+                  title: '背景模糊',
+                  subtitle: '导航栏和顶部栏的毛玻璃效果',
+                  leadingIcon: 'assets/icons/ic_blur.svg',
+                  type: SettingsListItemType.toggle,
+                  switchValue: _isBlurEffectEnabled,
+                  onSwitchChanged: (value) async {
+                    await _blurEffectService.setEnabled(value);
+                    setState(() {
+                      _isBlurEffectEnabled = value;
+                    });
+                    if (mounted) {
+                      SnackBarHelper.show(
+                        context,
+                        value ? '已启用模糊效果' : '已关闭模糊效果',
+                      );
+                    }
+                  },
+                  isFirst: true,
+                ),
+                SettingsListItem(
                   title: '稍后再看',
                   subtitle: '在帖子详情页标记稍后查看的内容',
                   leadingIcon: 'assets/icons/ic_watch_later.svg',
@@ -252,7 +287,6 @@ class _SettingsPageState extends State<SettingsPage> {
                       );
                     }
                   },
-                  isFirst: true,
                   isLast: true,
                 ),
               ],
@@ -273,6 +307,14 @@ class _SettingsPageState extends State<SettingsPage> {
                   },
                   isFirst: true,
                 ),
+                if (isThreeColumn)
+                  SettingsListItem(
+                    title: '重置多栏布局宽度',
+                    subtitle: '恢复侧栏和中间栏的默认宽度',
+                    leadingIcon: 'assets/icons/ic_layout_reset.svg',
+                    type: SettingsListItemType.navigation,
+                    onTap: _resetDesktopLayoutWidths,
+                  ),
                 SettingsListItem(
                   title: '退出登录',
                   leadingIcon: 'assets/icons/ic_logout.svg',
@@ -288,6 +330,13 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
       ),
     );
+  }
+
+  Future<void> _resetDesktopLayoutWidths() async {
+    await DesktopLayoutPreferenceService().reset();
+    if (mounted) {
+      SnackBarHelper.show(context, '已恢复默认多栏宽度');
+    }
   }
 
   Widget _buildSectionTitle(String title) {
@@ -344,8 +393,9 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _loadEmailPushStatus() async {
     try {
       final userInfo = await widget.apiService.getUserInfo();
-      final detailedInfo = await widget.apiService.getDetailedUserInfo(userInfo.phone);
-      
+      final detailedInfo =
+          await widget.apiService.getDetailedUserInfo(userInfo.phone);
+
       if (mounted) {
         setState(() {
           _isEmailNotificationEnabled = detailedInfo.emailPush;
@@ -360,22 +410,22 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _toggleEmailNotification(bool value) async {
     try {
       final userInfo = await widget.apiService.getUserInfo();
-      
+
       if (userInfo.userId == 0) {
         if (mounted) {
           SnackBarHelper.show(context, '用户信息获取失败');
         }
         return;
       }
-      
+
       final success = await widget.apiService.updateEmailPush(userInfo.userId);
-      
+
       if (mounted) {
         if (success) {
           setState(() {
             _isEmailNotificationEnabled = value;
           });
-          
+
           SnackBarHelper.show(
             context,
             value ? '邮箱通知已开启' : '邮箱通知已关闭',
