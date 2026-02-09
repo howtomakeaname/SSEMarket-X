@@ -13,7 +13,7 @@
 **/oh-package-lock.json5
 /package.json
 /package-lock.json
-
+/build-profile.json5
 **/src/main/resources/rawfile/flutter_assets/
 **/libs/**/libapp.so
 **/libs/**/libflutter.so

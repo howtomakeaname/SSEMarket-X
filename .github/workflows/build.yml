@@ -261,7 +261,9 @@ jobs:
         run: flutter --version
       
       - name: Get dependencies
-        run: flutter pub get
+        run: |
+          mv ohos/build-profile.template.json5 ohos/build-profile.json5
+          flutter pub get
       
       - name: Build OpenHarmony HAP
         run: flutter build hap --release --no-codesign
