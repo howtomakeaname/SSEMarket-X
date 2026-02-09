@@ -53,30 +53,11 @@ jobs:
           mv build/app/outputs/flutter-apk/app-arm64-v8a-release.apk build/app/outputs/flutter-apk/sse-market-android-arm64-v8a-${VERSION_NAME}.apk
           mv build/app/outputs/flutter-apk/app-x86_64-release.apk build/app/outputs/flutter-apk/sse-market-android-x86_64-${VERSION_NAME}.apk
 
-      - name: Archive Android APKs
-        run: |
-          cd build/app/outputs/flutter-apk
-          zip -j "sse-market-android-armeabi-v7a-${VERSION_NAME}.zip" "sse-market-android-armeabi-v7a-${VERSION_NAME}.apk"
-          zip -j "sse-market-android-arm64-v8a-${VERSION_NAME}.zip" "sse-market-android-arm64-v8a-${VERSION_NAME}.apk"
-          zip -j "sse-market-android-x86_64-${VERSION_NAME}.zip" "sse-market-android-x86_64-${VERSION_NAME}.apk"
-
-      - name: Upload armeabi-v7a ZIP
+      - name: Upload Android APKs
         uses: actions/upload-artifact@v4
         with:
-          name: sse-market-android-armeabi-v7a-${{ env.VERSION_NAME }}.zip
-          path: build/app/outputs/flutter-apk/sse-market-android-armeabi-v7a-${{ env.VERSION_NAME }}.zip
-
-      - name: Upload arm64-v8a ZIP
-        uses: actions/upload-artifact@v4
-        with:
-          name: sse-market-android-arm64-v8a-${{ env.VERSION_NAME }}.zip
-          path: build/app/outputs/flutter-apk/sse-market-android-arm64-v8a-${{ env.VERSION_NAME }}.zip
-
-      - name: Upload x86_64 ZIP
-        uses: actions/upload-artifact@v4
-        with:
-          name: sse-market-android-x86_64-${{ env.VERSION_NAME }}.zip
-          path: build/app/outputs/flutter-apk/sse-market-android-x86_64-${{ env.VERSION_NAME }}.zip
+          name: android
+          path: build/app/outputs/flutter-apk
 
   build-windows-x64:
     runs-on: windows-latest
@@ -102,7 +83,7 @@ jobs:
       - name: Upload Windows x64 Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: sse-market-windows-x64-${{ env.VERSION_NAME }}.zip
+          name: windows_x64
           path: build/windows/x64/runner/Release/sse-market-windows-x64-${{ env.VERSION_NAME }}.zip
 
   build-windows-arm64:
@@ -145,7 +126,7 @@ jobs:
       - name: Upload Windows ARM64 Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: sse-market-windows-arm64-${{ env.VERSION_NAME }}.zip
+          name: windows_arm64
           path: build/windows/arm64/runner/Release/sse-market-windows-arm64-${{ env.VERSION_NAME }}.zip
 
   build-linux:
@@ -175,7 +156,7 @@ jobs:
       - name: Upload Linux Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: sse-market-linux-x64-${{ env.VERSION_NAME }}.tar.gz
+          name: linux_x64
           path: build/linux/x64/release/sse-market-linux-x64-${{ env.VERSION_NAME }}.tar.gz
 
   build-macos:
@@ -200,7 +181,7 @@ jobs:
       - name: Upload macOS Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: sse-market-macos-universal-${{ env.VERSION_NAME }}.zip
+          name: macos
           path: build/macos/Build/Products/Release/sse-market-macos-universal-${{ env.VERSION_NAME }}.zip
 
   build-ios:
@@ -217,16 +198,18 @@ jobs:
       - name: Build iOS (no codesign)
         run: flutter build ios --release --no-codesign
       
-      - name: Archive iOS App
+      - name: Package iOS IPA (Payload/Runner.app)
         run: |
           cd build/ios/iphoneos
-          zip -r "sse-market-ios-nosign-${VERSION_NAME}.zip" Runner.app
+          mkdir -p Payload
+          mv Runner.app Payload
+          zip -r "sse-market-ios-nosign-${VERSION_NAME}.ipa" Payload
       
       - name: Upload iOS Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: sse-market-ios-nosign-${{ env.VERSION_NAME }}.zip
-          path: build/ios/iphoneos/sse-market-ios-nosign-${{ env.VERSION_NAME }}.zip
+          name: ios
+          path: build/ios/iphoneos/sse-market-ios-nosign-${{ env.VERSION_NAME }}.ipa
 
   build-ohos:
     runs-on: ubuntu-latest
@@ -271,17 +254,12 @@ jobs:
       - name: Rename HAP
         run: |
           mv build/ohos/hap/entry-default-unsigned.hap build/ohos/hap/sse-market-ohos-nosign-${VERSION_NAME}.hap
-      
-      - name: Archive OpenHarmony HAP
-        run: |
-          cd build/ohos/hap
-          zip -j "sse-market-ohos-nosign-${VERSION_NAME}.zip" "sse-market-ohos-nosign-${VERSION_NAME}.hap"
-      
+
       - name: Upload OpenHarmony HAP
         uses: actions/upload-artifact@v4
         with:
-          name: sse-market-ohos-nosign-${{ env.VERSION_NAME }}.zip
-          path: build/ohos/hap/sse-market-ohos-nosign-${{ env.VERSION_NAME }}.zip
+          name: ohos
+          path: build/ohos/hap/sse-market-ohos-nosign-${{ env.VERSION_NAME }}.hap
 
   create-release:
     needs: [build-android, build-windows-x64, build-windows-arm64, build-linux, build-macos, build-ios, build-ohos]
@@ -298,7 +276,16 @@ jobs:
       - name: Download All Artifacts
         uses: actions/download-artifact@v4
         with:
-          path: artifacts
+          name: |
+            android
+            windows_x64
+            windows_arm64
+            linux_x64
+            macos
+            ios
+            ohos
+          path: outputs
+          merge-multiple: true
 
       - name: Generate Changelog
         id: changelog
@@ -377,14 +364,10 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            artifacts/sse-market-android-armeabi-v7a-${{ env.VERSION_NAME }}.zip/sse-market-android-armeabi-v7a-${{ env.VERSION_NAME }}.zip
-            artifacts/sse-market-android-arm64-v8a-${{ env.VERSION_NAME }}.zip/sse-market-android-arm64-v8a-${{ env.VERSION_NAME }}.zip
-            artifacts/sse-market-android-x86_64-${{ env.VERSION_NAME }}.zip/sse-market-android-x86_64-${{ env.VERSION_NAME }}.zip
-            artifacts/sse-market-windows-x64-${{ env.VERSION_NAME }}.zip/sse-market-windows-x64-${{ env.VERSION_NAME }}.zip
-            artifacts/sse-market-windows-arm64-${{ env.VERSION_NAME }}.zip/sse-market-windows-arm64-${{ env.VERSION_NAME }}.zip
-            artifacts/sse-market-linux-x64-${{ env.VERSION_NAME }}.tar.gz/sse-market-linux-x64-${{ env.VERSION_NAME }}.tar.gz
-            artifacts/sse-market-macos-universal-${{ env.VERSION_NAME }}.zip/sse-market-macos-universal-${{ env.VERSION_NAME }}.zip
-            artifacts/sse-market-ios-nosign-${{ env.VERSION_NAME }}.zip/sse-market-ios-nosign-${{ env.VERSION_NAME }}.zip
-            artifacts/sse-market-ohos-nosign-${{ env.VERSION_NAME }}.zip/sse-market-ohos-nosign-${{ env.VERSION_NAME }}.zip
+            outputs/*.apk
+            outputs/*.zip
+            outputs/*.tar.gz
+            outputs/*.ipa
+            outputs/*.hap
           token: ${{ secrets.GITHUB_TOKEN }}
           body_path: release_notes.md
