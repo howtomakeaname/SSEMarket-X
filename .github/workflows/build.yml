@@ -276,14 +276,7 @@ jobs:
       - name: Download All Artifacts
         uses: actions/download-artifact@v4
         with:
-          name: |
-            android
-            windows_x64
-            windows_arm64
-            linux_x64
-            macos
-            ios
-            ohos
+          pattern: '*'
           path: outputs
           merge-multiple: true
 
@@ -305,11 +298,14 @@ jobs:
           echo "## 📝 更新内容" > changelog.md
           echo "" >> changelog.md
           
+          # 过滤去重
+          filter_and_dedup() { grep -v '^- *$' | awk '!seen[$0]++'; }
+          
           # 新功能
           FEATURES=$(echo "$COMMITS" | grep -i "^feat" || true)
           if [ ! -z "$FEATURES" ]; then
             echo "### ✨ 新功能" >> changelog.md
-            echo "$FEATURES" | sed 's/^feat[:(]\([^)]*\)[):]*\s*/- /' | sed 's/^feat:\s*/- /' >> changelog.md
+            echo "$FEATURES" | sed 's/^feat[:(]\([^)]*\)[):]*\s*/- /' | sed 's/^feat:\s*/- /' | filter_and_dedup >> changelog.md
             echo "" >> changelog.md
           fi
           
@@ -317,7 +313,7 @@ jobs:
           FIXES=$(echo "$COMMITS" | grep -i "^fix" || true)
           if [ ! -z "$FIXES" ]; then
             echo "### 🐛 Bug 修复" >> changelog.md
-            echo "$FIXES" | sed 's/^fix[:(]\([^)]*\)[):]*\s*/- /' | sed 's/^fix:\s*/- /' >> changelog.md
+            echo "$FIXES" | sed 's/^fix[:(]\([^)]*\)[):]*\s*/- /' | sed 's/^fix:\s*/- /' | filter_and_dedup >> changelog.md
             echo "" >> changelog.md
           fi
           
@@ -325,7 +321,7 @@ jobs:
           PERF=$(echo "$COMMITS" | grep -i "^perf" || true)
           if [ ! -z "$PERF" ]; then
             echo "### ⚡ 性能优化" >> changelog.md
-            echo "$PERF" | sed 's/^perf[:(]\([^)]*\)[):]*\s*/- /' | sed 's/^perf:\s*/- /' >> changelog.md
+            echo "$PERF" | sed 's/^perf[:(]\([^)]*\)[):]*\s*/- /' | sed 's/^perf:\s*/- /' | filter_and_dedup >> changelog.md
             echo "" >> changelog.md
           fi
           
@@ -333,7 +329,7 @@ jobs:
           REFACTOR=$(echo "$COMMITS" | grep -i "^refactor" || true)
           if [ ! -z "$REFACTOR" ]; then
             echo "### ♻️ 代码重构" >> changelog.md
-            echo "$REFACTOR" | sed 's/^refactor[:(]\([^)]*\)[):]*\s*/- /' | sed 's/^refactor:\s*/- /' >> changelog.md
+            echo "$REFACTOR" | sed 's/^refactor[:(]\([^)]*\)[):]*\s*/- /' | sed 's/^refactor:\s*/- /' | filter_and_dedup >> changelog.md
             echo "" >> changelog.md
           fi
           
@@ -341,7 +337,7 @@ jobs:
           STYLE=$(echo "$COMMITS" | grep -i "^style" || true)
           if [ ! -z "$STYLE" ]; then
             echo "### 💄 样式更新" >> changelog.md
-            echo "$STYLE" | sed 's/^style[:(]\([^)]*\)[):]*\s*/- /' | sed 's/^style:\s*/- /' >> changelog.md
+            echo "$STYLE" | sed 's/^style[:(]\([^)]*\)[):]*\s*/- /' | sed 's/^style:\s*/- /' | filter_and_dedup >> changelog.md
             echo "" >> changelog.md
           fi
           
@@ -349,7 +345,7 @@ jobs:
           DOCS=$(echo "$COMMITS" | grep -i "^docs" || true)
           if [ ! -z "$DOCS" ]; then
             echo "### 📚 文档更新" >> changelog.md
-            echo "$DOCS" | sed 's/^docs[:(]\([^)]*\)[):]*\s*/- /' | sed 's/^docs:\s*/- /' >> changelog.md
+            echo "$DOCS" | sed 's/^docs[:(]\([^)]*\)[):]*\s*/- /' | sed 's/^docs:\s*/- /' | filter_and_dedup >> changelog.md
             echo "" >> changelog.md
           fi
           

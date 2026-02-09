@@ -3,7 +3,7 @@ name: Sync Release to Gitee
 on:
   release:
     types: [published]
-    workflow_dispatch: # 允许手动触发
+  workflow_dispatch: # 允许手动触发
 
 jobs:
   sync:
@@ -19,3 +19,4 @@ jobs:
           github_repo: ${{ github.event.repository.name }}
           gitee_upload_retry_times: 3
           debug: false
+
