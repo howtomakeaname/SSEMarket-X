@@ -14,6 +14,12 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localProperties.load(FileInputStream(localPropertiesFile))
+}
+
 android {
     namespace = "com.susse.market"
     compileSdk = flutter.compileSdkVersion
@@ -35,10 +41,8 @@ android {
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
-        versionCode =
-            if (project.hasProperty("flutter.versionCode")) project.property("flutter.versionCode").toString().toInt() else 1
-        versionName =
-            if (project.hasProperty("flutter.versionName")) project.property("flutter.versionName").toString() else "1.0.0"
+        versionCode = (localProperties.getProperty("flutter.versionCode") ?: "1").toInt()
+        versionName = localProperties.getProperty("flutter.versionName") ?: "1.0.0"
     }
 
     signingConfigs {

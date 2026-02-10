@@ -11,6 +11,10 @@ dependency_overrides:
     git:
       url: "https://gitcode.com/openharmony-tpc/flutter_packages.git"
       path: "packages/flutter_markdown"
+  package_info_plus:
+    git: 
+      url: "https://gitcode.com/openharmony-sig/flutter_plus_plugins.git"
+      path: "packages/package_info_plus/package_info_plus"
   webview_flutter:
     git:
       url: "https://gitcode.com/openharmony-tpc/flutter_packages.git"

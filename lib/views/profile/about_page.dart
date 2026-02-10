@@ -21,19 +21,11 @@ class _AboutPageState extends State<AboutPage> {
   }
 
   Future<void> _loadVersion() async {
-    try {
-      final packageInfo = await PackageInfo.fromPlatform();
-      if (mounted) {
-        setState(() {
-          _version = packageInfo.version;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _version = '1.0.0';
-        });
-      }
+    final packageInfo = await PackageInfo.fromPlatform();
+    if (mounted) {
+      setState(() {
+        _version = packageInfo.version;
+      });
     }
   }
 
